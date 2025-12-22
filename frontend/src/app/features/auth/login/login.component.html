@@ -1,0 +1,104 @@
+<div class="container">
+  <!-- Left Brand Panel -->
+  <div class="brand-panel">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M12 2L2 7l10 5 10-5-10-5z" />
+          <path d="M2 17l10 5 10-5" />
+          <path d="M2 12l10 5 10-5" />
+        </svg>
+      </div>
+      <span class="logo-text">Drumigo</span>
+    </div>
+
+    <div class="brand-content">
+      <h1 class="brand-tagline">Your journey,<br />simplified.</h1>
+      <p class="brand-description">
+        Get where you need to be with comfort, safety, and reliability. Every ride is a step towards
+        your destination.
+      </p>
+    </div>
+
+    <div class="brand-stats">
+      <div class="stat-item">
+        <div class="stat-number">10K+</div>
+        <div class="stat-label">Active Riders</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">500+</div>
+        <div class="stat-label">Drivers</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">50K+</div>
+        <div class="stat-label">Rides Completed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Form Panel -->
+  <div class="form-panel">
+    <div class="form-header">
+      <h2 class="form-title">Welcome back</h2>
+      <p class="form-subtitle">
+        Don't have an account? <a routerLink="/register">Sign up for free</a>
+      </p>
+    </div>
+
+    <form (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label class="form-label" for="email">Email address</label>
+        <input
+          type="email"
+          id="email"
+          class="form-input"
+          placeholder="Enter your email"
+          [(ngModel)]="email"
+          name="email"
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          class="form-input"
+          placeholder="Enter your password"
+          [(ngModel)]="password"
+          name="password"
+        />
+      </div>
+
+      <div class="form-options">
+        <label class="checkbox-wrapper">
+          <input
+            type="checkbox"
+            class="checkbox-input"
+            [(ngModel)]="rememberMe"
+            name="rememberMe"
+          />
+          <span class="checkbox-label">Remember me</span>
+        </label>
+        <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="btn-primary">Sign in</button>
+    </form>
+
+    <div class="divider">
+      <div class="divider-line"></div>
+      <span class="divider-text">or</span>
+      <div class="divider-line"></div>
+    </div>
+
+    <a routerLink="/home" class="guest-link">Continue as <span>Guest</span> to estimate a ride</a>
+  </div>
+</div>
