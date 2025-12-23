@@ -2,20 +2,7 @@
   <!-- Left Brand Panel -->
   <div class="brand-panel">
     <div class="logo">
-      <div class="logo-icon">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M12 2L2 7l10 5 10-5-10-5z" />
-          <path d="M2 17l10 5 10-5" />
-          <path d="M2 12l10 5 10-5" />
-        </svg>
-      </div>
+      <img src="images/logo/logo-white-v2.svg" alt="Drumigo Logo" class="logo-image" />
       <span class="logo-text">Drumigo</span>
     </div>
 
@@ -52,7 +39,7 @@
       </p>
     </div>
 
-    <form (ngSubmit)="onSubmit()">
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
       <div class="form-group">
         <label class="form-label" for="email">Email address</label>
         <input
@@ -60,9 +47,13 @@
           id="email"
           class="form-input"
           placeholder="Enter your email"
-          [(ngModel)]="email"
-          name="email"
+          formControlName="email"
+          [class.error]="submitted && f['email'].errors"
         />
+        <div class="error-message" *ngIf="submitted && f['email'].errors">
+          <small *ngIf="f['email'].errors['required']">Email is required</small>
+          <small *ngIf="f['email'].errors['email']">Please enter a valid email</small>
+        </div>
       </div>
 
       <div class="form-group">
@@ -72,25 +63,31 @@
           id="password"
           class="form-input"
           placeholder="Enter your password"
-          [(ngModel)]="password"
-          name="password"
+          formControlName="password"
+          [class.error]="submitted && f['password'].errors"
         />
+        <div class="error-message" *ngIf="submitted && f['password'].errors">
+          <small *ngIf="f['password'].errors['required']">Password is required</small>
+          <small *ngIf="f['password'].errors['minlength']"
+            >Password must be at least 6 characters</small
+          >
+          <small *ngIf="f['password'].errors['pattern']"
+            >Password must contain at least one capital letter and one number</small
+          >
+        </div>
       </div>
 
       <div class="form-options">
         <label class="checkbox-wrapper">
-          <input
-            type="checkbox"
-            class="checkbox-input"
-            [(ngModel)]="rememberMe"
-            name="rememberMe"
-          />
+          <input type="checkbox" class="checkbox-input" formControlName="rememberMe" />
           <span class="checkbox-label">Remember me</span>
         </label>
         <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
       </div>
 
-      <button type="submit" class="btn-primary">Sign in</button>
+      <button type="submit" class="btn-primary" [disabled]="submitted && loginForm.invalid">
+        Sign in
+      </button>
     </form>
 
     <div class="divider">
