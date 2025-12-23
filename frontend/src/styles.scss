@@ -1,1 +1,42 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap');
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Global Variables */
+:root {
+  --primary: #5b4cdb;
+  --primary-light: #7b6ee8;
+  --primary-dark: #4338ca;
+  --accent: #ff7f5c;
+  --accent-light: #ffa07a;
+  --bg-cream: #fdfbf7;
+  --bg-warm: #f9f7f3;
+  --text-dark: #1f1f1f;
+  --text-medium: #4a4a4a;
+  --text-light: #8a8a8a;
+  --border: #e8e4dd;
+  --white: #ffffff;
+  --shadow-sm: 0 2px 8px rgba(91, 76, 219, 0.08);
+  --shadow-md: 0 8px 24px rgba(91, 76, 219, 0.12);
+  --shadow-lg: 0 16px 48px rgba(91, 76, 219, 0.16);
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+}
