@@ -1,0 +1,195 @@
+<div class="page">
+  <div class="container">
+    <div class="header">
+      <h1>My Profile</h1>
+      <p>Manage your personal information and preferences</p>
+    </div>
+
+    <div class="pending-alert" *ngIf="isDriver() && profile.pendingChanges">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z"
+          fill="#F59E0B"
+        />
+      </svg>
+
+      <div class="pending-alert-content">
+        <h3>Changes Pending Approval</h3>
+        <p>
+          Your recent profile changes are awaiting administrator approval. You'll be notified once
+          they're reviewed.
+        </p>
+      </div>
+    </div>
+
+    <div class="profile-grid">
+      <!-- Left -->
+      <div>
+        <div class="profile-card">
+          <div class="profile-avatar-section">
+            <div class="avatar-wrapper">
+              <div class="avatar">
+                <ng-container *ngIf="profile.avatarUrl; else initialsTpl">
+                  <img [src]="profile.avatarUrl!" alt="Profile" />
+                </ng-container>
+                <ng-template #initialsTpl>
+                  {{ initials() }}
+                </ng-template>
+              </div>
+
+              <button
+                class="avatar-upload-btn"
+                type="button"
+                (click)="onUploadAvatar()"
+                aria-label="Upload profile photo"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M12 4V20M4 12H20"
+                    stroke="white"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <h2 class="user-name">{{ fullName() }}</h2>
+            <span class="user-role">{{ profile.role }}</span>
+          </div>
+
+          <div class="driver-stats" *ngIf="isDriver() && profile.activeHoursLast24h as hrs">
+            <div class="stat-label">{{ hrs.label }}</div>
+            <div class="stat-value">{{ hrs.value }}</div>
+
+            <div
+              class="progress-bar"
+              role="progressbar"
+              [attr.aria-valuenow]="hrs.percentOfLimit"
+              aria-valuemin="0"
+              aria-valuemax="100"
+            >
+              <div class="progress-fill" [style.width.%]="hrs.percentOfLimit"></div>
+            </div>
+            <div class="progress-text">{{ hrs.dailyLimitLabel }}</div>
+          </div>
+
+          <button class="btn-danger" type="button" (click)="onChangePassword()">
+            Change Password
+          </button>
+        </div>
+      </div>
+
+      <!-- Right -->
+      <div class="details-section">
+        <div class="profile-card">
+          <div class="section-header">
+            <h3 class="section-title">Personal Information</h3>
+            <button class="btn-secondary" type="button" (click)="onEditProfile()">
+              Edit Profile
+            </button>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">First Name</span>
+              <span class="info-value">{{ profile.firstName }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Last Name</span>
+              <span class="info-value">{{ profile.lastName }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Email Address</span>
+              <span class="info-value">{{ profile.email }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Phone Number</span>
+              <span class="info-value">{{ profile.phone }}</span>
+            </div>
+
+            <div class="info-item full-row">
+              <span class="info-label">Home Address</span>
+              <span class="info-value">{{ profile.address }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-card" *ngIf="isDriver() && profile.vehicle as v">
+          <div class="section-header">
+            <h3 class="section-title">Vehicle Information</h3>
+            <button class="btn-secondary" type="button" (click)="onEditVehicle()">
+              Edit Vehicle
+            </button>
+          </div>
+
+          <div class="vehicle-info">
+            <div class="vehicle-header">
+              <div class="vehicle-icon" aria-hidden="true">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5H6.5C5.84 5 5.29 5.42 5.08 6.01L3 12V20C3 20.55 3.45 21 4 21H5C5.55 21 6 20.55 6 20V19H18V20C18 20.55 18.45 21 19 21H20C20.55 21 21 20.55 21 20V12L18.92 6.01ZM6.5 16C5.67 16 5 15.33 5 14.5C5 13.67 5.67 13 6.5 13C7.33 13 8 13.67 8 14.5C8 15.33 7.33 16 6.5 16ZM17.5 16C16.67 16 16 15.33 16 14.5C16 13.67 16.67 13 17.5 13C18.33 13 19 13.67 19 14.5C19 15.33 18.33 16 17.5 16ZM5 11L6.5 6.5H17.5L19 11H5Z"
+                    fill="white"
+                  />
+                </svg>
+              </div>
+
+              <div class="vehicle-type">
+                <h4>{{ v.model }}</h4>
+                <p>{{ v.category }}</p>
+              </div>
+            </div>
+
+            <div class="vehicle-details">
+              <div class="info-item">
+                <span class="info-label">License Plate</span>
+                <span class="info-value">{{ v.licensePlate }}</span>
+              </div>
+
+              <div class="info-item">
+                <span class="info-label">Number of Seats</span>
+                <span class="info-value">{{ v.seats }} passengers</span>
+              </div>
+
+              <div class="info-item full-row">
+                <span class="info-label">Vehicle Features</span>
+
+                <div class="badge-group">
+                  <span class="badge badge-success" *ngIf="v.features.babySeats">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                    Baby Seats
+                  </span>
+
+                  <span class="badge badge-success" *ngIf="v.features.petFriendly">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                    Pet Friendly
+                  </span>
+
+                  <span
+                    class="badge badge-primary"
+                    *ngIf="!v.features.babySeats && !v.features.petFriendly"
+                  >
+                    No special features
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
