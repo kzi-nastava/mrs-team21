@@ -33,6 +33,13 @@ export const routes: Routes = [
         (m) => m.ProfilePageComponent
       ),
   },
+  {
+    path: 'driver-history',
+    loadComponent: () =>
+      import('./features/driver-history/driver-history.component').then(
+        (m) => m.DriverHistoryComponent
+      ),
+  },
 
   {
     path: '',

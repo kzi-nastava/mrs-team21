@@ -1,0 +1,63 @@
+<nav class="nav-bar">
+  <a routerLink="/login" class="nav-logo" (click)="closeMobileMenu()">
+    <div class="nav-logo-image">
+      <img src="images/logo/logo-white-v2.svg" alt="Drumigo Logo" class="logo-img" />
+    </div>
+    <span class="nav-logo-text">Drumigo</span>
+  </a>
+  
+  <div class="nav-links" [class.mobile-open]="isMobileMenuOpen">
+    <a 
+      routerLink="/login" 
+      routerLinkActive="active" 
+      [routerLinkActiveOptions]="{exact: false}"
+      class="nav-link"
+      (click)="closeMobileMenu()">
+      Login
+    </a>
+    <a 
+      routerLink="/register" 
+      routerLinkActive="active" 
+      class="nav-link"
+      (click)="closeMobileMenu()">
+      Register
+    </a>
+    <a 
+      routerLink="/forgot-password" 
+      routerLinkActive="active" 
+      class="nav-link"
+      (click)="closeMobileMenu()">
+      Forgot Password
+    </a>
+    <a 
+      routerLink="/reset-password/demo" 
+      routerLinkActive="active" 
+      class="nav-link"
+      (click)="closeMobileMenu()">
+      Reset Password
+    </a>
+    <a 
+      routerLink="/profile" 
+      routerLinkActive="active" 
+      class="nav-link"
+      (click)="closeMobileMenu()">
+      Profile
+    </a>
+    <a 
+      routerLink="/driver-history" 
+      routerLinkActive="active" 
+      class="nav-link"
+      (click)="closeMobileMenu()">
+      Ride History
+    </a>
+  </div>
+  
+  <button 
+    class="nav-mobile-toggle" 
+    (click)="toggleMobileMenu()"
+    [attr.aria-label]="isMobileMenuOpen ? 'Close menu' : 'Open menu'"
+    [attr.aria-expanded]="isMobileMenuOpen">
+    <span class="hamburger-icon">☰</span>
+  </button>
+</nav>
+
