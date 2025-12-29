@@ -5,30 +5,28 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Main content -->
-    <FrameLayout
+    <!-- Main content: toolbar on top, nav host below -->
+    <LinearLayout
         android:id="@+id/main"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/primary"
-            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-            app:title="@string/app_name" />
+        <!-- Reuse the toolbar layout that already sets navigation icon and styling -->
+        <include layout="@layout/toolbar_main" />
 
-        <!-- Navigation host -->
+        <!-- Navigation host fills remaining space -->
         <fragment
             android:id="@+id/nav_host_fragment"
             android:name="androidx.navigation.fragment.NavHostFragment"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             app:defaultNavHost="true"
+            app:navGraph="@navigation/nav_graph"
             app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
-    </FrameLayout>
+    </LinearLayout>
 
     <!-- Navigation drawer -->
     <com.google.android.material.navigation.NavigationView
