@@ -113,6 +113,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             menuItemId = R.id.nav_forgot_password;
         } else if (destinationId == R.id.resetPasswordFragment) {
             menuItemId = R.id.nav_reset_password;
+        } else if (destinationId == R.id.profileFragment) {
+            menuItemId = R.id.nav_profile;
         } else {
             return;
         }
@@ -138,6 +140,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             // Launch RideHistoryActivity
             Intent intent = new Intent(this, com.ridesharing.app.ui.history.RideHistoryActivity.class);
             startActivity(intent);
+        } else if (itemId == R.id.nav_profile) {
+            // Navigate to profile fragment
+            navController.navigate(R.id.profileFragment);
         }
         
         drawerLayout.closeDrawer(GravityCompat.START);
