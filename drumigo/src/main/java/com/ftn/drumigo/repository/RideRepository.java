@@ -24,7 +24,20 @@ public interface RideRepository extends JpaRepository<Ride, Long> {
                                                    @Param("to") Instant to, 
                                                    Pageable pageable);
     
-    @Query("SELECT r FROM Ride r WHERE r.driver.name LIKE %:name% OR r.driver.surname LIKE %:name%")
+    @Query("SELECT r FROM Ride r WHERE r.driver.name LIKE CONCAT('%', :name, '%') OR r.driver.surname LIKE CONCAT('%', :name, '%')")
     List<Ride> findByDriverNameContaining(@Param("name") String name);
+    
+    @Query("SELECT r FROM Ride r WHERE r.status = :status AND r.requestedAt >= :from AND r.requestedAt <= :to")
+    List<Ride> findByStatusAndRequestedAtBetween(@Param("status") RideStatus status,
+                                                   @Param("from") Instant from,
+                                                   @Param("to") Instant to);
+    
+    @Query("SELECT r FROM Ride r WHERE r.status = :status AND r.requestedAt >= :from AND r.requestedAt <= :to " +
+           "AND (r.orderingPassenger.id = :userId OR EXISTS " +
+           "(SELECT rp FROM RidePassenger rp WHERE rp.ride = r AND rp.passenger.id = :userId))")
+    List<Ride> findByStatusAndUserAndRequestedAtBetween(@Param("status") RideStatus status,
+                                                          @Param("userId") Long userId,
+                                                          @Param("from") Instant from,
+                                                          @Param("to") Instant to);
 }
 

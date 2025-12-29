@@ -3,6 +3,7 @@ package com.ftn.drumigo.controller;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RideInconsistency;
 import com.ftn.drumigo.domain.RideWaypoint;
+import com.ftn.drumigo.dto.RideCreateRequest;
 import com.ftn.drumigo.dto.RideInconsistencyCreateRequest;
 import com.ftn.drumigo.dto.RideInconsistencyResponse;
 import com.ftn.drumigo.dto.RideResponse;
@@ -26,6 +27,24 @@ public class RideController {
     private final RideService rideService;
     private final RideMapper rideMapper;
     private final RideInconsistencyMapper rideInconsistencyMapper;
+    
+    @PostMapping
+    public ResponseEntity<RideResponse> createRide(
+            @RequestParam Long orderingPassengerId,
+            @Valid @RequestBody RideCreateRequest request) {
+        Ride ride = rideService.create(orderingPassengerId, request);
+        List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
+        return ResponseEntity.status(201).body(rideMapper.toResponse(ride, waypoints));
+    }
+    
+    @PutMapping("/{id}/start")
+    public ResponseEntity<RideResponse> startRide(
+            @PathVariable Long id,
+            @RequestParam Long driverId) {
+        Ride ride = rideService.startRide(id, driverId);
+        List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
+        return ResponseEntity.ok(rideMapper.toResponse(ride, waypoints));
+    }
     
     @GetMapping("/active")
     public ResponseEntity<List<RideResponse>> getActiveRides() {
