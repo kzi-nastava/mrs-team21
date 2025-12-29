@@ -6,6 +6,13 @@ import com.ftn.drumigo.domain.RideWaypoint;
 import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.dto.*;
 import com.ftn.drumigo.mapper.*;
+import com.ftn.drumigo.dto.RideCreateRequest;
+import com.ftn.drumigo.dto.RideInconsistencyCreateRequest;
+import com.ftn.drumigo.dto.RideInconsistencyResponse;
+import com.ftn.drumigo.dto.RideResponse;
+import com.ftn.drumigo.dto.RideTrackingResponse;
+import com.ftn.drumigo.mapper.RideInconsistencyMapper;
+import com.ftn.drumigo.mapper.RideMapper;
 import com.ftn.drumigo.service.RideService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +41,24 @@ public class RideController {
     private final PanicEventMapper panicEventMapper;
     private final DriverMapper driverMapper;
     private final VehicleMapper vehicleMapper;
+    
+    @PostMapping
+    public ResponseEntity<RideResponse> createRide(
+            @RequestParam Long orderingPassengerId,
+            @Valid @RequestBody RideCreateRequest request) {
+        Ride ride = rideService.create(orderingPassengerId, request);
+        List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
+        return ResponseEntity.status(201).body(rideMapper.toResponse(ride, waypoints));
+    }
+    
+    @PutMapping("/{id}/start")
+    public ResponseEntity<RideResponse> startRide(
+            @PathVariable Long id,
+            @RequestParam Long driverId) {
+        Ride ride = rideService.startRide(id, driverId);
+        List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
+        return ResponseEntity.ok(rideMapper.toResponse(ride, waypoints));
+    }
     
     @PostMapping
     public ResponseEntity<RideResponse> createRide(

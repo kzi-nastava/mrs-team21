@@ -1,16 +1,49 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.Mobile" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-        <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_200</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
-        <item name="colorOnPrimary">@color/black</item>
-        <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/teal_200</item>
-        <item name="colorSecondaryVariant">@color/teal_200</item>
-        <item name="colorOnSecondary">@color/black</item>
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
-        <!-- Customize your theme here. -->
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base application theme - Dark Mode -->
+    <style name="Theme.Drumigo" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- Primary colors -->
+        <item name="colorPrimary">@color/primary_light</item>
+        <item name="colorPrimaryVariant">@color/primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/primary_dark</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
+
+        <!-- Secondary colors -->
+        <item name="colorSecondary">@color/accent_light</item>
+        <item name="colorSecondaryVariant">@color/accent</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">@color/accent</item>
+        <item name="colorOnSecondaryContainer">@color/white</item>
+
+        <!-- Background and surface colors -->
+        <item name="android:colorBackground">@color/text_dark</item>
+        <item name="colorSurface">@color/text_medium</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="colorSurfaceVariant">@color/text_medium</item>
+        <item name="colorOnSurfaceVariant">@color/text_light</item>
+
+        <!-- Error colors -->
+        <item name="colorError">@color/error</item>
+        <item name="colorOnError">@color/white</item>
+
+        <!-- Outline -->
+        <item name="colorOutline">@color/border</item>
+
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@color/primary_dark</item>
+        <item name="android:navigationBarColor">@color/text_dark</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <!-- Splash Theme - Dark Mode -->
+    <style name="Theme.Drumigo.Splash" parent="Theme.Drumigo">
+        <item name="android:windowBackground">@color/primary_dark</item>
+        <item name="android:statusBarColor">@color/primary_dark</item>
+    </style>
+
+    <!-- Auth Theme (for login, register, etc.) - Dark Mode -->
+    <style name="Theme.Drumigo.Auth" parent="Theme.Drumigo">
+        <item name="android:statusBarColor">@color/primary_dark</item>
     </style>
 </resources>
