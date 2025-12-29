@@ -1,0 +1,101 @@
+<div class="container">
+  <!-- Left Brand Panel -->
+  <div class="brand-panel">
+    <div class="logo">
+      <img src="images/logo/logo-white-v2.svg" alt="Drumigo Logo" class="logo-image" />
+      <span class="logo-text">Drumigo</span>
+    </div>
+
+    <div class="brand-content">
+      <h1 class="brand-tagline">Your journey,<br />simplified.</h1>
+      <p class="brand-description">
+        Get where you need to be with comfort, safety, and reliability. Every ride is a step towards
+        your destination.
+      </p>
+    </div>
+
+    <div class="brand-stats">
+      <div class="stat-item">
+        <div class="stat-number">10K+</div>
+        <div class="stat-label">Active Riders</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">500+</div>
+        <div class="stat-label">Drivers</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">50K+</div>
+        <div class="stat-label">Rides Completed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Form Panel -->
+  <div class="form-panel">
+    <div class="form-header">
+      <h2 class="form-title">Welcome back</h2>
+      <p class="form-subtitle">
+        Don't have an account? <a routerLink="/register">Sign up for free</a>
+      </p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label class="form-label" for="email">Email address</label>
+        <input
+          type="email"
+          id="email"
+          class="form-input"
+          placeholder="Enter your email"
+          formControlName="email"
+          [class.error]="submitted && f['email'].errors"
+        />
+        <div class="error-message" *ngIf="submitted && f['email'].errors">
+          <small *ngIf="f['email'].errors['required']">Email is required</small>
+          <small *ngIf="f['email'].errors['email']">Please enter a valid email</small>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          class="form-input"
+          placeholder="Enter your password"
+          formControlName="password"
+          [class.error]="submitted && f['password'].errors"
+        />
+        <div class="error-message" *ngIf="submitted && f['password'].errors">
+          <small *ngIf="f['password'].errors['required']">Password is required</small>
+          <small *ngIf="f['password'].errors['minlength']"
+            >Password must be at least 6 characters</small
+          >
+          <small *ngIf="f['password'].errors['pattern']"
+            >Password must contain at least one capital letter and one number</small
+          >
+        </div>
+      </div>
+
+      <div class="form-options">
+        <label class="checkbox-wrapper">
+          <input type="checkbox" class="checkbox-input" formControlName="rememberMe" />
+          <span class="checkbox-label">Remember me</span>
+        </label>
+        <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="submitted && loginForm.invalid">
+        Sign in
+      </button>
+    </form>
+
+    <div class="divider">
+      <div class="divider-line"></div>
+      <span class="divider-text">or</span>
+      <div class="divider-line"></div>
+    </div>
+
+    <a routerLink="/home" class="guest-link">Continue as <span>Guest</span> to estimate a ride</a>
+  </div>
+</div>

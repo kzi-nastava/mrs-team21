@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base application theme -->
+    <style name="Theme.Drumigo" parent="Theme.Material3.Light.NoActionBar">
+        <!-- Primary colors -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/primary_light</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
+        
+        <!-- Secondary colors -->
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorSecondaryVariant">@color/accent_light</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">@color/accent_light</item>
+        <item name="colorOnSecondaryContainer">@color/text_dark</item>
+        
+        <!-- Background and surface colors -->
+        <item name="android:colorBackground">@color/bg_cream</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">@color/text_dark</item>
+        <item name="colorSurfaceVariant">@color/bg_warm</item>
+        <item name="colorOnSurfaceVariant">@color/text_medium</item>
+        
+        <!-- Error colors -->
+        <item name="colorError">@color/error</item>
+        <item name="colorOnError">@color/white</item>
+        
+        <!-- Outline -->
+        <item name="colorOutline">@color/border</item>
+        
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@color/primary</item>
+        <item name="android:navigationBarColor">@color/bg_cream</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+
+    <!-- Splash Theme -->
+    <style name="Theme.Drumigo.Splash" parent="Theme.Drumigo">
+        <item name="android:windowBackground">@color/primary</item>
+        <item name="android:statusBarColor">@color/primary</item>
+    </style>
+    
+    <!-- Auth Theme (for login, register, etc.) -->
+    <style name="Theme.Drumigo.Auth" parent="Theme.Drumigo">
+        <item name="android:statusBarColor">@color/primary</item>
+    </style>
+</resources>

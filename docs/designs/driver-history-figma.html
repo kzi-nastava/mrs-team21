@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Ride History - Figma Design</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #5B4CDB;
+            --primary-light: #7B6EE8;
+            --primary-dark: #4338CA;
+            --accent: #FF7F5C;
+            --accent-light: #FFA07A;
+            --bg-cream: #FDFBF7;
+            --bg-warm: #F9F7F3;
+            --text-dark: #1F1F1F;
+            --text-medium: #4A4A4A;
+            --text-light: #8A8A8A;
+            --border: #E8E4DD;
+            --white: #FFFFFF;
+            --success: #22C55E;
+            --success-light: #DCFCE7;
+            --warning: #F59E0B;
+            --warning-light: #FEF3C7;
+            --danger: #EF4444;
+            --danger-light: #FEE2E2;
+            --shadow-sm: 0 2px 8px rgba(91, 76, 219, 0.08);
+            --shadow-md: 0 8px 24px rgba(91, 76, 219, 0.12);
+            --shadow-lg: 0 16px 48px rgba(91, 76, 219, 0.16);
+            --radius-sm: 12px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-cream);
+            min-height: 100vh;
+            color: var(--text-dark);
+            padding: 40px;
+        }
+
+        .design-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--white);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .design-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 32px;
+        }
+
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            font-size: 15px;
+            color: var(--text-light);
+        }
+
+        .filters-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-medium);
+        }
+
+        .filter-input {
+            padding: 10px 14px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            color: var(--text-dark);
+            background: var(--white);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            outline: none;
+        }
+
+        .btn-filter {
+            padding: 10px 20px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--white);
+            background: var(--primary);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+        }
+
+        .filter-spacer {
+            flex: 1;
+        }
+
+        .results-count {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .rides-table-container {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        .rides-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .rides-table th {
+            text-align: left;
+            padding: 16px 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: var(--bg-warm);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .rides-table td {
+            padding: 18px 20px;
+            font-size: 14px;
+            color: var(--text-dark);
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        .rides-table tbody tr:hover {
+            background: var(--bg-cream);
+        }
+
+        .date-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .date-value {
+            font-weight: 500;
+        }
+
+        .time-value {
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .route-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .route-markers {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .route-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .route-dot.start {
+            background: var(--primary);
+        }
+
+        .route-dot.end {
+            background: var(--accent);
+        }
+
+        .route-line-small {
+            width: 2px;
+            height: 16px;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--accent) 100%);
+        }
+
+        .route-addresses {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .route-from, .route-to {
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        .route-to {
+            color: var(--text-medium);
+        }
+
+        .passengers-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .passenger-avatars {
+            display: flex;
+        }
+
+        .passenger-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 11px;
+            font-weight: 600;
+            border: 2px solid var(--white);
+            margin-left: -8px;
+        }
+
+        .passenger-avatar:first-child {
+            margin-left: 0;
+        }
+
+        .passenger-count {
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-badge.completed {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .status-badge.cancelled {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .status-badge svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .cancelled-by {
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .cancelled-by span {
+            color: var(--danger);
+            font-weight: 500;
+        }
+
+        .price-cell {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        .panic-indicator {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-cream);
+        }
+
+        .panic-indicator svg {
+            width: 18px;
+            height: 18px;
+            color: var(--text-light);
+        }
+
+        .panic-indicator.active {
+            background: var(--danger-light);
+        }
+
+        .panic-indicator.active svg {
+            color: var(--danger);
+        }
+    </style>
+</head>
+<body>
+    <div class="design-container">
+        <h1 class="design-title">Driver Ride History - Design System (Section 2.9.2)</h1>
+        
+        <div class="app-container">
+            <main class="main-content">
+                <div class="page-header">
+                    <h1 class="page-title">Ride History</h1>
+                    <p class="page-subtitle">View all your completed and cancelled rides</p>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <span class="filter-label">From:</span>
+                        <input type="date" class="filter-input" value="2024-01-01">
+                    </div>
+                    <div class="filter-group">
+                        <span class="filter-label">To:</span>
+                        <input type="date" class="filter-input" value="2024-12-20">
+                    </div>
+                    <button class="btn-filter">Clear Filter</button>
+                    <div class="filter-spacer"></div>
+                    <span class="results-count">Showing 12 rides</span>
+                </div>
+
+                <!-- Rides Table -->
+                <div class="rides-table-container">
+                    <table class="rides-table">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Passengers</th>
+                                <th>Route</th>
+                                <th>Status</th>
+                                <th>Cancelled By</th>
+                                <th>Earnings</th>
+                                <th>PANIC</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="date-cell">
+                                        <span class="date-value">Dec 18, 2024</span>
+                                        <span class="time-value">14:30 - 14:52</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="passengers-cell">
+                                        <div class="passenger-avatars">
+                                            <div class="passenger-avatar">JD</div>
+                                        </div>
+                                        <span class="passenger-count">1 passenger</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="route-cell">
+                                        <div class="route-markers">
+                                            <div class="route-dot start"></div>
+                                            <div class="route-line-small"></div>
+                                            <div class="route-dot end"></div>
+                                        </div>
+                                        <div class="route-addresses">
+                                            <span class="route-from">Bulevar Oslobođenja 76</span>
+                                            <span class="route-to">Faculty of Technical Sciences</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="status-badge completed">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                        Completed
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="cancelled-by">—</span>
+                                </td>
+                                <td class="price-cell">+450 RSD</td>
+                                <td>
+                                    <div class="panic-indicator">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                            <line x1="12" y1="9" x2="12" y2="13"/>
+                                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                        </svg>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="date-cell">
+                                        <span class="date-value">Dec 17, 2024</span>
+                                        <span class="time-value">18:45 - 19:02</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="passengers-cell">
+                                        <div class="passenger-avatars">
+                                            <div class="passenger-avatar">SV</div>
+                                        </div>
+                                        <span class="passenger-count">1 passenger</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="route-cell">
+                                        <div class="route-markers">
+                                            <div class="route-dot start"></div>
+                                            <div class="route-line-small"></div>
+                                            <div class="route-dot end"></div>
+                                        </div>
+                                        <div class="route-addresses">
+                                            <span class="route-from">Liman Park</span>
+                                            <span class="route-to">Spens Sports Center</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="status-badge cancelled">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <line x1="15" y1="9" x2="9" y2="15"/>
+                                            <line x1="9" y1="9" x2="15" y2="15"/>
+                                        </svg>
+                                        Cancelled
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="cancelled-by">By <span>Passenger</span></span>
+                                </td>
+                                <td class="price-cell">—</td>
+                                <td>
+                                    <div class="panic-indicator">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                            <line x1="12" y1="9" x2="12" y2="13"/>
+                                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                        </svg>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="date-cell">
+                                        <span class="date-value">Dec 16, 2024</span>
+                                        <span class="time-value">22:10 - 22:35</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="passengers-cell">
+                                        <div class="passenger-avatars">
+                                            <div class="passenger-avatar">NK</div>
+                                        </div>
+                                        <span class="passenger-count">1 passenger</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="route-cell">
+                                        <div class="route-markers">
+                                            <div class="route-dot start"></div>
+                                            <div class="route-line-small"></div>
+                                            <div class="route-dot end"></div>
+                                        </div>
+                                        <div class="route-addresses">
+                                            <span class="route-from">Petrovaradin Fortress</span>
+                                            <span class="route-to">Grbavica District</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="status-badge completed">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                        Completed
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="cancelled-by">—</span>
+                                </td>
+                                <td class="price-cell">+620 RSD</td>
+                                <td>
+                                    <div class="panic-indicator active">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                            <line x1="12" y1="9" x2="12" y2="13"/>
+                                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                        </svg>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
