@@ -1,3 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Mobile</string>
+    <!-- App Name -->
+    <string name="app_name">Drumigo</string>
+    
+    <!-- Common -->
+    <string name="email">Email address</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm password</string>
+    <string name="optional">Optional</string>
+    
+    <!-- Login Screen -->
+    <string name="login_title">Welcome back</string>
+    <string name="login_subtitle">Don\'t have an account?</string>
+    <string name="login_sign_up_link">Sign up for free</string>
+    <string name="email_placeholder">Enter your email</string>
+    <string name="password_placeholder">Enter your password</string>
+    <string name="remember_me">Remember me</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="sign_in">Sign in</string>
+    <string name="or">or</string>
+    <string name="continue_as_guest">Continue as</string>
+    <string name="guest">Guest</string>
+    <string name="guest_description">to estimate a ride</string>
+    
+    <!-- Login Branding -->
+    <string name="brand_tagline">Your journey,\nsimplified.</string>
+    <string name="brand_description">Get where you need to be with comfort, safety, and reliability. Every ride is a step towards your destination.</string>
+    <string name="stat_riders">10K+</string>
+    <string name="stat_riders_label">Active Riders</string>
+    <string name="stat_drivers">500+</string>
+    <string name="stat_drivers_label">Drivers</string>
+    <string name="stat_rides">50K+</string>
+    <string name="stat_rides_label">Rides Completed</string>
+    
+    <!-- Registration Screen -->
+    <string name="register_title">Create your account</string>
+    <string name="register_subtitle">Already have an account?</string>
+    <string name="register_sign_in_link">Sign in</string>
+    <string name="register_tagline">Start your\njourney today</string>
+    <string name="register_description">Join thousands of riders who trust us for safe, reliable, and comfortable transportation.</string>
+    <string name="first_name">First name</string>
+    <string name="last_name">Last name</string>
+    <string name="first_name_placeholder">Enter your first name</string>
+    <string name="last_name_placeholder">Enter your last name</string>
+    <string name="phone_number">Phone number</string>
+    <string name="phone_placeholder">Enter phone number</string>
+    <string name="country_code_default">+381</string>
+    <string name="home_address">Home address</string>
+    <string name="address_placeholder">Enter your home address</string>
+    <string name="create_password_placeholder">Create a password</string>
+    <string name="confirm_password_placeholder">Confirm password</string>
+    <string name="profile_photo">Profile photo</string>
+    <string name="profile_photo_hint">Upload a photo so drivers can recognize you</string>
+    <string name="upload_photo">Upload photo</string>
+    <string name="terms_agreement">I agree to the</string>
+    <string name="terms_of_service">Terms of Service</string>
+    <string name="and">and</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="create_account">Create account</string>
+    <string name="email_verification_hint">We\'ll send you a verification link to activate your account</string>
+    <string name="activation_note">After signing up, check your email for a verification link. The link expires in 24 hours. You won\'t be able to sign in until your account is activated.</string>
+    
+    <!-- Registration Features -->
+    <string name="feature_safe_drivers">Safe &amp; verified drivers</string>
+    <string name="feature_real_time">Real-time ride tracking</string>
+    <string name="feature_pricing">Transparent pricing</string>
+    
+    <!-- Forgot Password Screen -->
+    <string name="forgot_password_title">Forgot your password?</string>
+    <string name="forgot_password_description">No worries! Enter the email address associated with your account and we\'ll send you a link to reset your password.</string>
+    <string name="send_reset_link">Send reset link</string>
+    <string name="back_to_login">Back to login</string>
+    <string name="remember_password">Remember your password?</string>
+    
+    <!-- Reset Password Screen -->
+    <string name="reset_password_title">Create new password</string>
+    <string name="reset_password_description">Your new password must be different from previously used passwords.</string>
+    <string name="new_password">New password</string>
+    <string name="new_password_placeholder">Enter new password</string>
+    <string name="confirm_new_password_placeholder">Confirm new password</string>
+    <string name="reset_password">Reset password</string>
+    <string name="password_requirements_title">Password requirements</string>
+    <string name="requirement_length">At least 8 characters</string>
+    <string name="requirement_uppercase">One uppercase letter</string>
+    <string name="requirement_lowercase">One lowercase letter</string>
+    <string name="requirement_special">One number or special character</string>
+    <string name="reset_link_note">This link will expire in 24 hours. After resetting your password, you\'ll be redirected to the login page.</string>
+    
+    <!-- Navigation Drawer -->
+    <string name="nav_header_guest">Guest User</string>
+    <string name="nav_header_guest_email">Sign in to access all features</string>
+    <string name="nav_login">Sign In</string>
+    <string name="nav_registration">Create Account</string>
+    <string name="nav_forgot_password">Forgot Password</string>
+    <string name="nav_reset_password">Reset Password</string>
+    <string name="nav_logout">Logout</string>
+    <string name="nav_drawer_open">Open navigation drawer</string>
+    <string name="nav_drawer_close">Close navigation drawer</string>
+    <string name="open_navigation">Open navigation</string>
+
+    <!-- Validation Messages -->
+    <string name="error_email_required">Email is required</string>
+    <string name="error_email_invalid">Please enter a valid email</string>
+    <string name="error_password_required">Password is required</string>
+    <string name="error_password_short">Password must be at least 8 characters</string>
+    <string name="error_passwords_not_match">Passwords do not match</string>
+    <string name="error_first_name_required">First name is required</string>
+    <string name="error_last_name_required">Last name is required</string>
+    <string name="error_phone_required">Phone number is required</string>
+    <string name="error_address_required">Address is required</string>
+    <string name="error_terms_required">You must agree to the terms</string>
 </resources>
