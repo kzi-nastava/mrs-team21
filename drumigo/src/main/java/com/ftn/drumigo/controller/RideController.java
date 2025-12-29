@@ -60,24 +60,6 @@ public class RideController {
         return ResponseEntity.ok(rideMapper.toResponse(ride, waypoints));
     }
     
-    @PostMapping
-    public ResponseEntity<RideResponse> createRide(
-            @RequestParam Long orderingPassengerId,
-            @Valid @RequestBody RideCreateRequest request) {
-        Ride ride = rideService.create(orderingPassengerId, request);
-        List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
-        return ResponseEntity.status(201).body(rideMapper.toResponse(ride, waypoints));
-    }
-    
-    @PutMapping("/{id}/start")
-    public ResponseEntity<RideResponse> startRide(
-            @PathVariable Long id,
-            @RequestParam Long driverId) {
-        Ride ride = rideService.startRide(id, driverId);
-        List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
-        return ResponseEntity.ok(rideMapper.toResponse(ride, waypoints));
-    }
-    
     @GetMapping("/active")
     public ResponseEntity<List<RideResponse>> getActiveRides() {
         List<Ride> rides = rideService.getActiveRides();
@@ -304,4 +286,3 @@ public class RideController {
         return ResponseEntity.status(201).body(rideMapper.toResponse(ride, waypoints));
     }
 }
-
