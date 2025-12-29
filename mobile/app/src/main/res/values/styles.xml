@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base Text Style -->
+    <style name="TextStyle">
+        <item name="android:textSize">@dimen/text_body</item>
+        <item name="android:textColor">@color/text_dark</item>
+    </style>
+
+    <!-- Base Widget Style for Drumigo -->
+    <style name="Widget.Drumigo" parent="">
+    </style>
+
+    <!-- Text Styles -->
+    <style name="TextStyle.Hero">
+        <item name="android:textSize">@dimen/text_hero</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:lineSpacingMultiplier">1.2</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+    
+    <style name="TextStyle.Title">
+        <item name="android:textSize">@dimen/text_title</item>
+        <item name="android:textColor">@color/text_dark</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+    
+    <style name="TextStyle.Headline">
+        <item name="android:textSize">@dimen/text_xxl</item>
+        <item name="android:textColor">@color/text_dark</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+    
+    <style name="TextStyle.Subtitle">
+        <item name="android:textSize">@dimen/text_body</item>
+        <item name="android:textColor">@color/text_light</item>
+        <item name="android:lineSpacingMultiplier">1.5</item>
+    </style>
+    
+    <style name="TextStyle.Body">
+        <item name="android:textSize">@dimen/text_body</item>
+        <item name="android:textColor">@color/text_medium</item>
+        <item name="android:lineSpacingMultiplier">1.5</item>
+    </style>
+    
+    <style name="TextStyle.Caption">
+        <item name="android:textSize">@dimen/text_sm</item>
+        <item name="android:textColor">@color/text_light</item>
+    </style>
+    
+    <style name="TextStyle.Label">
+        <item name="android:textSize">@dimen/text_sm</item>
+        <item name="android:textColor">@color/text_medium</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    
+    <style name="TextStyle.Link">
+        <item name="android:textSize">@dimen/text_sm</item>
+        <item name="android:textColor">@color/primary</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    
+    <!-- Input Field Style -->
+    <style name="Widget.Drumigo.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxCornerRadiusTopStart">@dimen/radius_md</item>
+        <item name="boxCornerRadiusTopEnd">@dimen/radius_md</item>
+        <item name="boxCornerRadiusBottomStart">@dimen/radius_md</item>
+        <item name="boxCornerRadiusBottomEnd">@dimen/radius_md</item>
+        <item name="boxStrokeWidth">2dp</item>
+        <item name="boxStrokeColor">@color/input_stroke_color</item>
+        <item name="boxBackgroundColor">@color/bg_cream</item>
+        <item name="hintTextColor">@color/text_light</item>
+        <item name="android:textColorHint">@color/text_light</item>
+    </style>
+    
+    <style name="Widget.Drumigo.TextInputEditText" parent="Widget.Material3.TextInputEditText.OutlinedBox">
+        <item name="android:textSize">@dimen/text_md</item>
+        <item name="android:textColor">@color/text_dark</item>
+        <item name="android:paddingStart">@dimen/input_padding_horizontal</item>
+        <item name="android:paddingEnd">@dimen/input_padding_horizontal</item>
+        <item name="android:paddingTop">@dimen/input_padding_vertical</item>
+        <item name="android:paddingBottom">@dimen/input_padding_vertical</item>
+    </style>
+    
+    <!-- Primary Button Style -->
+    <style name="Widget.Drumigo.Button.Primary" parent="Widget.Material3.Button">
+        <item name="android:textSize">@dimen/text_md</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:paddingTop">@dimen/spacing_md</item>
+        <item name="android:paddingBottom">@dimen/spacing_md</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="cornerRadius">@dimen/radius_md</item>
+        <item name="backgroundTint">@color/primary</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="elevation">4dp</item>
+    </style>
+    
+    <!-- Secondary/Outline Button Style -->
+    <style name="Widget.Drumigo.Button.Secondary" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:textSize">@dimen/text_body</item>
+        <item name="android:textColor">@color/text_medium</item>
+        <item name="strokeColor">@color/border</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="cornerRadius">@dimen/radius_md</item>
+        <item name="android:paddingTop">@dimen/spacing_md</item>
+        <item name="android:paddingBottom">@dimen/spacing_md</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+    
+    <!-- Text Button Style -->
+    <style name="Widget.Drumigo.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textSize">@dimen/text_sm</item>
+        <item name="android:textColor">@color/primary</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:padding">0dp</item>
+    </style>
+    
+    <!-- Checkbox Style -->
+    <style name="Widget.Drumigo.CheckBox" parent="Widget.Material3.CompoundButton.CheckBox">
+        <item name="buttonTint">@color/primary</item>
+        <item name="android:textSize">@dimen/text_sm</item>
+        <item name="android:textColor">@color/text_medium</item>
+    </style>
+    
+    <!-- Card Style -->
+    <style name="Widget.Drumigo.Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">@dimen/radius_lg</item>
+        <item name="cardElevation">@dimen/card_elevation</item>
+        <item name="cardBackgroundColor">@color/white</item>
+    </style>
+    
+    <!-- Divider Style -->
+    <style name="Widget.Drumigo.Divider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:background">@color/border</item>
+    </style>
+</resources>

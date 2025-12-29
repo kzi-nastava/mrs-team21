@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Spacing -->
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_sm">8dp</dimen>
+    <dimen name="spacing_md">16dp</dimen>
+    <dimen name="spacing_lg">24dp</dimen>
+    <dimen name="spacing_xl">32dp</dimen>
+    <dimen name="spacing_xxl">48dp</dimen>
+    
+    <!-- Corner Radius -->
+    <dimen name="radius_sm">12dp</dimen>
+    <dimen name="radius_md">16dp</dimen>
+    <dimen name="radius_lg">24dp</dimen>
+    <dimen name="radius_full">50dp</dimen>
+    
+    <!-- Input Fields -->
+    <dimen name="input_height">56dp</dimen>
+    <dimen name="input_padding_horizontal">20dp</dimen>
+    <dimen name="input_padding_vertical">16dp</dimen>
+    <dimen name="input_border_width">2dp</dimen>
+    
+    <!-- Buttons -->
+    <dimen name="button_height">56dp</dimen>
+    <dimen name="button_padding_horizontal">32dp</dimen>
+    
+    <!-- Icons -->
+    <dimen name="icon_sm">18dp</dimen>
+    <dimen name="icon_md">24dp</dimen>
+    <dimen name="icon_lg">32dp</dimen>
+    <dimen name="icon_xl">48dp</dimen>
+    
+    <!-- Avatar -->
+    <dimen name="avatar_size">80dp</dimen>
+    <dimen name="avatar_size_small">72dp</dimen>
+    
+    <!-- Logo -->
+    <dimen name="logo_icon_size">44dp</dimen>
+    <dimen name="logo_icon_inner">26dp</dimen>
+    
+    <!-- Feature Icon -->
+    <dimen name="feature_icon_size">36dp</dimen>
+    
+    <!-- Text Sizes -->
+    <dimen name="text_xs">12sp</dimen>
+    <dimen name="text_sm">13sp</dimen>
+    <dimen name="text_body">15sp</dimen>
+    <dimen name="text_md">16sp</dimen>
+    <dimen name="text_lg">18sp</dimen>
+    <dimen name="text_xl">22sp</dimen>
+    <dimen name="text_xxl">28sp</dimen>
+    <dimen name="text_title">30sp</dimen>
+    <dimen name="text_hero">38sp</dimen>
+    
+    <!-- Card -->
+    <dimen name="card_padding">24dp</dimen>
+    <dimen name="card_elevation">8dp</dimen>
+</resources>
