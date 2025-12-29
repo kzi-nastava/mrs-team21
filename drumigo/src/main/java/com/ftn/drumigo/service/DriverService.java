@@ -155,7 +155,7 @@ public class DriverService {
         
         // Generate token
         String token = UUID.randomUUID().toString();
-        String tokenHash = hashToken(token);
+        String tokenHash = com.ftn.drumigo.util.TokenUtil.hashToken(token);
         
         // Create token entity (expires in 24 hours)
         UserToken userToken = new UserToken();
@@ -172,7 +172,7 @@ public class DriverService {
     }
     
     public void setPassword(String token, SetPasswordRequest request) {
-        String tokenHash = hashToken(token);
+        String tokenHash = com.ftn.drumigo.util.TokenUtil.hashToken(token);
         Instant now = Instant.now();
         
         UserToken userToken = userTokenRepository
@@ -196,15 +196,6 @@ public class DriverService {
         userTokenRepository.save(userToken);
     }
     
-    private String hashToken(String token) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
-            return Base64.getEncoder().encodeToString(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Error hashing token", e);
-        }
-    }
     
     private String hashPassword(String password) {
         try {
@@ -214,5 +205,12 @@ public class DriverService {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Error hashing password", e);
         }
+    }
+    
+    public Driver updateDriverState(Long id, Boolean activeDriver) {
+        Driver driver = getById(id);
+        driver.setActiveDriver(activeDriver);
+        driver.setLastStateChangeAt(Instant.now());
+        return driverRepository.save(driver);
     }
 }

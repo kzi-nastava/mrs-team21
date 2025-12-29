@@ -5,12 +5,15 @@ import com.ftn.drumigo.domain.enums.NotificationType;
 import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.dto.RideCreateRequest;
 import com.ftn.drumigo.dto.RideInconsistencyCreateRequest;
+import com.ftn.drumigo.dto.RideStopRequest;
 import com.ftn.drumigo.exception.BadRequestException;
 import com.ftn.drumigo.exception.ResourceNotFoundException;
 import com.ftn.drumigo.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +21,8 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +40,8 @@ public class RideService {
     private final VehicleTypeRepository vehicleTypeRepository;
     private final LocationRepository locationRepository;
     private final UserRepository userRepository;
+    private final PanicEventRepository panicEventRepository;
+    private final ReviewRepository reviewRepository;
     
     public List<Ride> getActiveRides() {
         return rideRepository.findByStatus(RideStatus.ACTIVE);
@@ -367,35 +374,48 @@ public class RideService {
         Instant now = Instant.now();
         Instant twentyFourHoursAgo = now.minus(Duration.ofHours(24));
         
-        // Get rides that started or ended within the last 24 hours
-        List<Ride> recentRides = rideRepository.findByDriverAndStatus(driver, RideStatus.ACTIVE);
-        recentRides.addAll(rideRepository.findByDriverAndStatus(driver, RideStatus.FINISHED));
+        // Get all rides that started or ended within the last 24 hours (including CANCELLED)
+        List<Ride> allRecentRides = rideRepository.findAll().stream()
+            .filter(r -> r.getDriver() != null && r.getDriver().getId().equals(driver.getId()))
+            .filter(r -> {
+                boolean startedInWindow = r.getStartTime() != null && 
+                    !r.getStartTime().isBefore(twentyFourHoursAgo);
+                boolean endedInWindow = r.getEndTime() != null && 
+                    !r.getEndTime().isBefore(twentyFourHoursAgo);
+                return startedInWindow || endedInWindow;
+            })
+            .collect(Collectors.toList());
         
         long totalSeconds = 0;
-        for (Ride ride : recentRides) {
-            // Check if ride overlaps with the 24-hour window
-            // A ride contributes if it started within the window OR ended within the window
-            boolean startedInWindow = ride.getStartTime() != null && 
-                !ride.getStartTime().isBefore(twentyFourHoursAgo);
-            boolean endedInWindow = ride.getEndTime() != null && 
-                !ride.getEndTime().isBefore(twentyFourHoursAgo);
+        for (Ride ride : allRecentRides) {
+            // Only count rides that were actually active (ACTIVE, FINISHED, or CANCELLED that had started)
+            if (ride.getStartTime() == null) {
+                continue;
+            }
             
-            if (startedInWindow || endedInWindow) {
-                if (ride.getStatus() == RideStatus.FINISHED && ride.getStartTime() != null && ride.getEndTime() != null) {
-                    // For finished rides, use actual duration
-                    Instant rideStart = ride.getStartTime();
-                    Instant rideEnd = ride.getEndTime();
-                    // Only count the portion within the 24-hour window
-                    Instant windowStart = rideStart.isBefore(twentyFourHoursAgo) ? twentyFourHoursAgo : rideStart;
-                    Instant windowEnd = rideEnd.isAfter(now) ? now : rideEnd;
-                    if (!windowStart.isAfter(windowEnd)) {
-                        totalSeconds += Duration.between(windowStart, windowEnd).getSeconds();
-                    }
-                } else if (ride.getStatus() == RideStatus.ACTIVE && ride.getStartTime() != null) {
-                    // For active rides, count from start time (or window start) to now
-                    Instant rideStart = ride.getStartTime();
-                    Instant windowStart = rideStart.isBefore(twentyFourHoursAgo) ? twentyFourHoursAgo : rideStart;
-                    totalSeconds += Duration.between(windowStart, now).getSeconds();
+            if (ride.getStatus() == RideStatus.FINISHED && ride.getEndTime() != null) {
+                // For finished rides, use actual duration
+                Instant rideStart = ride.getStartTime();
+                Instant rideEnd = ride.getEndTime();
+                // Only count the portion within the 24-hour window
+                Instant windowStart = rideStart.isBefore(twentyFourHoursAgo) ? twentyFourHoursAgo : rideStart;
+                Instant windowEnd = rideEnd.isAfter(now) ? now : rideEnd;
+                if (!windowStart.isAfter(windowEnd)) {
+                    totalSeconds += Duration.between(windowStart, windowEnd).getSeconds();
+                }
+            } else if (ride.getStatus() == RideStatus.ACTIVE) {
+                // For active rides, count from start time (or window start) to now
+                Instant rideStart = ride.getStartTime();
+                Instant windowStart = rideStart.isBefore(twentyFourHoursAgo) ? twentyFourHoursAgo : rideStart;
+                totalSeconds += Duration.between(windowStart, now).getSeconds();
+            } else if (ride.getStatus() == RideStatus.CANCELLED && ride.getEndTime() != null) {
+                // For cancelled rides that had started, count the time until cancellation
+                Instant rideStart = ride.getStartTime();
+                Instant rideEnd = ride.getEndTime();
+                Instant windowStart = rideStart.isBefore(twentyFourHoursAgo) ? twentyFourHoursAgo : rideStart;
+                Instant windowEnd = rideEnd.isAfter(now) ? now : rideEnd;
+                if (!windowStart.isAfter(windowEnd)) {
+                    totalSeconds += Duration.between(windowStart, windowEnd).getSeconds();
                 }
             }
         }
@@ -449,6 +469,440 @@ public class RideService {
             notification.setMessage("Your ride request has been rejected. No available driver found.");
             notificationRepository.save(notification);
         }
+    }
+    
+    public Ride cancelByDriver(Long rideId, Long driverId, String reason) {
+        Ride ride = getById(rideId);
+        Driver driver = driverRepository.findById(driverId)
+            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + driverId));
+        
+        if (ride.getDriver() == null || !ride.getDriver().getId().equals(driverId)) {
+            throw new BadRequestException("Driver is not assigned to this ride");
+        }
+        
+        if (ride.getStatus() != RideStatus.ACCEPTED && ride.getStatus() != RideStatus.ACTIVE) {
+            throw new BadRequestException("Ride cannot be cancelled. Current status: " + ride.getStatus());
+        }
+        
+        ride.setStatus(RideStatus.CANCELLED);
+        ride.setCancelReason(reason);
+        ride.setCanceledByUser(driver);
+        
+        if (ride.getVehicle() != null) {
+            Vehicle vehicle = ride.getVehicle();
+            vehicle.setAvailable(true);
+            vehicleRepository.save(vehicle);
+        }
+        
+        ride = rideRepository.save(ride);
+        
+        // Create cancellation notifications
+        createCancellationNotifications(ride);
+        
+        return ride;
+    }
+    
+    public Ride withdrawByPassenger(Long rideId, Long passengerId) {
+        Ride ride = getById(rideId);
+        Passenger passenger = passengerRepository.findById(passengerId)
+            .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with id: " + passengerId));
+        
+        // Check if passenger is the ordering passenger
+        if (ride.getOrderingPassenger() == null || !ride.getOrderingPassenger().getId().equals(passengerId)) {
+            throw new BadRequestException("Only the ordering passenger can withdraw a ride");
+        }
+        
+        // Cannot withdraw if ride is already ACTIVE or FINISHED
+        if (ride.getStatus() == RideStatus.ACTIVE || ride.getStatus() == RideStatus.FINISHED) {
+            throw new BadRequestException("Cannot withdraw a ride that is already " + ride.getStatus());
+        }
+        
+        if (ride.getStatus() != RideStatus.PENDING && ride.getStatus() != RideStatus.ACCEPTED) {
+            throw new BadRequestException("Ride cannot be withdrawn. Current status: " + ride.getStatus());
+        }
+        
+        // Enforce "≥10 minutes before scheduled start" (spec 2.5)
+        Instant now = Instant.now();
+        if (ride.getScheduledFor() != null) {
+            // For scheduled rides, check 10 minutes before scheduled time
+            Instant tenMinutesBefore = ride.getScheduledFor().minusSeconds(10 * 60);
+            if (now.isAfter(tenMinutesBefore)) {
+                throw new BadRequestException("Cannot withdraw ride less than 10 minutes before scheduled start");
+            }
+        } else {
+            // For immediate rides, check if ride was requested more than 10 minutes ago
+            // If it was requested less than 10 minutes ago, allow withdrawal
+            // If it was requested more than 10 minutes ago and is still PENDING/ACCEPTED, 
+            // we allow withdrawal (no strict 10-minute rule for immediate rides)
+            // But if it's ACTIVE, we already rejected above
+        }
+        
+        ride.setStatus(RideStatus.CANCELLED);
+        ride.setCancelReason("Withdrawn by passenger");
+        ride.setCanceledByUser(passenger);
+        
+        if (ride.getVehicle() != null) {
+            Vehicle vehicle = ride.getVehicle();
+            vehicle.setAvailable(true);
+            vehicleRepository.save(vehicle);
+        }
+        
+        ride = rideRepository.save(ride);
+        
+        // Create cancellation notifications
+        createCancellationNotifications(ride);
+        
+        return ride;
+    }
+    
+    public Ride stopRide(Long rideId, Long driverId, RideStopRequest request) {
+        Ride ride = getById(rideId);
+        
+        if (ride.getDriver() == null || !ride.getDriver().getId().equals(driverId)) {
+            throw new BadRequestException("Driver is not assigned to this ride");
+        }
+        
+        if (ride.getStatus() != RideStatus.ACTIVE) {
+            throw new BadRequestException("Ride must be ACTIVE to be stopped. Current status: " + ride.getStatus());
+        }
+        
+        // Create or find stop location
+        Location stopLocation = locationRepository.findByAddressAndLatAndLng(
+                request.stopAddress(), request.stopLat(), request.stopLng())
+                .orElse(null);
+        
+        if (stopLocation == null) {
+            stopLocation = new Location();
+            stopLocation.setAddress(request.stopAddress());
+            stopLocation.setLat(request.stopLat());
+            stopLocation.setLng(request.stopLng());
+            stopLocation = locationRepository.save(stopLocation);
+        }
+        
+        // Basic validation: check if stop location is reasonable (not too far from route)
+        // For KT1, we'll do a simple check: stop should be within reasonable distance from any waypoint
+        List<RideWaypoint> currentWaypoints = getRideWaypoints(ride);
+        boolean isReasonable = false;
+        if (!currentWaypoints.isEmpty()) {
+            for (RideWaypoint wp : currentWaypoints) {
+                BigDecimal distance = calculateDistanceBetweenLocations(wp.getLocation(), stopLocation);
+                // Allow stops within 50km of any waypoint (reasonable for ride-hailing)
+                if (distance.compareTo(new BigDecimal("50")) <= 0) {
+                    isReasonable = true;
+                    break;
+                }
+            }
+        }
+        if (!isReasonable && !currentWaypoints.isEmpty()) {
+            throw new BadRequestException("Stop location is too far from the ride route");
+        }
+        
+        // Remove all waypoints after the start (we'll keep start and add stop as destination)
+        // Remove waypoints with order > 0 (keep start at order 0, remove all destinations)
+        for (RideWaypoint wp : currentWaypoints) {
+            if (wp.getWaypointOrder() > 0) {
+                rideWaypointRepository.delete(wp);
+            }
+        }
+        
+        // Update ride
+        ride.setStoppedAt(Instant.now());
+        ride.setStopLocation(stopLocation);
+        
+        // Recompute distance and price from start to stop location
+        if (!currentWaypoints.isEmpty()) {
+            Location startLocation = currentWaypoints.get(0).getLocation();
+            BigDecimal newDistance = calculateDistanceBetweenLocations(startLocation, stopLocation);
+            
+            // Update total distance (partial)
+            ride.setTotalDistanceKm(newDistance);
+            
+            // Recompute price
+            BigDecimal newCost = ride.getPricingStartPrice()
+                .add(newDistance.multiply(ride.getPricingPricePerKm()));
+            ride.setTotalCost(newCost);
+        }
+        
+        // Add stop as new destination waypoint (order 1, since start is order 0)
+        RideWaypoint stopWaypoint = new RideWaypoint();
+        stopWaypoint.setRide(ride);
+        stopWaypoint.setLocation(stopLocation);
+        stopWaypoint.setWaypointOrder(1);
+        rideWaypointRepository.save(stopWaypoint);
+        
+        // Ride remains ACTIVE after stopping (spec 2.6.5 doesn't specify status change)
+        ride = rideRepository.save(ride);
+        
+        return ride;
+    }
+    
+    private BigDecimal calculateDistanceBetweenLocations(Location loc1, Location loc2) {
+        double lat1 = loc1.getLat().doubleValue();
+        double lon1 = loc1.getLng().doubleValue();
+        double lat2 = loc2.getLat().doubleValue();
+        double lon2 = loc2.getLng().doubleValue();
+        
+        double distance = haversineDistance(lat1, lon1, lat2, lon2);
+        return BigDecimal.valueOf(distance).setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+    
+    private void createCancellationNotifications(Ride ride) {
+        // Notification for ordering passenger
+        if (ride.getOrderingPassenger() != null) {
+            Notification notification = new Notification();
+            notification.setUser(ride.getOrderingPassenger());
+            notification.setRide(ride);
+            notification.setType(NotificationType.RIDE_CANCELLED);
+            notification.setMessage("Your ride has been cancelled");
+            notificationRepository.save(notification);
+        }
+        
+        // Notifications for linked passengers
+        List<RidePassenger> ridePassengers = ridePassengerRepository.findByRide(ride);
+        for (RidePassenger rp : ridePassengers) {
+            Notification notification = new Notification();
+            notification.setUser(rp.getPassenger());
+            notification.setRide(ride);
+            notification.setType(NotificationType.RIDE_CANCELLED);
+            notification.setMessage("Your ride has been cancelled");
+            notificationRepository.save(notification);
+        }
+    }
+    
+    public Page<Ride> getPassengerRideHistory(Long passengerId, Instant from, Instant to, 
+                                              List<RideStatus> statuses, Boolean hasPanic, Pageable pageable) {
+        final Instant fromFinal = from == null ? Instant.ofEpochMilli(0) : from;
+        final Instant toFinal = to == null ? Instant.now() : to;
+        
+        // Get rides where passenger is ordering passenger (use inclusive boundaries)
+        List<Ride> allRides = rideRepository.findAll().stream()
+            .filter(r -> r.getOrderingPassenger() != null && 
+                        r.getOrderingPassenger().getId().equals(passengerId) &&
+                        !r.getRequestedAt().isBefore(fromFinal) && 
+                        !r.getRequestedAt().isAfter(toFinal))
+            .collect(Collectors.toList());
+        
+        // Also get rides where passenger is linked (use Set to avoid duplicates)
+        Set<Long> rideIds = allRides.stream().map(Ride::getId).collect(Collectors.toSet());
+        List<RidePassenger> linkedRides = ridePassengerRepository.findAll().stream()
+            .filter(rp -> rp.getPassenger().getId().equals(passengerId))
+            .collect(Collectors.toList());
+        for (RidePassenger rp : linkedRides) {
+            Ride ride = rp.getRide();
+            if (!ride.getRequestedAt().isBefore(fromFinal) && !ride.getRequestedAt().isAfter(toFinal)) {
+                if (!rideIds.contains(ride.getId())) {
+                    allRides.add(ride);
+                    rideIds.add(ride.getId());
+                }
+            }
+        }
+        
+        // Filter by status if provided
+        List<Ride> filteredByStatus;
+        if (statuses != null && !statuses.isEmpty()) {
+            filteredByStatus = allRides.stream()
+                .filter(r -> statuses.contains(r.getStatus()))
+                .collect(Collectors.toList());
+        } else {
+            filteredByStatus = allRides;
+        }
+        
+        // Filter by panic if provided (optimize with repository query)
+        List<Ride> finalRides;
+        if (hasPanic != null && !filteredByStatus.isEmpty()) {
+            List<PanicEvent> panicEvents = panicEventRepository.findByRideIn(filteredByStatus);
+            Set<Long> ridesWithPanic = panicEvents.stream()
+                .map(pe -> pe.getRide().getId())
+                .collect(Collectors.toSet());
+            
+            if (hasPanic) {
+                finalRides = filteredByStatus.stream()
+                    .filter(r -> ridesWithPanic.contains(r.getId()))
+                    .collect(Collectors.toList());
+            } else {
+                finalRides = filteredByStatus.stream()
+                    .filter(r -> !ridesWithPanic.contains(r.getId()))
+                    .collect(Collectors.toList());
+            }
+        } else {
+            finalRides = filteredByStatus;
+        }
+        
+        // Sort using pageable.sort instead of hardcoding
+        Sort sort = pageable.getSort();
+        if (sort.isSorted()) {
+            Sort.Order order = sort.iterator().next();
+            String property = order.getProperty();
+            boolean ascending = order.getDirection().isAscending();
+            
+            finalRides.sort((r1, r2) -> {
+                @SuppressWarnings("rawtypes")
+                Comparable val1 = getSortValue(r1, property);
+                @SuppressWarnings("rawtypes")
+                Comparable val2 = getSortValue(r2, property);
+                @SuppressWarnings({"rawtypes", "unchecked"})
+                int result = val1.compareTo(val2);
+                return ascending ? result : -result;
+            });
+        } else {
+            // Default sort by requestedAt descending
+            finalRides.sort((r1, r2) -> r2.getRequestedAt().compareTo(r1.getRequestedAt()));
+        }
+        
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), finalRides.size());
+        List<Ride> pagedRides = finalRides.subList(start, end);
+        
+        return new PageImpl<>(
+            pagedRides, pageable, finalRides.size());
+    }
+    
+    @SuppressWarnings("rawtypes")
+    private Comparable getSortValue(Ride ride, String property) {
+        return switch (property) {
+            case "requestedAt" -> ride.getRequestedAt();
+            case "startTime" -> ride.getStartTime() != null ? ride.getStartTime() : Instant.ofEpochMilli(0);
+            case "endTime" -> ride.getEndTime() != null ? ride.getEndTime() : Instant.ofEpochMilli(0);
+            case "totalCost" -> ride.getTotalCost() != null ? ride.getTotalCost() : BigDecimal.ZERO;
+            default -> ride.getRequestedAt();
+        };
+    }
+    
+    public Page<Ride> getAdminRideHistory(Instant from, Instant to, List<RideStatus> statuses, 
+                                         Boolean hasPanic, Pageable pageable) {
+        final Instant fromFinal = from == null ? Instant.ofEpochMilli(0) : from;
+        final Instant toFinal = to == null ? Instant.now() : to;
+        
+        // Use inclusive boundaries
+        List<Ride> allRides = rideRepository.findAll().stream()
+            .filter(r -> !r.getRequestedAt().isBefore(fromFinal) && !r.getRequestedAt().isAfter(toFinal))
+            .collect(Collectors.toList());
+        
+        // Filter by status if provided
+        List<Ride> filteredByStatus;
+        if (statuses != null && !statuses.isEmpty()) {
+            filteredByStatus = allRides.stream()
+                .filter(r -> statuses.contains(r.getStatus()))
+                .collect(Collectors.toList());
+        } else {
+            filteredByStatus = allRides;
+        }
+        
+        // Filter by panic if provided (optimize with repository query)
+        List<Ride> finalRides;
+        if (hasPanic != null && !filteredByStatus.isEmpty()) {
+            List<PanicEvent> panicEvents = panicEventRepository.findByRideIn(filteredByStatus);
+            Set<Long> ridesWithPanic = panicEvents.stream()
+                .map(pe -> pe.getRide().getId())
+                .collect(Collectors.toSet());
+            
+            if (hasPanic) {
+                finalRides = filteredByStatus.stream()
+                    .filter(r -> ridesWithPanic.contains(r.getId()))
+                    .collect(Collectors.toList());
+            } else {
+                finalRides = filteredByStatus.stream()
+                    .filter(r -> !ridesWithPanic.contains(r.getId()))
+                    .collect(Collectors.toList());
+            }
+        } else {
+            finalRides = filteredByStatus;
+        }
+        
+        // Sort using pageable.sort instead of hardcoding
+        Sort sort = pageable.getSort();
+        if (sort.isSorted()) {
+            Sort.Order order = sort.iterator().next();
+            String property = order.getProperty();
+            boolean ascending = order.getDirection().isAscending();
+            
+            finalRides.sort((r1, r2) -> {
+                @SuppressWarnings("rawtypes")
+                Comparable val1 = getSortValue(r1, property);
+                @SuppressWarnings("rawtypes")
+                Comparable val2 = getSortValue(r2, property);
+                @SuppressWarnings({"rawtypes", "unchecked"})
+                int result = val1.compareTo(val2);
+                return ascending ? result : -result;
+            });
+        } else {
+            // Default sort by requestedAt descending
+            finalRides.sort((r1, r2) -> r2.getRequestedAt().compareTo(r1.getRequestedAt()));
+        }
+        
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), finalRides.size());
+        List<Ride> pagedRides = finalRides.subList(start, end);
+        
+        return new PageImpl<>(
+            pagedRides, pageable, finalRides.size());
+    }
+    
+    public Ride reorderRide(Long rideId, Long passengerId) {
+        Ride originalRide = getById(rideId);
+        
+        // Check if passenger is the ordering passenger
+        if (originalRide.getOrderingPassenger() == null || !originalRide.getOrderingPassenger().getId().equals(passengerId)) {
+            throw new BadRequestException("Only the ordering passenger can reorder a ride");
+        }
+        
+        // Get original waypoints
+        List<RideWaypoint> originalWaypoints = getRideWaypoints(originalRide);
+        
+        // Create new ride request with same waypoints/options
+        RideCreateRequest.WaypointRequest[] waypointRequests = originalWaypoints.stream()
+            .map(wp -> new RideCreateRequest.WaypointRequest(
+                wp.getLocation().getAddress(),
+                wp.getLocation().getLat(),
+                wp.getLocation().getLng(),
+                wp.getWaypointOrder()
+            ))
+            .toArray(RideCreateRequest.WaypointRequest[]::new);
+        
+        // Get linked passenger emails from original ride
+        List<RidePassenger> linkedPassengers = ridePassengerRepository.findByRide(originalRide);
+        List<String> linkedEmails = linkedPassengers.stream()
+            .map(rp -> rp.getPassenger().getEmail())
+            .collect(Collectors.toList());
+        
+        // Convert vehicle type name string to enum
+        com.ftn.drumigo.domain.enums.VehicleTypeName vehicleTypeName = 
+            com.ftn.drumigo.domain.enums.VehicleTypeName.valueOf(originalRide.getPricingVehicleTypeName());
+        
+        // Preserve scheduled time if present
+        Instant scheduledFor = originalRide.getScheduledFor();
+        
+        RideCreateRequest reorderRequest = new RideCreateRequest(
+            java.util.Arrays.asList(waypointRequests),
+            vehicleTypeName,
+            originalRide.getBabyTransport(),
+            originalRide.getPetTransport(),
+            linkedEmails,
+            scheduledFor // Preserve scheduled time
+        );
+        
+        // Create new ride
+        return create(passengerId, reorderRequest);
+    }
+    
+    public List<com.ftn.drumigo.domain.Review> getRideReviews(Long rideId) {
+        Ride ride = getById(rideId);
+        return reviewRepository.findByRide(ride);
+    }
+    
+    public List<com.ftn.drumigo.domain.PanicEvent> getRidePanicEvents(Long rideId) {
+        Ride ride = getById(rideId);
+        return panicEventRepository.findByRide(ride);
+    }
+    
+    public List<RidePassenger> getRidePassengers(Ride ride) {
+        return ridePassengerRepository.findByRide(ride);
+    }
+    
+    public boolean hasPanic(Long rideId) {
+        Ride ride = getById(rideId);
+        List<PanicEvent> panicEvents = panicEventRepository.findByRide(ride);
+        return !panicEvents.isEmpty();
     }
 }
 

@@ -122,5 +122,13 @@ public class DriverController {
         
         return ResponseEntity.ok(responses);
     }
+    
+    @PutMapping("/{id}/state")
+    public ResponseEntity<DriverResponse> updateDriverState(
+            @PathVariable Long id,
+            @Valid @RequestBody DriverStateUpdateRequest request) {
+        Driver driver = driverService.updateDriverState(id, request.activeDriver());
+        return ResponseEntity.ok(driverMapper.toResponse(driver));
+    }
 }
 

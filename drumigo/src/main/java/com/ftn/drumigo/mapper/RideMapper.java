@@ -2,6 +2,7 @@ package com.ftn.drumigo.mapper;
 
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RideWaypoint;
+import com.ftn.drumigo.dto.PassengerRideHistoryItemResponse;
 import com.ftn.drumigo.dto.RideResponse;
 import com.ftn.drumigo.dto.RideTrackingResponse;
 import org.springframework.stereotype.Component;
@@ -82,6 +83,35 @@ public class RideMapper {
             ride.getBabyTransport(),
             ride.getPetTransport(),
             waypointInfos
+        );
+    }
+    
+    public PassengerRideHistoryItemResponse toPassengerHistoryResponse(Ride ride, List<RideWaypoint> waypoints, boolean hasPanic) {
+        if (ride == null) {
+            return null;
+        }
+        
+        String startAddress = waypoints == null || waypoints.isEmpty() ? null : waypoints.get(0).getLocation().getAddress();
+        String destinationAddress = waypoints == null || waypoints.isEmpty() ? null : waypoints.get(waypoints.size() - 1).getLocation().getAddress();
+        
+        boolean canceled = ride.getStatus() == com.ftn.drumigo.domain.enums.RideStatus.CANCELLED;
+        String canceledBy = canceled && ride.getCanceledByUser() != null 
+            ? ride.getCanceledByUser().getName() + " " + ride.getCanceledByUser().getSurname()
+            : null;
+        
+        return new PassengerRideHistoryItemResponse(
+            ride.getId(),
+            ride.getStatus(),
+            ride.getRequestedAt(),
+            ride.getScheduledFor(),
+            ride.getStartTime(),
+            ride.getEndTime(),
+            startAddress,
+            destinationAddress,
+            ride.getTotalCost(),
+            canceled,
+            canceledBy,
+            hasPanic
         );
     }
 }

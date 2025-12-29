@@ -68,5 +68,10 @@ public class UserService {
         user.setUpdatedAt(Instant.now());
         return userRepository.save(user);
     }
+    
+    public User getByEmail(String email) {
+        return userRepository.findByEmail(email)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+    }
 }
 

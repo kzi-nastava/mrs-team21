@@ -10,5 +10,6 @@ import java.util.List;
 @Repository
 public interface PanicEventRepository extends JpaRepository<PanicEvent, Long> {
     List<PanicEvent> findByRide(Ride ride);
+    List<PanicEvent> findByRideIn(List<Ride> rides);
 }
 

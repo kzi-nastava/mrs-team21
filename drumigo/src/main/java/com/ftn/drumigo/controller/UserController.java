@@ -5,6 +5,7 @@ import com.ftn.drumigo.domain.UserNote;
 import com.ftn.drumigo.dto.*;
 import com.ftn.drumigo.mapper.UserMapper;
 import com.ftn.drumigo.mapper.UserNoteMapper;
+import com.ftn.drumigo.service.AuthService;
 import com.ftn.drumigo.service.UserNoteService;
 import com.ftn.drumigo.service.UserService;
 import jakarta.validation.Valid;
@@ -24,6 +25,7 @@ public class UserController {
     private final UserMapper userMapper;
     private final UserNoteService userNoteService;
     private final UserNoteMapper userNoteMapper;
+    private final AuthService authService;
     
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
@@ -67,6 +69,14 @@ public class UserController {
             .map(userNoteMapper::toResponse)
             .collect(Collectors.toList());
         return ResponseEntity.ok(responses);
+    }
+    
+    @PutMapping("/{id}/password")
+    public ResponseEntity<Void> updatePassword(
+            @PathVariable Long id,
+            @Valid @RequestBody PasswordUpdateRequest request) {
+        authService.updatePassword(id, request);
+        return ResponseEntity.ok().build();
     }
 }
 
