@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Date & Time Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/dateText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Dec 18, 2024"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_dark"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/timeText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="14:30 - 14:52"
+                    android:textSize="13sp"
+                    android:textColor="@color/text_light"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Status Badge -->
+            <LinearLayout
+                android:id="@+id/statusBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_status_completed"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp">
+
+                <ImageView
+                    android:id="@+id/statusIcon"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_check"
+                    android:layout_marginEnd="4dp"
+                    app:tint="@color/success" />
+
+                <TextView
+                    android:id="@+id/statusText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Completed"
+                    android:textSize="12sp"
+                    android:textColor="@color/success"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Route -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <!-- Route Markers -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_marginEnd="12dp">
+
+                <View
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:background="@drawable/bg_route_dot_start" />
+
+                <View
+                    android:layout_width="2dp"
+                    android:layout_height="20dp"
+                    android:background="@drawable/bg_route_line" />
+
+                <View
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:background="@drawable/bg_route_dot_end" />
+            </LinearLayout>
+
+            <!-- Addresses -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/fromText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Bulevar Oslobođenja 76"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_dark"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/toText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Faculty of Technical Sciences"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_medium" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Passengers -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Passengers:"
+                android:textSize="12sp"
+                android:textColor="@color/text_light"
+                android:textStyle="bold"
+                android:layout_marginEnd="8dp" />
+
+            <LinearLayout
+                android:id="@+id/passengerAvatarsContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginEnd="8dp">
+                <!-- Avatars will be added dynamically -->
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/passengerCountText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1 passenger"
+                android:textSize="13sp"
+                android:textColor="@color/text_light" />
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/border"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Bottom Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Cancelled By -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cancelled By:"
+                    android:textSize="11sp"
+                    android:textColor="@color/text_light"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="2dp" />
+
+                <TextView
+                    android:id="@+id/cancelledByText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textSize="13sp"
+                    android:textColor="@color/text_light" />
+            </LinearLayout>
+
+            <!-- Price -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="end"
+                android:layout_marginStart="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Earnings:"
+                    android:textSize="11sp"
+                    android:textColor="@color/text_light"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="2dp" />
+
+                <TextView
+                    android:id="@+id/priceText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="+450 RSD"
+                    android:textSize="16sp"
+                    android:textColor="@color/success"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- PANIC Indicator -->
+            <FrameLayout
+                android:id="@+id/panicIndicator"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_panic_inactive"
+                android:layout_marginStart="16dp"
+                android:foregroundGravity="center">
+
+                <ImageView
+                    android:id="@+id/panicIcon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_warning"
+                    android:layout_gravity="center"
+                    app:tint="@color/text_light" />
+            </FrameLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

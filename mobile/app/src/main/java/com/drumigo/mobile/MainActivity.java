@@ -1,5 +1,6 @@
 package com.drumigo.mobile;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
@@ -133,6 +134,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if (itemId == R.id.nav_logout) {
             // Handle logout - for now just go to login
             navController.navigate(R.id.loginFragment);
+        } else if (itemId == R.id.nav_ride_history) {
+            // Launch RideHistoryActivity
+            Intent intent = new Intent(this, com.ridesharing.app.ui.history.RideHistoryActivity.class);
+            startActivity(intent);
         }
         
         drawerLayout.closeDrawer(GravityCompat.START);

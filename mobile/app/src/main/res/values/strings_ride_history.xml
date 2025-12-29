@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Placeholder strings for the Ride History screen. Replace or extend as needed. -->
+    <string name="ride_history_title">Ride History</string>
+</resources>
+

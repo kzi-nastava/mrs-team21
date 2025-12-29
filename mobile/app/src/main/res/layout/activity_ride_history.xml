@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_cream"
+    tools:context=".ui.history.RideHistoryActivity">
+
+    <!-- App Bar -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        app:elevation="0dp">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/white"
+            app:title="Ride History"
+            app:titleTextColor="@color/text_dark"
+            app:navigationIcon="@drawable/ic_arrow_back" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Main Content -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Page Header -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="View all your completed and cancelled rides"
+                android:textSize="14sp"
+                android:textColor="@color/text_light"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Filters Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Date Filters -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <!-- From Date -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginEnd="8dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="From:"
+                                android:textSize="12sp"
+                                android:textColor="@color/text_medium"
+                                android:textStyle="bold"
+                                android:layout_marginBottom="4dp" />
+
+                            <TextView
+                                android:id="@+id/fromDateText"
+                                android:layout_width="match_parent"
+                                android:layout_height="44dp"
+                                android:background="@drawable/bg_input"
+                                android:padding="12dp"
+                                android:text="Jan 01, 2024"
+                                android:textSize="14sp"
+                                android:textColor="@color/text_dark"
+                                android:gravity="center_vertical"
+                                android:drawableEnd="@drawable/ic_calendar"
+                                android:drawablePadding="8dp" />
+                        </LinearLayout>
+
+                        <!-- To Date -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginStart="8dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="To:"
+                                android:textSize="12sp"
+                                android:textColor="@color/text_medium"
+                                android:textStyle="bold"
+                                android:layout_marginBottom="4dp" />
+
+                            <TextView
+                                android:id="@+id/toDateText"
+                                android:layout_width="match_parent"
+                                android:layout_height="44dp"
+                                android:background="@drawable/bg_input"
+                                android:padding="12dp"
+                                android:text="Dec 20, 2024"
+                                android:textSize="14sp"
+                                android:textColor="@color/text_dark"
+                                android:gravity="center_vertical"
+                                android:drawableEnd="@drawable/ic_calendar"
+                                android:drawablePadding="8dp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Apply Button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/applyFilterButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:text="Apply Filter"
+                        android:textAllCaps="false"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:backgroundTint="@color/primary"
+                        android:layout_marginBottom="8dp" />
+
+                    <!-- Results Count -->
+                    <TextView
+                        android:id="@+id/resultsCountText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Showing 12 rides"
+                        android:textSize="13sp"
+                        android:textColor="@color/text_light"
+                        android:layout_gravity="center" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Rides List -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewRides"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                tools:listitem="@layout/item_ride_history" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
