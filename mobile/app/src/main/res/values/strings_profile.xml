@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Profile Screen -->
+    <string name="profile_title">My Profile</string>
+    <string name="profile_subtitle">Manage your personal information and preferences</string>
+
+    <!-- Profile Header -->
+    <string name="profile_driver">DRIVER</string>
+    <string name="profile_passenger">PASSENGER</string>
+    <string name="profile_admin">ADMIN</string>
+    <string name="profile_change_photo">Change photo</string>
+
+    <!-- Active Hours (Driver) -->
+    <string name="active_hours_label">Active Hours (Last 24h)</string>
+    <string name="active_hours_progress">%1$d%% of daily limit (8 hours)</string>
+
+    <!-- Personal Information -->
+    <string name="personal_info_title">Personal Information</string>
+    <string name="label_first_name">First Name</string>
+    <string name="label_last_name">Last Name</string>
+    <string name="label_email">Email Address</string>
+    <string name="label_phone">Phone Number</string>
+    <string name="label_address">Home Address</string>
+    <string name="btn_edit_profile">Edit Profile</string>
+
+    <!-- Vehicle Information (Driver only) -->
+    <string name="vehicle_info_title">Vehicle Information</string>
+    <string name="label_vehicle_type">Vehicle Type</string>
+    <string name="label_license_plate">License Plate</string>
+    <string name="label_seats">Number of Seats</string>
+    <string name="label_vehicle_features">Vehicle Features</string>
+    <string name="feature_baby_seats">Baby Seats</string>
+    <string name="feature_pet_friendly">Pet Friendly</string>
+    <string name="btn_edit_vehicle">Edit Vehicle</string>
+    <string name="seats_count">%1$d passengers</string>
+
+    <!-- Change Password -->
+    <string name="btn_change_password">Change Password</string>
+
+    <!-- Edit Profile Dialog/Screen -->
+    <string name="edit_profile_title">Edit Profile</string>
+    <string name="btn_save_changes">Save Changes</string>
+    <string name="btn_cancel">Cancel</string>
+
+    <!-- Pending Changes Notice (Driver) -->
+    <string name="pending_changes_title">Pending Changes</string>
+    <string name="pending_changes_message">Your profile changes are pending administrator approval.
+        You will be notified when they are reviewed.</string>
+
+    <!-- Toast/Snackbar Messages -->
+    <string name="profile_updated">Profile updated successfully</string>
+    <string name="profile_update_pending">Changes have been submitted for admin approval</string>
+    <string name="photo_updated">Profile photo changed successfully</string>
+    <string name="error_update_profile">Error updating profile</string>
+
+    <!-- Navigation -->
+    <string name="nav_profile">Profile</string>
+
+    <!-- Vehicle Edit -->
+    <string name="label_vehicle_name">Vehicle Name</string>
+    <string name="admin_approval_notice">Changes will be visible after administrator approval.</string>
+</resources>
