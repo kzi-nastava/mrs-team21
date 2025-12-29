@@ -1,0 +1,692 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_cream">
+
+    <!-- App Bar -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        app:elevation="0dp">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/white"
+            app:title="@string/profile_title"
+            app:titleTextColor="@color/text_dark"
+            app:navigationIcon="@drawable/ic_menu" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Main Content -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_md">
+
+            <!-- Page Subtitle -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/profile_subtitle"
+                style="@style/TextStyle.Caption"
+                android:layout_marginBottom="@dimen/spacing_lg" />
+
+            <!-- Profile Header Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_md"
+                app:cardCornerRadius="@dimen/radius_lg"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:padding="@dimen/spacing_lg">
+
+                    <!-- Avatar with Edit Badge -->
+                    <FrameLayout
+                        android:id="@+id/avatarContainer"
+                        android:layout_width="100dp"
+                        android:layout_height="100dp">
+
+                        <!-- Avatar Background -->
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_profile_avatar">
+
+                            <!-- Default Initials -->
+                            <TextView
+                                android:id="@+id/avatarInitials"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:text="JD"
+                                android:textColor="@color/white"
+                                android:textSize="36sp"
+                                android:fontFamily="sans-serif-medium"
+                                tools:text="JD" />
+
+                            <!-- Profile Image (for when user has photo) -->
+                            <ImageView
+                                android:id="@+id/avatarImage"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:visibility="gone"
+                                android:scaleType="centerCrop"
+                                android:contentDescription="@string/profile_photo"
+                                tools:visibility="gone" />
+                        </FrameLayout>
+
+                        <!-- Edit Badge -->
+                        <FrameLayout
+                            android:id="@+id/avatarEditBadge"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_gravity="bottom|end"
+                            android:background="@drawable/bg_avatar_edit_badge"
+                            android:clickable="true"
+                            android:focusable="true">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_camera"
+                                android:contentDescription="@string/profile_change_photo" />
+                        </FrameLayout>
+                    </FrameLayout>
+
+                    <!-- User Name -->
+                    <TextView
+                        android:id="@+id/userName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_md"
+                        android:text="John Doe"
+                        style="@style/TextStyle.Headline"
+                        tools:text="John Doe" />
+
+                    <!-- User Role Badge -->
+                    <TextView
+                        android:id="@+id/userRole"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_xs"
+                        android:text="@string/profile_driver"
+                        android:textColor="@color/text_light"
+                        android:textSize="@dimen/text_xs"
+                        android:letterSpacing="0.1"
+                        tools:text="VOZAČ" />
+
+                    <!-- Active Hours Section (Driver Only) -->
+                    <LinearLayout
+                        android:id="@+id/activeHoursContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginTop="@dimen/spacing_lg"
+                        android:visibility="visible"
+                        tools:visibility="visible">
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="@color/border"
+                            android:layout_marginBottom="@dimen/spacing_md" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/active_hours_label"
+                            android:textColor="@color/text_light"
+                            android:textSize="@dimen/text_xs" />
+
+                        <TextView
+                            android:id="@+id/activeHoursValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_xs"
+                            android:text="6h 45m"
+                            android:textColor="@color/text_dark"
+                            android:textSize="@dimen/text_xxl"
+                            android:fontFamily="sans-serif-medium"
+                            tools:text="6h 45m" />
+
+                        <ProgressBar
+                            android:id="@+id/activeHoursProgress"
+                            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="8dp"
+                            android:layout_marginTop="@dimen/spacing_sm"
+                            android:progressDrawable="@drawable/bg_active_hours_progress"
+                            android:max="100"
+                            android:progress="84"
+                            tools:progress="84" />
+
+                        <TextView
+                            android:id="@+id/activeHoursProgressText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_xs"
+                            android:text="84% dnevnog limita (8 sati)"
+                            android:textColor="@color/text_light"
+                            android:textSize="@dimen/text_xs"
+                            tools:text="84% dnevnog limita (8 sati)" />
+                    </LinearLayout>
+
+                    <!-- Change Password Button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnChangePassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_lg"
+                        android:text="@string/btn_change_password"
+                        android:textColor="@color/primary"
+                        style="@style/Widget.Drumigo.Button.Secondary" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Pending Changes Notice (Driver Only) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/pendingChangesCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_md"
+                android:visibility="gone"
+                app:cardCornerRadius="@dimen/radius_md"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/accent_08"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/spacing_md"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_info"
+                        app:tint="@color/accent"
+                        android:contentDescription="@null" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="@dimen/spacing_sm">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pending_changes_title"
+                            android:textColor="@color/accent"
+                            android:textSize="@dimen/text_sm"
+                            android:fontFamily="sans-serif-medium" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/pending_changes_message"
+                            android:textColor="@color/text_medium"
+                            android:textSize="@dimen/text_xs" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Personal Information Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_md"
+                app:cardCornerRadius="@dimen/radius_lg"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_lg">
+
+                    <!-- Header with Edit Button -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="@dimen/spacing_md">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/personal_info_title"
+                            style="@style/TextStyle.Title"
+                            android:textSize="@dimen/text_lg" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnEditProfile"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:text="@string/btn_edit_profile"
+                            android:textSize="@dimen/text_xs"
+                            style="@style/Widget.Drumigo.Button.Text"
+                            app:icon="@drawable/ic_edit"
+                            app:iconSize="14dp"
+                            app:iconGravity="start"
+                            app:iconPadding="4dp" />
+                    </LinearLayout>
+
+                    <!-- First Name & Last Name Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="@dimen/spacing_md">
+
+                        <!-- First Name -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginEnd="@dimen/spacing_sm">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/label_first_name"
+                                android:textColor="@color/text_light"
+                                android:textSize="@dimen/text_xs" />
+
+                            <TextView
+                                android:id="@+id/firstName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="John"
+                                android:textColor="@color/text_dark"
+                                android:textSize="@dimen/text_md"
+                                tools:text="John" />
+                        </LinearLayout>
+
+                        <!-- Last Name -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginStart="@dimen/spacing_sm">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/label_last_name"
+                                android:textColor="@color/text_light"
+                                android:textSize="@dimen/text_xs" />
+
+                            <TextView
+                                android:id="@+id/lastName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Doe"
+                                android:textColor="@color/text_dark"
+                                android:textSize="@dimen/text_md"
+                                tools:text="Doe" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Email & Phone Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="@dimen/spacing_md">
+
+                        <!-- Email -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginEnd="@dimen/spacing_sm">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/label_email"
+                                android:textColor="@color/text_light"
+                                android:textSize="@dimen/text_xs" />
+
+                            <TextView
+                                android:id="@+id/email"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="john.doe@example.com"
+                                android:textColor="@color/text_dark"
+                                android:textSize="@dimen/text_sm"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                tools:text="john.doe@example.com" />
+                        </LinearLayout>
+
+                        <!-- Phone -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginStart="@dimen/spacing_sm">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/label_phone"
+                                android:textColor="@color/text_light"
+                                android:textSize="@dimen/text_xs" />
+
+                            <TextView
+                                android:id="@+id/phone"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="+381 64 123 4567"
+                                android:textColor="@color/text_dark"
+                                android:textSize="@dimen/text_md"
+                                tools:text="+381 64 123 4567" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Address -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/label_address"
+                            android:textColor="@color/text_light"
+                            android:textSize="@dimen/text_xs" />
+
+                        <TextView
+                            android:id="@+id/address"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="123 Main Street, Belgrade, Serbia"
+                            android:textColor="@color/text_dark"
+                            android:textSize="@dimen/text_md"
+                            tools:text="123 Main Street, Belgrade, Serbia" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Vehicle Information Card (Driver Only) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/vehicleInfoCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_md"
+                android:visibility="visible"
+                app:cardCornerRadius="@dimen/radius_lg"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_lg">
+
+                    <!-- Header with Edit Button -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="@dimen/spacing_md">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/vehicle_info_title"
+                            style="@style/TextStyle.Title"
+                            android:textSize="@dimen/text_lg" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnEditVehicle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:text="@string/btn_edit_vehicle"
+                            android:textSize="@dimen/text_xs"
+                            style="@style/Widget.Drumigo.Button.Text"
+                            app:icon="@drawable/ic_edit"
+                            app:iconSize="14dp"
+                            app:iconGravity="start"
+                            app:iconPadding="4dp" />
+                    </LinearLayout>
+
+                    <!-- Vehicle Info Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="@dimen/spacing_md">
+
+                        <!-- Vehicle Icon -->
+                        <FrameLayout
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_vehicle_icon">
+
+                            <ImageView
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_car"
+                                android:contentDescription="@null" />
+                        </FrameLayout>
+
+                        <!-- Vehicle Name & Type -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginStart="@dimen/spacing_md">
+
+                            <TextView
+                                android:id="@+id/vehicleName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Tesla Model 3"
+                                android:textColor="@color/text_dark"
+                                android:textSize="@dimen/text_md"
+                                android:fontFamily="sans-serif-medium"
+                                tools:text="Tesla Model 3" />
+
+                            <TextView
+                                android:id="@+id/vehicleType"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Luxury Sedan"
+                                android:textColor="@color/text_light"
+                                android:textSize="@dimen/text_sm"
+                                tools:text="Luxury Sedan" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- License Plate & Seats Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="@dimen/spacing_md">
+
+                        <!-- License Plate -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginEnd="@dimen/spacing_sm">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/label_license_plate"
+                                android:textColor="@color/text_light"
+                                android:textSize="@dimen/text_xs" />
+
+                            <TextView
+                                android:id="@+id/licensePlate"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="BG-123-AB"
+                                android:textColor="@color/text_dark"
+                                android:textSize="@dimen/text_md"
+                                android:fontFamily="sans-serif-medium"
+                                tools:text="BG-123-AB" />
+                        </LinearLayout>
+
+                        <!-- Number of Seats -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginStart="@dimen/spacing_sm">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/label_seats"
+                                android:textColor="@color/text_light"
+                                android:textSize="@dimen/text_xs" />
+
+                            <TextView
+                                android:id="@+id/seatsCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="4 putnika"
+                                android:textColor="@color/text_dark"
+                                android:textSize="@dimen/text_md"
+                                tools:text="4 putnika" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Vehicle Features -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/label_vehicle_features"
+                            android:textColor="@color/text_light"
+                            android:textSize="@dimen/text_xs"
+                            android:layout_marginBottom="@dimen/spacing_sm" />
+
+                        <LinearLayout
+                            android:id="@+id/vehicleFeaturesContainer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <!-- Baby Seats Tag -->
+                            <LinearLayout
+                                android:id="@+id/featureBabySeats"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_feature_tag"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:layout_marginEnd="@dimen/spacing_sm">
+
+                                <ImageView
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:src="@drawable/ic_baby"
+                                    android:layout_marginEnd="4dp"
+                                    android:contentDescription="@null" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/feature_baby_seats"
+                                    android:textColor="@color/success"
+                                    android:textSize="@dimen/text_xs" />
+                            </LinearLayout>
+
+                            <!-- Pet Friendly Tag -->
+                            <LinearLayout
+                                android:id="@+id/featurePetFriendly"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_feature_tag_accent"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <ImageView
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:src="@drawable/ic_paw"
+                                    android:layout_marginEnd="4dp"
+                                    android:contentDescription="@null" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/feature_pet_friendly"
+                                    android:textColor="@color/accent"
+                                    android:textSize="@dimen/text_xs" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
