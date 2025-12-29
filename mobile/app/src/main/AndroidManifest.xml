@@ -59,6 +59,12 @@
 
         </activity>
 
+        <!-- Ride History activity (explicit full name because it's in a different Java package) -->
+        <activity
+            android:name="com.ridesharing.app.ui.history.RideHistoryActivity"
+            android:exported="false"
+            android:label="@string/nav_ride_history" />
+
     </application>
 
 </manifest>

@@ -98,6 +98,7 @@
     <string name="nav_drawer_open">Open navigation drawer</string>
     <string name="nav_drawer_close">Close navigation drawer</string>
     <string name="open_navigation">Open navigation</string>
+    <string name="nav_ride_history">Ride History</string>
 
     <!-- Validation Messages -->
     <string name="error_email_required">Email is required</string>

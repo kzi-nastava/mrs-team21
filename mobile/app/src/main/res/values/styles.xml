@@ -142,4 +142,10 @@
         <item name="android:layout_height">1dp</item>
         <item name="android:background">@color/border</item>
     </style>
+
+    <!-- DatePicker theme used by RideHistoryActivity -->
+    <style name="DatePickerTheme" parent="Theme.MaterialComponents.Light.Dialog">
+        <item name="android:datePickerStyle">@style/Widget.MaterialComponents.MaterialCalendar</item>
+        <item name="android:colorAccent">@color/primary</item>
+    </style>
 </resources>

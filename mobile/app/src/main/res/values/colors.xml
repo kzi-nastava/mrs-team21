@@ -24,7 +24,9 @@
     <color name="success">#22C55E</color>
     <color name="success_bg">#F0FDF4</color>
     <color name="error">#EF4444</color>
-    
+    <!-- danger is an alias used across code; keep for compatibility -->
+    <color name="danger">#EF4444</color>
+
     <!-- Transparency variants -->
     <color name="primary_10">#1A5B4CDB</color>
     <color name="primary_15">#265B4CDB</color>

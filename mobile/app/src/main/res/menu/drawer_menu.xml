@@ -17,6 +17,11 @@
         <item
             android:id="@+id/nav_reset_password"
             android:title="@string/nav_reset_password" />
+
+        <item
+            android:id="@+id/nav_ride_history"
+            android:title="@string/nav_ride_history"
+            android:icon="@drawable/ic_clock_white" />
     </group>
 
     <item
