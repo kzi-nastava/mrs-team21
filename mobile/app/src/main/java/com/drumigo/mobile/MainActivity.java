@@ -57,6 +57,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         toolbar = binding.getRoot().findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        // Ensure the hamburger icon is visible (set after setSupportActionBar)
+        toolbar.setNavigationIcon(R.drawable.ic_menu);
+
         // Handle navigation icon (hamburger menu) clicks
         toolbar.setNavigationOnClickListener(v -> openDrawer());
     }
