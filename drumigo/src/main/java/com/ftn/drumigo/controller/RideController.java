@@ -14,6 +14,7 @@ import com.ftn.drumigo.dto.RideTrackingResponse;
 import com.ftn.drumigo.mapper.RideInconsistencyMapper;
 import com.ftn.drumigo.mapper.RideMapper;
 import com.ftn.drumigo.service.RideService;
+import com.ftn.drumigo.service.UnregisteredService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -35,13 +36,15 @@ import java.util.stream.Collectors;
 public class RideController {
     
     private final RideService rideService;
+    private final UnregisteredService unregisteredService;
     private final RideMapper rideMapper;
     private final RideInconsistencyMapper rideInconsistencyMapper;
     private final ReviewMapper reviewMapper;
     private final PanicEventMapper panicEventMapper;
     private final DriverMapper driverMapper;
     private final VehicleMapper vehicleMapper;
-    
+
+
     @PostMapping
     public ResponseEntity<RideResponse> createRide(
             @RequestParam Long orderingPassengerId,
@@ -49,6 +52,12 @@ public class RideController {
         Ride ride = rideService.create(orderingPassengerId, request);
         List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
         return ResponseEntity.status(201).body(rideMapper.toResponse(ride, waypoints));
+    }
+
+    @PostMapping("/estimate")
+    public ResponseEntity<EstimateResponse> estimateRide(@Valid @RequestBody EstimateRequest request) {
+        EstimateResponse response = unregisteredService.getEstimate(request);
+        return ResponseEntity.ok(response);
     }
     
     @PutMapping("/{id}/start")
