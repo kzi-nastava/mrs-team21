@@ -47,3 +47,6 @@ __screenshots__/
 Thumbs.db
 
 /.vscode
+
+# Environment files - each team member adds their own Mapbox API key in environment.dev.ts
+src/environments/environment.dev.ts
