@@ -41,6 +41,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'ride-tracking/:rideId',
+    loadComponent: () =>
+      import('./features/ride-tracking/ride-tracking.component').then(
+        (m) => m.RideTrackingComponent,
+      ),
+  },
+  {
     path: 'landing',
     loadComponent: () =>
       import('./features/landing/landing-page/landing-page.component').then(
