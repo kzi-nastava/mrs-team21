@@ -90,7 +90,13 @@
         </div>
       </div>
 
-      <button class="btn-calculate" (click)="calculateEstimate()">Calculate estimate</button>
+      <button
+        class="btn-calculate"
+        (click)="calculateEstimate()"
+        [disabled]="!pickupLocation() || !destinationLocation()"
+      >
+        Calculate estimate
+      </button>
     </div>
 
     <!-- Estimate Results -->
