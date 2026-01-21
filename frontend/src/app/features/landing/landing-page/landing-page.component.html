@@ -11,14 +11,9 @@
     </div>
   </header>
 
-  <!-- Map Section (Placeholder) -->
+  <!-- Map Section -->
   <div class="map-section">
-    <div
-      class="map-placeholder"
-      style="min-height: 280px; display: flex; align-items: center; justify-content: center; background-color: #f3f4f6; border-radius: 12px; border: 1px dashed #cbd5f5; color: #6b7280; text-align: center;"
-    >
-      <p>Map WIP</p>
-    </div>
+    <app-map [markers]="vehicleMarkers()" [config]="mapConfig"></app-map>
 
     <!-- Floating Estimate Button -->
     <div class="estimate-cta">
