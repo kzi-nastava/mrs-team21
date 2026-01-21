@@ -47,3 +47,17 @@ __screenshots__/
 Thumbs.db
 
 /.vscode
+
+# Backend build output
+backend/
+
+# Maven (for drumigo and other Java projects)
+target/
+*.class
+*.jar
+*.war
+
+# Gradle (for mobile)
+.gradle/
+build/
+local.properties
