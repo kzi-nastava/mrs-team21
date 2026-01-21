@@ -120,25 +120,25 @@
 
     &.available {
       .marker-icon {
-        background: #22c55e;
+        background: var(--marker-available);
 
         &::after {
-          border-top-color: #22c55e;
+          border-top-color: var(--marker-available);
         }
       }
 
       .pulse-ring {
-        background: rgba(34, 197, 94, 0.4);
+        background: var(--marker-available-pulse);
         animation: pulse 2s ease-out infinite;
       }
     }
 
     &.busy {
       .marker-icon {
-        background: #f97316;
+        background: var(--marker-busy);
 
         &::after {
-          border-top-color: #f97316;
+          border-top-color: var(--marker-busy);
         }
       }
     }

@@ -1,4 +1,5 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { RideEstimatePanelComponent } from '../components/ride-estimate-panel/ride-estimate-panel.component';
 import { MapComponent, MapConfig } from '../../map/map.component';
@@ -20,6 +21,8 @@ export class LandingPageComponent implements OnInit {
     zoom: 12.5,
   };
 
+  private destroyRef = inject(DestroyRef);
+
   constructor(private vehicleService: VehicleMockService) {}
 
   ngOnInit(): void {
@@ -27,10 +30,13 @@ export class LandingPageComponent implements OnInit {
   }
 
   private loadVehicles(): void {
-    this.vehicleService.getActiveVehicles().subscribe((vehicles) => {
-      const markers = vehicles.map((v) => vehicleToMapMarker(v));
-      this.vehicleMarkers.set(markers);
-    });
+    this.vehicleService
+      .getActiveVehicles()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((vehicles) => {
+        const markers = vehicles.map((v) => vehicleToMapMarker(v));
+        this.vehicleMarkers.set(markers);
+      });
   }
 
   openPanel(): void {

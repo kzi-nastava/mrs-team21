@@ -28,18 +28,27 @@ export interface MapMarker {
 }
 
 /**
+ * Vehicle type mapping from backend enum to MapMarker vehicleType
+ */
+const VEHICLE_TYPE_MAP: Record<string, MapMarker['vehicleType']> = {
+  STANDARD: 'car',
+  LUXURY: 'car',
+  VAN: 'van',
+  MOTORCYCLE: 'motorcycle',
+};
+
+/**
  * Transforms a VehicleResponse to a MapMarker
  */
 export function vehicleToMapMarker(vehicle: VehicleResponse): MapMarker {
+  const typeKey = vehicle.vehicleTypeName
+    ? vehicle.vehicleTypeName.toUpperCase()
+    : '';
   return {
     lat: vehicle.currentLat,
     lng: vehicle.currentLng,
     status: vehicle.available ? 'available' : 'busy',
     driverName: `${vehicle.driverName} ${vehicle.driverSurname}`,
-    vehicleType: vehicle.vehicleTypeName?.toLowerCase().includes('van')
-      ? 'van'
-      : vehicle.vehicleTypeName?.toLowerCase().includes('motorcycle')
-      ? 'motorcycle'
-      : 'car',
+    vehicleType: VEHICLE_TYPE_MAP[typeKey] ?? 'car',
   };
 }

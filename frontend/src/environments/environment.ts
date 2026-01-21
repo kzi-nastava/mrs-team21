@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
-  mapboxToken: 'API_KEY', // Placeholder - create environment.dev.ts with your real API key
+  mapboxToken: 'MAPBOX_API_KEY', // Placeholder - create environment.dev.ts with your real API key
 };
 

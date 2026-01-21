@@ -60,16 +60,34 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
   }
 
   private initializeMap(): void {
-    // Set Mapbox access token
-    mapboxgl.accessToken = environment.mapboxToken;
+    // Validate Mapbox access token
+    const token = environment.mapboxToken;
+    if (!token || token === 'MAPBOX_API_KEY' || token.trim() === '') {
+      console.error(
+        'Mapbox API key is missing or invalid. Please create environment.dev.ts with your Mapbox API key.'
+      );
+      this.showMapError(
+        'Mapbox API key is not configured. Please create environment.dev.ts with your Mapbox API key.'
+      );
+      return;
+    }
 
-    this.map = new mapboxgl.Map({
-      container: this.mapContainer.nativeElement,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [this.config.center[0], this.config.center[1]], // [lng, lat]
-      zoom: this.config.zoom,
-      attributionControl: true,
-    });
+    // Set Mapbox access token
+    mapboxgl.accessToken = token;
+
+    try {
+      this.map = new mapboxgl.Map({
+        container: this.mapContainer.nativeElement,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [this.config.center[0], this.config.center[1]], // [lng, lat]
+        zoom: this.config.zoom,
+        attributionControl: true,
+      });
+    } catch (error) {
+      console.error('Failed to initialize Mapbox map:', error);
+      this.showMapError('Failed to load map. Please check your Mapbox API key configuration.');
+      return;
+    }
 
     if (this.showControls) {
       this.map.addControl(new mapboxgl.NavigationControl(), 'top-left');
@@ -105,18 +123,26 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
         .setLngLat([marker.lng, marker.lat])
         .addTo(this.map);
 
-      // Add popup with driver info if available
+      // Add popup with driver info if available (using DOM methods to prevent XSS)
       if (marker.driverName) {
+        const popupContent = document.createElement('div');
+        popupContent.className = 'popup-content';
+
+        const driverNameElement = document.createElement('strong');
+        driverNameElement.textContent = marker.driverName;
+        popupContent.appendChild(driverNameElement);
+
+        const statusElement = document.createElement('span');
+        statusElement.className = `status ${marker.status}`;
+        statusElement.textContent =
+          marker.status === 'available' ? 'Available' : 'On a ride';
+        popupContent.appendChild(statusElement);
+
         const popup = new mapboxgl.Popup({
           offset: 25,
           closeButton: false,
           className: 'driver-popup',
-        }).setHTML(`
-          <div class="popup-content">
-            <strong>${marker.driverName}</strong>
-            <span class="status ${marker.status}">${marker.status === 'available' ? 'Available' : 'On a ride'}</span>
-          </div>
-        `);
+        }).setDOMContent(popupContent);
         mapboxMarker.setPopup(popup);
       }
 
@@ -156,5 +182,17 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
 
   getMap(): mapboxgl.Map {
     return this.map;
+  }
+
+  private showMapError(message: string): void {
+    // Display error message in the map container
+    if (this.mapContainer?.nativeElement) {
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'map-error';
+      errorDiv.style.cssText =
+        'padding: 20px; text-align: center; color: #ef4444; background: #fee2e2; border-radius: 8px; margin: 20px;';
+      errorDiv.textContent = message;
+      this.mapContainer.nativeElement.appendChild(errorDiv);
+    }
   }
 }
