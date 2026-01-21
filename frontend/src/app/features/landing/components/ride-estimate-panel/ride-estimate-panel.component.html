@@ -1,0 +1,167 @@
+<div class="side-panel" [class.open]="isOpen">
+  <!-- Retract tab button -->
+  <button class="btn-retract" (click)="closePanel()" title="Close panel">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  </button>
+
+  <div class="panel-header">
+    <div class="panel-header-content">
+      <h2>Estimate your ride</h2>
+      <p>Enter locations to see price & time</p>
+    </div>
+    <button class="btn-close-panel" (click)="closePanel()">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="panel-content">
+    <!-- Location Inputs -->
+    <div class="location-inputs">
+      <div class="connector-line"></div>
+
+      <div class="location-input-group">
+        <div class="location-marker-icon start">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="3" />
+            <circle cx="12" cy="12" r="8" />
+          </svg>
+        </div>
+        <div class="location-input-wrapper">
+          <label class="location-label">Pickup location</label>
+          <input
+            type="text"
+            class="location-input"
+            placeholder="Enter pickup address..."
+            [value]="pickupLocation()"
+            (input)="updatePickup($any($event.target).value)"
+          />
+        </div>
+      </div>
+
+      <div class="location-input-group">
+        <div class="location-marker-icon end">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+        </div>
+        <div class="location-input-wrapper">
+          <label class="location-label">Destination</label>
+          <input
+            type="text"
+            class="location-input"
+            placeholder="Enter destination address..."
+            [value]="destinationLocation()"
+            (input)="updateDestination($any($event.target).value)"
+          />
+        </div>
+      </div>
+
+      <button class="btn-calculate" (click)="calculateEstimate()">Calculate estimate</button>
+    </div>
+
+    <!-- Estimate Results -->
+    <div class="estimate-results" [class.show]="showResults()">
+      <div class="estimate-header">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        <span>Route calculated</span>
+      </div>
+      <div class="estimate-grid">
+        <div class="estimate-item">
+          <div class="estimate-value">~{{ estimate.time }} <span>min</span></div>
+          <div class="estimate-label">Est. Time</div>
+        </div>
+        <div class="estimate-item">
+          <div class="estimate-value">~{{ estimate.price }} <span>RSD</span></div>
+          <div class="estimate-label">Est. Price</div>
+        </div>
+        <div class="estimate-distance">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="18" x2="18" y2="18" />
+          </svg>
+          <span>Distance: {{ estimate.distance }} km</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="cta-section">
+      <h3 class="cta-title">Ready to book this ride?</h3>
+      <p class="cta-description">
+        Create a free account to book rides, track your driver in real-time, and enjoy seamless
+        travel.
+      </p>
+      <a routerLink="/register" class="btn-cta">Sign up to book</a>
+    </div>
+
+    <div class="guest-note">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="16" x2="12" y2="12" />
+        <line x1="12" y1="8" x2="12.01" y2="8" />
+      </svg>
+      <p>
+        This is an estimate only. Actual price may vary based on traffic, route changes, and
+        selected vehicle type.
+      </p>
+    </div>
+  </div>
+</div>
