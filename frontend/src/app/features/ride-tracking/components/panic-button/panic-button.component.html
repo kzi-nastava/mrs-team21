@@ -10,6 +10,7 @@
       (mouseleave)="onPanicRelease()"
       (touchstart)="onPanicPress()"
       (touchend)="onPanicRelease()"
+      (touchcancel)="onPanicRelease()"
       [disabled]="panicTriggered()"
       type="button"
       aria-label="Panic button - hold for 2 seconds to activate"
