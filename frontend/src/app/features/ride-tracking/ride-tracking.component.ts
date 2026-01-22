@@ -23,11 +23,19 @@ import {
   PanicButtonComponent,
   PanicRideInfo,
 } from './components/panic-button/panic-button.component';
+import { StopRideComponent, StopRideInfo } from './components/stop-ride/stop-ride.component';
 
 @Component({
   selector: 'app-ride-tracking',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, MapComponent, PanicButtonComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    MapComponent,
+    PanicButtonComponent,
+    StopRideComponent,
+  ],
   templateUrl: './ride-tracking.component.html',
   styleUrl: './ride-tracking.component.scss',
 })
@@ -55,6 +63,7 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   isSubmittingReport = signal<boolean>(false);
   reportSubmitted = signal<boolean>(false);
   showPanicModal = signal<boolean>(false);
+  showStopModal = signal<boolean>(false);
 
   panicRideInfo = computed<PanicRideInfo | null>(() => {
     const ride = this.activeRide();
@@ -66,6 +75,25 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
       licensePlate: ride.vehicle.licensePlate,
       currentLocation: ride.startAddress,
       destination: ride.destinationAddress,
+    };
+  });
+
+  stopRideInfo = computed<StopRideInfo | null>(() => {
+    const ride = this.activeRide();
+    if (!ride) return null;
+    return {
+      passengerName: 'Jovana Dimitrijević', // Mock data - in real app get from passenger service
+      passengerRating: 4.9,
+      ridesDone: 127,
+      pickupLocation: ride.startAddress,
+      destinationLocation: ride.destinationAddress,
+      currentLocation: 'Bulevar Kralja Petra I 45, Novi Sad', // Mock data - would be actual current location
+      duration: '8 min',
+      distance: '2.1 km',
+      completionPercent: 65,
+      originalFare: 450,
+      adjustedFare: 320,
+      currency: 'RSD',
     };
   });
 
@@ -392,5 +420,26 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
     this.closePanicModal();
     // In real app: Navigate to cancel ride flow or open cancel dialog
     console.log('Cancel ride from panic modal');
+  }
+
+  // Stop ride button methods
+  openStopModal(): void {
+    this.showStopModal.set(true);
+  }
+
+  closeStopModal(): void {
+    this.showStopModal.set(false);
+  }
+
+  onStopRide(): void {
+    console.log('Ride stopped at current location');
+    // In real app: Send stop ride request to backend
+    // This would: end the ride, apply adjusted fare, update ride history
+    this.closeStopModal();
+  }
+
+  onContinueRide(): void {
+    console.log('Continuing ride');
+    this.closeStopModal();
   }
 }

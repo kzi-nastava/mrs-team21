@@ -1,0 +1,384 @@
+.stop-ride-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  height: 100%;
+  overflow-y: auto;
+
+  // Custom scrollbar
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+
+    &:hover {
+      background: var(--text-secondary);
+    }
+  }
+}
+
+// Empty State
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 24px;
+  text-align: center;
+}
+
+.empty-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--text-secondary);
+  opacity: 0.5;
+  animation: loadingPulse 2s ease-in-out infinite;
+}
+
+@keyframes loadingPulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.empty-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+// Passenger Card
+.passenger-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.passenger-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.passenger-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff7f5c 0%, #ff9666 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.passenger-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.passenger-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.passenger-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+
+  svg {
+    width: 14px;
+    height: 14px;
+    color: #f59e0b;
+  }
+}
+
+// Route Details
+.route-details {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.route-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.route-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+
+  &.start {
+    background: var(--primary);
+  }
+
+  &.end {
+    background: #ff7f5c;
+  }
+}
+
+.route-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.route-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.route-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+// Ride Stats
+.ride-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.stat-card {
+  background: var(--background);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+// Stop Ride Section
+.stop-section {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.stop-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.stop-icon {
+  width: 44px;
+  height: 44px;
+  background: #f59e0b;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  svg {
+    width: 22px;
+    height: 22px;
+    color: white;
+  }
+}
+
+.stop-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.stop-description {
+  font-size: 13px;
+  color: #78350f;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+// New Location
+.new-location {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 10px;
+  margin-bottom: 12px;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    color: #f59e0b;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+}
+
+.location-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.location-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.location-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+// Price Adjustment
+.price-adjustment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: white;
+  border-radius: 10px;
+}
+
+.price-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.price-values {
+  text-align: right;
+}
+
+.price-original {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-decoration: line-through;
+  margin-bottom: 2px;
+}
+
+.price-new {
+  font-size: 16px;
+  font-weight: 700;
+  color: #22c55e;
+}
+
+// Action Buttons
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-secondary,
+.btn-stop {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+
+  &:hover {
+    background: var(--background);
+    color: var(--text-primary);
+  }
+}
+
+.btn-stop {
+  background: #f59e0b;
+  color: white;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+
+  &:hover:not(:disabled) {
+    background: #d97706;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+// Responsive
+@media (max-width: 480px) {
+  .stop-ride-container {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .ride-stats {
+    grid-template-columns: 1fr;
+  }
+}
