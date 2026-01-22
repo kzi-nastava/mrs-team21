@@ -158,7 +158,8 @@
             <textarea
               id="inconsistency-note"
               class="form-textarea"
-              [(ngModel)]="inconsistencyNote"
+              [ngModel]="inconsistencyNote()"
+              (ngModelChange)="inconsistencyNote.set($event)"
               name="inconsistencyNote"
               placeholder="e.g., Driver is taking a longer route than necessary..."
               rows="5"

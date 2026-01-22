@@ -65,11 +65,12 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     // Wait a bit for map to initialize
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       if (this.mapComponent && this.currentLocation()) {
         this.updateMapView();
       }
     }, 500);
+    this.destroyRef.onDestroy(() => clearTimeout(timeoutId));
   }
 
   ngOnDestroy(): void {
@@ -103,7 +104,7 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   private calculateRouteCoordinates(ride: ActiveRide): void {
     if (ride.route && ride.route.length > 0) {
       // Use waypoints from route
-      const coordinates: [number, number][] = ride.route
+      const coordinates: [number, number][] = [...ride.route]
         .sort((a, b) => a.order - b.order)
         .map((waypoint) => [waypoint.lng, waypoint.lat] as [number, number]);
       this.routeCoordinates.set(coordinates);
@@ -341,9 +342,10 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
         next: () => {
           this.reportSubmitted.set(true);
           this.isSubmittingReport.set(false);
-          setTimeout(() => {
+          const timeoutId = setTimeout(() => {
             this.closeInconsistencyForm();
           }, 2000);
+          this.destroyRef.onDestroy(() => clearTimeout(timeoutId));
         },
         error: (error) => {
           console.error('Error submitting report:', error);

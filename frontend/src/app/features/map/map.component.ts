@@ -61,11 +61,8 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
     }
 
     // Update route when route coordinates change
-    if (
-      (changes['routeCoordinates'] || changes['showRoute']) &&
-      this.map
-    ) {
-      if (this.showRoute && this.routeCoordinates && this.routeCoordinates.length > 0) {
+    if ((changes['routeCoordinates'] || changes['showRoute']) && this.map) {
+      if (this.showRoute && this.routeCoordinates && this.routeCoordinates.length >= 2) {
         // Wait for map to be ready if it's still loading
         if (this.map.loaded()) {
           this.drawRoute(this.routeCoordinates);
@@ -126,8 +123,10 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
 
     this.map.on('load', () => {
       this.addMarkers();
-      if (this.showRoute && this.routeCoordinates && this.routeCoordinates.length > 0) {
+      if (this.showRoute && this.routeCoordinates && this.routeCoordinates.length >= 2) {
         this.drawRoute(this.routeCoordinates);
+      } else {
+        this.clearRoute();
       }
       this.mapReady.emit(this.map);
     });
