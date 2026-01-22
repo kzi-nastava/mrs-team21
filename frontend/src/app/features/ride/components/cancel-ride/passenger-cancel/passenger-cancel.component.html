@@ -1,5 +1,5 @@
 <div class="cancel-dialog-overlay" (click)="onOverlayClick($event)">
-  <div class="cancel-dialog-unified">
+  <div class="cancel-dialog-unified" (click)="$event.stopPropagation()">
     <!-- Cancel Icon -->
     <div class="cancel-icon">
       <svg
