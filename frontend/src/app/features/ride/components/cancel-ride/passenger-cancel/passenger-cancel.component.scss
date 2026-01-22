@@ -1,6 +1,7 @@
 @use '../cancel-ride.styles' as *;
 
-// Passenger-specific styles for unified dialog
+// Passenger Cancel - Unified simple dialog
+
 .cancel-dialog-unified {
   background: var(--white);
   border-radius: var(--radius-lg);
@@ -9,8 +10,10 @@
   max-width: 420px;
   box-shadow: var(--shadow-lg);
   text-align: center;
+  animation: slideUp 0.3s ease-out;
 }
 
+// Cancel icon - danger/red theme
 .cancel-icon {
   width: 64px;
   height: 64px;
@@ -36,7 +39,7 @@
   margin-bottom: 20px;
 }
 
-// Compact ride info
+// Compact ride info card
 .ride-info-compact {
   background: var(--bg-cream);
   border-radius: var(--radius-md);
@@ -113,7 +116,7 @@
   }
 }
 
-// Policy notice
+// Policy notice - info style
 .policy-notice {
   display: flex;
   align-items: flex-start;
@@ -141,61 +144,5 @@
     strong {
       color: var(--primary);
     }
-  }
-
-  &.warning {
-    background: var(--warning-light);
-
-    svg {
-      color: var(--warning);
-    }
-
-    p strong {
-      color: var(--danger);
-    }
-  }
-}
-
-// Action buttons
-.action-buttons {
-  display: flex;
-  gap: 12px;
-}
-
-.btn-secondary {
-  flex: 1;
-  padding: 14px 20px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-medium);
-  background: var(--bg-cream);
-  border: 2px solid var(--border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    border-color: var(--text-medium);
-  }
-}
-
-.btn-danger {
-  flex: 1;
-  padding: 14px 20px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--white);
-  background: var(--danger);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-
-  &:hover {
-    filter: brightness(0.9);
-    transform: translateY(-1px);
   }
 }
