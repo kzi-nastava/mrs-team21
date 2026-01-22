@@ -1,0 +1,201 @@
+@use '../cancel-ride.styles' as *;
+
+// Passenger-specific styles for unified dialog
+.cancel-dialog-unified {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.cancel-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--danger-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+
+  svg {
+    width: 28px;
+    height: 28px;
+    color: var(--danger);
+  }
+}
+
+.cancel-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 20px;
+}
+
+// Compact ride info
+.ride-info-compact {
+  background: var(--bg-cream);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.route-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.route-point {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+
+    &.start {
+      background: var(--primary);
+    }
+    &.end {
+      background: var(--accent);
+    }
+  }
+
+  .address {
+    font-size: 14px;
+    color: var(--text-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.driver-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+
+  .driver-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+    color: var(--white);
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .driver-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+  }
+
+  .driver-car {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-left: auto;
+  }
+}
+
+// Policy notice
+.policy-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-warm);
+  border-radius: var(--radius-sm);
+  margin-bottom: 24px;
+  text-align: left;
+
+  svg {
+    width: 20px;
+    height: 20px;
+    color: var(--primary);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  p {
+    font-size: 14px;
+    color: var(--text-medium);
+    line-height: 1.5;
+    margin: 0;
+
+    strong {
+      color: var(--primary);
+    }
+  }
+
+  &.warning {
+    background: var(--warning-light);
+
+    svg {
+      color: var(--warning);
+    }
+
+    p strong {
+      color: var(--danger);
+    }
+  }
+}
+
+// Action buttons
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-secondary {
+  flex: 1;
+  padding: 14px 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-medium);
+  background: var(--bg-cream);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: var(--text-medium);
+  }
+}
+
+.btn-danger {
+  flex: 1;
+  padding: 14px 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--white);
+  background: var(--danger);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+
+  &:hover {
+    filter: brightness(0.9);
+    transform: translateY(-1px);
+  }
+}
