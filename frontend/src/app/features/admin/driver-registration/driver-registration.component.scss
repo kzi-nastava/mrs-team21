@@ -1,0 +1,592 @@
+// Variables - matching project style
+$primary: #5b4cdb;
+$primary-light: #7b6ee8;
+$primary-dark: #4338ca;
+$accent: #ff7f5c;
+$accent-light: #ffa07a;
+$bg-cream: #fdfbf7;
+$bg-warm: #f9f7f3;
+$text-dark: #1f1f1f;
+$text-medium: #4a4a4a;
+$text-light: #8a8a8a;
+$border: #e8e4dd;
+$white: #ffffff;
+$success: #22c55e;
+$success-light: #dcfce7;
+$shadow-sm: 0 2px 8px rgba(91, 76, 219, 0.08);
+$shadow-md: 0 8px 24px rgba(91, 76, 219, 0.12);
+$shadow-lg: 0 16px 48px rgba(91, 76, 219, 0.16);
+$radius-sm: 12px;
+$radius-md: 16px;
+$radius-lg: 24px;
+
+:host {
+  display: block;
+  min-height: 100vh;
+  font-family: 'DM Sans', sans-serif;
+  background: $bg-cream;
+  color: $text-dark;
+}
+
+.admin-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+// Header
+.admin-header {
+  margin-bottom: 40px;
+}
+
+.header-content {
+  text-align: center;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+
+  svg {
+    color: $primary;
+  }
+
+  h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: $text-dark;
+    letter-spacing: -0.5px;
+    margin: 0;
+  }
+}
+
+.header-subtitle {
+  font-size: 15px;
+  color: $text-light;
+  margin: 0;
+}
+
+// Progress Steps
+.progress-section {
+  margin-bottom: 32px;
+}
+
+.progress-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(.active) {
+    background: rgba(91, 76, 219, 0.05);
+  }
+
+  &.active {
+    background: rgba(91, 76, 219, 0.08);
+
+    .step-indicator {
+      background: $primary;
+      color: $white;
+      border-color: $primary;
+    }
+
+    .step-title {
+      color: $primary;
+      font-weight: 600;
+    }
+  }
+
+  &.completed {
+    .step-indicator {
+      background: $success;
+      border-color: $success;
+      color: $white;
+    }
+
+    .step-title {
+      color: $success;
+    }
+  }
+}
+
+.step-indicator {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid $border;
+  background: $white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: $text-light;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.step-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.step-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: $text-medium;
+  transition: color 0.2s;
+}
+
+.step-desc {
+  font-size: 12px;
+  color: $text-light;
+}
+
+.step-connector {
+  width: 40px;
+  height: 2px;
+  background: $border;
+  transition: background 0.2s;
+
+  &.active {
+    background: $success;
+  }
+}
+
+// Form Container
+.form-container {
+  background: $white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-md;
+  padding: 40px;
+}
+
+.registration-form {
+  max-width: 100%;
+}
+
+.form-section {
+  margin-bottom: 32px;
+}
+
+.section-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: $text-dark;
+  margin-bottom: 4px;
+}
+
+.section-desc {
+  font-size: 14px;
+  color: $text-light;
+  margin-bottom: 24px;
+}
+
+// Form Elements (matching register page)
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: $text-medium;
+  margin-bottom: 8px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 14px 18px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: $text-dark;
+  background: $white;
+  border: 2px solid $border;
+  border-radius: $radius-md;
+  outline: none;
+  transition: all 0.2s;
+
+  &::placeholder {
+    color: $text-light;
+  }
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 4px rgba(91, 76, 219, 0.1);
+  }
+
+  &.error {
+    border-color: #dc3545;
+
+    &:focus {
+      border-color: #dc3545;
+      box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+    }
+  }
+}
+
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 14px center;
+  background-repeat: no-repeat;
+  background-size: 20px;
+  padding-right: 48px;
+  cursor: pointer;
+}
+
+.error-message {
+  margin-top: 8px;
+
+  small {
+    display: block;
+    color: #dc3545;
+    font-size: 13px;
+    font-weight: 500;
+  }
+}
+
+.input-hint {
+  font-size: 12px;
+  color: $text-light;
+  margin-top: 6px;
+}
+
+// Phone Input
+.phone-input-group {
+  display: flex;
+  gap: 12px;
+}
+
+.country-code {
+  width: 90px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.phone-number {
+  flex: 1;
+}
+
+// Seats Selector
+.seats-selector {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: $bg-warm;
+  padding: 8px 16px;
+  border-radius: $radius-md;
+  width: fit-content;
+}
+
+.seats-btn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid $border;
+  border-radius: $radius-sm;
+  background: $white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: $text-medium;
+
+  &:hover:not(:disabled) {
+    border-color: $primary;
+    color: $primary;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.seats-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: $text-dark;
+  min-width: 40px;
+  text-align: center;
+}
+
+// Features Grid
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.feature-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: $bg-warm;
+  border: 2px solid $border;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: $primary-light;
+  }
+
+  &.active {
+    background: rgba(91, 76, 219, 0.08);
+    border-color: $primary;
+
+    .feature-icon {
+      color: $primary;
+    }
+
+    .feature-check {
+      background: $primary;
+      border-color: $primary;
+    }
+  }
+}
+
+.feature-icon {
+  color: $text-light;
+  transition: color 0.2s;
+}
+
+.feature-label {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: $text-medium;
+}
+
+.feature-check {
+  width: 24px;
+  height: 24px;
+  border: 2px solid $border;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  color: $white;
+}
+
+// Info Note
+.info-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(91, 76, 219, 0.06);
+  border-radius: $radius-sm;
+  border-left: 3px solid $primary;
+  margin-bottom: 24px;
+
+  svg {
+    color: $primary;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  p {
+    font-size: 13px;
+    color: $text-medium;
+    line-height: 1.5;
+    margin: 0;
+  }
+}
+
+// Form Actions
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid $border;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 28px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: $white;
+  background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+  border: none;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: $shadow-md;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: $shadow-lg;
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 28px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: $text-medium;
+  background: $white;
+  border: 2px solid $border;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: $primary;
+    color: $primary;
+  }
+}
+
+// Loading Spinner
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: $white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Success Container
+.success-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.success-card {
+  background: $white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-md;
+  padding: 48px;
+  text-align: center;
+  max-width: 480px;
+}
+
+.success-icon {
+  width: 80px;
+  height: 80px;
+  background: $success-light;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  color: $success;
+}
+
+.success-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  color: $text-dark;
+  margin-bottom: 12px;
+}
+
+.success-message {
+  font-size: 15px;
+  color: $text-medium;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.success-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .btn-primary {
+    justify-content: center;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .admin-container {
+    padding: 24px 16px;
+  }
+
+  .progress-steps {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .step-connector {
+    width: 2px;
+    height: 20px;
+  }
+
+  .form-container {
+    padding: 24px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: 12px;
+
+    .btn-primary,
+    .btn-secondary {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}
