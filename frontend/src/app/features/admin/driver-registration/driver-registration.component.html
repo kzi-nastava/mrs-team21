@@ -51,12 +51,16 @@
   <main class="admin-main" *ngIf="!showSuccessMessage">
     <!-- Progress Steps -->
     <div class="progress-section">
-      <div class="progress-steps">
-        <div
+      <div class="progress-steps" role="tablist" aria-label="Registration steps">
+        <button
+          type="button"
           class="step"
           [class.active]="currentStep === 1"
           [class.completed]="currentStep > 1"
           (click)="goToStep(1)"
+          role="tab"
+          [attr.aria-selected]="currentStep === 1"
+          aria-controls="step-1-panel"
         >
           <div class="step-indicator">
             <span class="step-number" *ngIf="currentStep <= 1">1</span>
@@ -81,15 +85,19 @@
             <span class="step-title">Driver Information</span>
             <span class="step-desc">Personal details</span>
           </div>
-        </div>
+        </button>
 
-        <div class="step-connector" [class.active]="currentStep > 1"></div>
+        <div class="step-connector" [class.active]="currentStep > 1" aria-hidden="true"></div>
 
-        <div
+        <button
+          type="button"
           class="step"
           [class.active]="currentStep === 2"
           [class.completed]="false"
           (click)="goToStep(2)"
+          role="tab"
+          [attr.aria-selected]="currentStep === 2"
+          aria-controls="step-2-panel"
         >
           <div class="step-indicator">
             <span class="step-number">2</span>
@@ -98,7 +106,7 @@
             <span class="step-title">Vehicle Information</span>
             <span class="step-desc">Car details & features</span>
           </div>
-        </div>
+        </button>
       </div>
     </div>
 
