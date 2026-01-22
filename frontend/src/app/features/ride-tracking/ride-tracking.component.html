@@ -41,7 +41,11 @@
       <app-map
         [config]="mapConfig"
         [markers]="markers()"
-        [showControls]="true"></app-map>
+        [showControls]="true"
+        [showRoute]="true"
+        [routeCoordinates]="routeCoordinates()"
+        [useCarIcon]="true"
+        [carBearing]="carBearing()"></app-map>
     </div>
 
     <!-- Side Panel -->

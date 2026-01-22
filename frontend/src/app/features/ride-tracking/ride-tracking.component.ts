@@ -12,9 +12,11 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
 import { MapComponent, MapConfig } from '../map/map.component';
 import { MapMarker } from '../map/models/vehicle.model';
 import { RideTrackingMockService } from './services/ride-tracking-mock.service';
+import { MapboxDirectionsService } from './services/mapbox-directions.service';
 import { ActiveRide, LocationUpdate } from './models/active-ride.model';
 
 @Component({
@@ -30,12 +32,19 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
   private rideTrackingService = inject(RideTrackingMockService);
+  private directionsService = inject(MapboxDirectionsService);
+
+  private lastRouteRequestAt = 0;
+  private routeRequestInFlight = false;
+  private readonly minRerouteIntervalMs = 20000;
 
   rideId = signal<string>('');
   activeRide = signal<ActiveRide | null>(null);
   currentLocation = signal<{ lat: number; lng: number } | null>(null);
   etaSeconds = signal<number>(0);
   markers = signal<MapMarker[]>([]);
+  routeCoordinates = signal<[number, number][] | undefined>(undefined);
+  carBearing = signal<number | undefined>(undefined);
   showInconsistencyForm = signal<boolean>(false);
   inconsistencyNote = signal<string>('');
   isSubmittingReport = signal<boolean>(false);
@@ -76,11 +85,77 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
           this.activeRide.set(ride);
           this.currentLocation.set(ride.currentLocation);
           this.etaSeconds.set(ride.estimatedArrivalTime);
+          this.requestRouteFromCurrent(
+            ride.currentLocation,
+            ride.destinationLocation,
+            true,
+            ride
+          );
           this.updateMarkers();
           this.startLocationUpdates(rideId);
         },
         error: (error) => {
           console.error('Error loading active ride:', error);
+        },
+      });
+  }
+
+  private calculateRouteCoordinates(ride: ActiveRide): void {
+    if (ride.route && ride.route.length > 0) {
+      // Use waypoints from route
+      const coordinates: [number, number][] = ride.route
+        .sort((a, b) => a.order - b.order)
+        .map((waypoint) => [waypoint.lng, waypoint.lat] as [number, number]);
+      this.routeCoordinates.set(coordinates);
+    } else {
+      // Fallback to start and destination
+      const coordinates: [number, number][] = [
+        [ride.startLocation.lng, ride.startLocation.lat],
+        [ride.destinationLocation.lng, ride.destinationLocation.lat],
+      ];
+      this.routeCoordinates.set(coordinates);
+    }
+  }
+
+  private requestRouteFromCurrent(
+    currentLocation: { lat: number; lng: number },
+    destination: { lat: number; lng: number },
+    force = false,
+    fallbackRide?: ActiveRide
+  ): void {
+    const now = Date.now();
+    if (this.routeRequestInFlight) {
+      return;
+    }
+    if (!force && now - this.lastRouteRequestAt < this.minRerouteIntervalMs) {
+      return;
+    }
+
+    this.routeRequestInFlight = true;
+    this.lastRouteRequestAt = now;
+
+    this.directionsService
+      .getRoute(currentLocation, destination)
+      .pipe(
+        finalize(() => {
+          this.routeRequestInFlight = false;
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({
+        next: (coordinates) => {
+          if (coordinates && coordinates.length > 1) {
+            this.routeCoordinates.set(coordinates);
+            this.updateMarkers();
+            this.updateMapView();
+          }
+        },
+        error: (error) => {
+          console.warn('Failed to fetch road-aligned route:', error);
+          const ride = fallbackRide ?? this.activeRide();
+          if (ride && (!this.routeCoordinates() || this.routeCoordinates()!.length < 2)) {
+            this.calculateRouteCoordinates(ride);
+          }
         },
       });
   }
@@ -93,6 +168,16 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
         next: (update: LocationUpdate) => {
           this.currentLocation.set({ lat: update.lat, lng: update.lng });
           this.etaSeconds.set(update.estimatedArrivalTime);
+          if (update.bearing !== undefined) {
+            this.carBearing.set(update.bearing);
+          }
+          const ride = this.activeRide();
+          if (ride) {
+            this.requestRouteFromCurrent(
+              { lat: update.lat, lng: update.lng },
+              ride.destinationLocation
+            );
+          }
           this.updateMarkers();
           this.updateMapView();
         },
@@ -104,46 +189,103 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private updateMarkers(): void {
     const ride = this.activeRide();
-    const currentLoc = this.currentLocation();
+    const displayLoc = this.getDisplayLocation();
 
-    if (!ride || !currentLoc) return;
+    if (!ride || !displayLoc) return;
 
     const markers: MapMarker[] = [];
 
-    // Vehicle marker (current position)
+    // Only show the tracked vehicle (car icon will be used)
     markers.push({
-      lat: currentLoc.lat,
-      lng: currentLoc.lng,
+      lat: displayLoc.lat,
+      lng: displayLoc.lng,
       status: 'busy',
       driverName: `${ride.driver.firstName} ${ride.driver.lastName}`,
     });
 
-    // Start marker (if we have start location)
-    if (ride.startLocation) {
-      markers.push({
-        lat: ride.startLocation.lat,
-        lng: ride.startLocation.lng,
-        status: 'available',
-      });
-    }
-
-    // Destination marker (if we have destination location)
-    if (ride.destinationLocation) {
-      markers.push({
-        lat: ride.destinationLocation.lat,
-        lng: ride.destinationLocation.lng,
-        status: 'available',
-      });
-    }
+    // Note: Start and destination are shown via route line, not markers
+    // This keeps the map clean and focused on the vehicle
 
     this.markers.set(markers);
   }
 
   private updateMapView(): void {
-    const currentLoc = this.currentLocation();
-    if (currentLoc && this.mapComponent) {
-      this.mapComponent.setView(currentLoc.lat, currentLoc.lng, 13);
+    const displayLoc = this.getDisplayLocation();
+    if (displayLoc && this.mapComponent) {
+      this.mapComponent.setView(displayLoc.lat, displayLoc.lng);
     }
+  }
+
+  private getDisplayLocation(): { lat: number; lng: number } | null {
+    const currentLoc = this.currentLocation();
+    if (!currentLoc) {
+      return null;
+    }
+
+    const route = this.routeCoordinates();
+    if (!route || route.length < 2) {
+      return currentLoc;
+    }
+
+    return this.snapToRoute(currentLoc, route);
+  }
+
+  private snapToRoute(
+    point: { lat: number; lng: number },
+    route: [number, number][]
+  ): { lat: number; lng: number } {
+    const earthRadius = 6371000;
+    const refLatRad = this.toRad(point.lat);
+    const cosLat = Math.cos(refLatRad) || 0.000001;
+
+    const toXY = (lng: number, lat: number) => {
+      const x = this.toRad(lng) * earthRadius * cosLat;
+      const y = this.toRad(lat) * earthRadius;
+      return { x, y };
+    };
+
+    const toLngLat = (x: number, y: number) => {
+      const lat = this.toDeg(y / earthRadius);
+      const lng = this.toDeg(x / (earthRadius * cosLat));
+      return { lat, lng };
+    };
+
+    const p = toXY(point.lng, point.lat);
+    let closest = { x: p.x, y: p.y };
+    let minDistSq = Number.POSITIVE_INFINITY;
+
+    for (let i = 0; i < route.length - 1; i++) {
+      const [lngA, latA] = route[i];
+      const [lngB, latB] = route[i + 1];
+      const a = toXY(lngA, latA);
+      const b = toXY(lngB, latB);
+      const abx = b.x - a.x;
+      const aby = b.y - a.y;
+      const apx = p.x - a.x;
+      const apy = p.y - a.y;
+      const abLenSq = abx * abx + aby * aby;
+      const t = abLenSq === 0 ? 0 : (apx * abx + apy * aby) / abLenSq;
+      const clampedT = Math.max(0, Math.min(1, t));
+      const proj = { x: a.x + abx * clampedT, y: a.y + aby * clampedT };
+      const dx = p.x - proj.x;
+      const dy = p.y - proj.y;
+      const distSq = dx * dx + dy * dy;
+
+      if (distSq < minDistSq) {
+        minDistSq = distSq;
+        closest = proj;
+      }
+    }
+
+    return toLngLat(closest.x, closest.y);
+  }
+
+  private toRad(value: number): number {
+    return (value * Math.PI) / 180;
+  }
+
+  private toDeg(value: number): number {
+    return (value * 180) / Math.PI;
   }
 
   formatETA(seconds: number): string {

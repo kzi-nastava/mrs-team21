@@ -89,17 +89,27 @@ export class RideTrackingMockService {
     const totalSteps = route.length - 1;
     let currentStep = 0;
     let progress = 0; // 0 to 1
+    let previousLocation: { lat: number; lng: number } | null = null;
 
     // Simulate movement along route
     return interval(2500).pipe(
       map(() => {
         if (currentStep >= totalSteps) {
           // Reached destination
-          return {
+          const destination = {
             lat: ride.destinationLocation.lat,
             lng: ride.destinationLocation.lng,
+          };
+          const bearing = previousLocation
+            ? this.calculateBearing(previousLocation, destination)
+            : 0;
+
+          return {
+            lat: destination.lat,
+            lng: destination.lng,
             timestamp: new Date(),
             estimatedArrivalTime: 0,
+            bearing,
           };
         }
 
@@ -128,11 +138,24 @@ export class RideTrackingMockService {
           ride.destinationLocation
         );
 
+        // Calculate bearing from previous location
+        let bearing = 0;
+        if (previousLocation) {
+          bearing = this.calculateBearing(previousLocation, currentLocation);
+        } else {
+          // For first update, calculate bearing to next waypoint
+          const nextWaypoint = route[Math.min(currentStep + 1, totalSteps)];
+          bearing = this.calculateBearing(currentLocation, nextWaypoint);
+        }
+
+        previousLocation = currentLocation;
+
         return {
           lat,
           lng,
           timestamp: new Date(),
           estimatedArrivalTime: eta,
+          bearing,
         };
       }),
       takeWhile(
@@ -183,6 +206,34 @@ export class RideTrackingMockService {
 
   private toRad(degrees: number): number {
     return (degrees * Math.PI) / 180;
+  }
+
+  private toDeg(radians: number): number {
+    return (radians * 180) / Math.PI;
+  }
+
+  /**
+   * Calculate bearing (direction) between two points in degrees
+   * Returns bearing from 0 to 360 degrees (0 = North, 90 = East, etc.)
+   */
+  private calculateBearing(
+    from: { lat: number; lng: number },
+    to: { lat: number; lng: number }
+  ): number {
+    const dLng = this.toRad(to.lng - from.lng);
+    const lat1 = this.toRad(from.lat);
+    const lat2 = this.toRad(to.lat);
+
+    const y = Math.sin(dLng) * Math.cos(lat2);
+    const x =
+      Math.cos(lat1) * Math.sin(lat2) -
+      Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+
+    let bearing = Math.atan2(y, x);
+    bearing = this.toDeg(bearing);
+    bearing = (bearing + 360) % 360; // Normalize to 0-360
+
+    return Math.round(bearing);
   }
 
   /**

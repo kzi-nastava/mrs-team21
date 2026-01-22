@@ -58,4 +58,5 @@ export interface LocationUpdate {
   lng: number;
   timestamp: Date;
   estimatedArrivalTime: number; // in seconds
+  bearing?: number; // Bearing in degrees (0-360)
 }
