@@ -81,6 +81,20 @@
 
       <!-- Action Button -->
       <div class="action-section">
+        <button class="btn-stop-ride" (click)="openStopModal()" type="button">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="6" y="4" width="4" height="16" />
+            <rect x="14" y="4" width="4" height="16" />
+          </svg>
+          Stop Ride
+        </button>
         <button class="btn-panic" (click)="openPanicModal()" type="button">
           <svg
             viewBox="0 0 24 24"
@@ -231,6 +245,39 @@
         (cancelRide)="onCancelRideFromPanic()"
       >
       </app-panic-button>
+    </div>
+  </div>
+
+  <!-- Stop Ride Modal -->
+  <div class="stop-modal-overlay" *ngIf="showStopModal()" (click)="closeStopModal()">
+    <div class="stop-modal-content" (click)="$event.stopPropagation()">
+      <div class="stop-modal-header">
+        <h2 class="stop-modal-title">Stop Ride</h2>
+        <button
+          class="stop-modal-close"
+          (click)="closeStopModal()"
+          type="button"
+          aria-label="Close"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <app-stop-ride
+        [stopInfo]="stopRideInfo()"
+        (stopRide)="onStopRide()"
+        (continueRide)="onContinueRide()"
+      >
+      </app-stop-ride>
     </div>
   </div>
 </div>
