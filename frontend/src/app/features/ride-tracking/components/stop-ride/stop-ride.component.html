@@ -108,7 +108,7 @@
 
   <!-- Action Buttons -->
   <div class="action-buttons">
-    <button class="btn-secondary" (click)="onContinueRide()" type="button">Continue ride</button>
+    <button class="btn-secondary" (click)="onContinueRide()" [disabled]="isStopping()" type="button">Continue ride</button>
     <button class="btn-stop" (click)="onStopRide()" [disabled]="isStopping()" type="button">
       <svg
         viewBox="0 0 24 24"
