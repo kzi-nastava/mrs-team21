@@ -1,4 +1,22 @@
 <div class="stop-ride-container">
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!stopInfo">
+    <svg
+      class="empty-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="16" x2="12" y2="12" />
+      <line x1="12" y1="8" x2="12.01" y2="8" />
+    </svg>
+    <p class="empty-text">Loading ride information...</p>
+  </div>
+
   <!-- Passenger Info Card -->
   <div class="passenger-card" *ngIf="stopInfo">
     <div class="passenger-header">
@@ -39,7 +57,7 @@
   </div>
 
   <!-- Ride Stats -->
-  <div class="ride-stats">
+  <div class="ride-stats" *ngIf="stopInfo">
     <div class="stat-card">
       <div class="stat-value">{{ stopInfo?.duration }}</div>
       <div class="stat-label">Duration</div>
@@ -107,7 +125,7 @@
   </div>
 
   <!-- Action Buttons -->
-  <div class="action-buttons">
+  <div class="action-buttons" *ngIf="stopInfo">
     <button class="btn-secondary" (click)="onContinueRide()" type="button">Continue ride</button>
     <button class="btn-stop" (click)="onStopRide()" [disabled]="isStopping()" type="button">
       <svg
