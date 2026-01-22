@@ -1,0 +1,243 @@
+<div class="panic-container">
+  <!-- Main Panic Button -->
+  <div class="panic-button-wrapper">
+    <button
+      class="panic-button"
+      [class.pressing]="isPressing()"
+      [class.triggered]="panicTriggered()"
+      (mousedown)="onPanicPress()"
+      (mouseup)="onPanicRelease()"
+      (mouseleave)="onPanicRelease()"
+      (touchstart)="onPanicPress()"
+      (touchend)="onPanicRelease()"
+      (touchcancel)="onPanicRelease()"
+      [disabled]="panicTriggered()"
+      type="button"
+      aria-label="Panic button - hold for 2 seconds to activate"
+    >
+      <!-- Progress ring -->
+      <svg class="progress-ring" viewBox="0 0 160 160">
+        <circle class="progress-ring-bg" cx="80" cy="80" r="74" />
+        <circle
+          class="progress-ring-fill"
+          cx="80"
+          cy="80"
+          r="74"
+          [style.stroke-dashoffset]="465 - (465 * holdProgress()) / 100"
+        />
+      </svg>
+
+      <div class="panic-content">
+        <svg
+          *ngIf="!panicTriggered()"
+          class="panic-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+          />
+          <line x1="12" y1="9" x2="12" y2="13" />
+          <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+        <svg
+          *ngIf="panicTriggered()"
+          class="panic-icon check-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+        <span class="panic-text">{{ panicTriggered() ? 'HELP SENT' : 'PANIC' }}</span>
+      </div>
+    </button>
+
+    <p class="panic-instruction" *ngIf="!panicTriggered()">
+      Press and hold for 2 seconds to activate
+    </p>
+    <p class="panic-confirmation" *ngIf="panicTriggered()">Help is on the way. Stay calm.</p>
+  </div>
+
+  <!-- Ride Info Cards -->
+  <div class="ride-info-cards" *ngIf="rideInfo">
+    <div class="info-card">
+      <div class="info-icon">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      </div>
+      <div class="info-content">
+        <span class="info-label">Driver</span>
+        <span class="info-value">{{ rideInfo.driverName }}</span>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-icon">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="1" y="3" width="15" height="13" rx="2" />
+          <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+          <circle cx="5.5" cy="18.5" r="2.5" />
+          <circle cx="18.5" cy="18.5" r="2.5" />
+        </svg>
+      </div>
+      <div class="info-content">
+        <span class="info-label">Vehicle</span>
+        <span class="info-value">{{ rideInfo.vehicleModel }} • {{ rideInfo.licensePlate }}</span>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-icon location">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+          <circle cx="12" cy="10" r="3" />
+        </svg>
+      </div>
+      <div class="info-content">
+        <span class="info-label">Current Location</span>
+        <span class="info-value">{{ rideInfo.currentLocation }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- What Happens Section -->
+  <div class="what-happens" *ngIf="!panicTriggered()">
+    <h3 class="section-title">What happens when you press PANIC?</h3>
+    <ul class="happens-list">
+      <li>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+        <span>Emergency services will be notified</span>
+      </li>
+      <li>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+        <span>Your live location will be shared</span>
+      </li>
+      <li>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+        <span>Ride details sent to support team</span>
+      </li>
+      <li>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+        <span>Emergency contacts will be alerted</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Triggered Confirmation -->
+  <div class="panic-active-info" *ngIf="panicTriggered()">
+    <div class="active-status">
+      <div class="status-indicator"></div>
+      <span>Emergency mode active</span>
+    </div>
+    <p class="active-message">
+      Your location is being shared with emergency services and our support team. Stay calm and stay
+      where you are if safe to do so.
+    </p>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="action-buttons">
+    <button class="btn-support" (click)="onContactSupport()" type="button">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path
+          d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"
+        />
+      </svg>
+      Contact Support
+    </button>
+    <button class="btn-cancel-ride" (click)="onCancelRide()" type="button">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="15" y1="9" x2="9" y2="15" />
+        <line x1="9" y1="9" x2="15" y2="15" />
+      </svg>
+      Cancel Ride
+    </button>
+  </div>
+</div>

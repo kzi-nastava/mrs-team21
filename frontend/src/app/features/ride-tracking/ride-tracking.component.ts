@@ -7,6 +7,7 @@ import {
   DestroyRef,
   ViewChild,
   AfterViewInit,
+  computed,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -18,11 +19,15 @@ import { MapMarker } from '../map/models/vehicle.model';
 import { RideTrackingMockService } from './services/ride-tracking-mock.service';
 import { MapboxDirectionsService } from './services/mapbox-directions.service';
 import { ActiveRide, LocationUpdate } from './models/active-ride.model';
+import {
+  PanicButtonComponent,
+  PanicRideInfo,
+} from './components/panic-button/panic-button.component';
 
 @Component({
   selector: 'app-ride-tracking',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, MapComponent],
+  imports: [CommonModule, FormsModule, RouterLink, MapComponent, PanicButtonComponent],
   templateUrl: './ride-tracking.component.html',
   styleUrl: './ride-tracking.component.scss',
 })
@@ -49,6 +54,20 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   inconsistencyNote = signal<string>('');
   isSubmittingReport = signal<boolean>(false);
   reportSubmitted = signal<boolean>(false);
+  showPanicModal = signal<boolean>(false);
+
+  panicRideInfo = computed<PanicRideInfo | null>(() => {
+    const ride = this.activeRide();
+    if (!ride) return null;
+    return {
+      driverName: `${ride.driver.firstName} ${ride.driver.lastName}`,
+      driverPhone: ride.driver.phone,
+      vehicleModel: ride.vehicle.model,
+      licensePlate: ride.vehicle.licensePlate,
+      currentLocation: ride.startAddress,
+      destination: ride.destinationAddress,
+    };
+  });
 
   mapConfig: MapConfig = {
     center: [19.8335, 45.2671], // Novi Sad center [lng, lat]
@@ -86,12 +105,7 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
           this.activeRide.set(ride);
           this.currentLocation.set(ride.currentLocation);
           this.etaSeconds.set(ride.estimatedArrivalTime);
-          this.requestRouteFromCurrent(
-            ride.currentLocation,
-            ride.destinationLocation,
-            true,
-            ride
-          );
+          this.requestRouteFromCurrent(ride.currentLocation, ride.destinationLocation, true, ride);
           this.updateMarkers();
           this.startLocationUpdates(rideId);
         },
@@ -122,7 +136,7 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
     currentLocation: { lat: number; lng: number },
     destination: { lat: number; lng: number },
     force = false,
-    fallbackRide?: ActiveRide
+    fallbackRide?: ActiveRide,
   ): void {
     const now = Date.now();
     if (this.routeRequestInFlight) {
@@ -141,7 +155,7 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
         finalize(() => {
           this.routeRequestInFlight = false;
         }),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: (coordinates) => {
@@ -176,7 +190,7 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
           if (ride) {
             this.requestRouteFromCurrent(
               { lat: update.lat, lng: update.lng },
-              ride.destinationLocation
+              ride.destinationLocation,
             );
           }
           this.updateMarkers();
@@ -233,7 +247,7 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private snapToRoute(
     point: { lat: number; lng: number },
-    route: [number, number][]
+    route: [number, number][],
   ): { lat: number; lng: number } {
     const earthRadius = 6371000;
     const refLatRad = this.toRad(point.lat);
@@ -352,5 +366,31 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
           this.isSubmittingReport.set(false);
         },
       });
+  }
+
+  // Panic button methods
+  openPanicModal(): void {
+    this.showPanicModal.set(true);
+  }
+
+  closePanicModal(): void {
+    this.showPanicModal.set(false);
+  }
+
+  onPanicActivated(): void {
+    console.log('PANIC ACTIVATED - Emergency services notified');
+    // In real app: Send emergency notification to backend
+    // This would trigger: emergency contacts, support team, location sharing
+  }
+
+  onContactSupport(): void {
+    console.log('Contact support clicked');
+    // In real app: Open support chat or initiate call
+  }
+
+  onCancelRideFromPanic(): void {
+    this.closePanicModal();
+    // In real app: Navigate to cancel ride flow or open cancel dialog
+    console.log('Cancel ride from panic modal');
   }
 }
