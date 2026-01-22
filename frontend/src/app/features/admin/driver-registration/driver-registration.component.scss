@@ -1,48 +1,6 @@
-// Variables - matching project style
-$primary: var(--primary);
-$primary-light: var(--primary-light);
-$primary-dark: var(--primary-dark);
-$accent: var(--accent);
-$accent-light: var(--accent-light);
-$bg-cream: var(--bg-cream);
-$bg-warm: var(--bg-warm);
-$text-dark: var(--text-dark);
-$text-medium: var(--text-medium);
-$text-light: var(--text-light);
-$border: var(--border);
-$white: var(--white);
-$success: var(--success);
-$success-light: var(--success-light);
-$shadow-sm: var(--shadow-sm);
-$shadow-md: var(--shadow-md);
-$shadow-lg: var(--shadow-lg);
-$radius-sm: var(--radius-sm);
-$radius-md: var(--radius-md);
-$radius-lg: var(--radius-lg);
+// Driver registration styles - uses global CSS variables from styles.scss
 
 :host {
-  // Component-scoped design tokens as CSS custom properties
-  --primary: #5b4cdb;
-  --primary-light: #7b6ee8;
-  --primary-dark: #4338ca;
-  --accent: #ff7f5c;
-  --accent-light: #ffa07a;
-  --bg-cream: #fdfbf7;
-  --bg-warm: #f9f7f3;
-  --text-dark: #1f1f1f;
-  --text-medium: #4a4a4a;
-  --text-light: #8a8a8a;
-  --border: #e8e4dd;
-  --white: #ffffff;
-  --success: #22c55e;
-  --success-light: #dcfce7;
-  --shadow-sm: 0 2px 8px rgba(91, 76, 219, 0.08);
-  --shadow-md: 0 8px 24px rgba(91, 76, 219, 0.12);
-  --shadow-lg: 0 16px 48px rgba(91, 76, 219, 0.16);
-  --radius-sm: 12px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
-
   display: block;
   min-height: 100vh;
   font-family: 'DM Sans', sans-serif;
@@ -73,14 +31,14 @@ $radius-lg: var(--radius-lg);
   margin-bottom: 8px;
 
   svg {
-    color: $primary;
+    color: var(--primary);
   }
 
   h1 {
     font-family: 'Outfit', sans-serif;
     font-size: 28px;
     font-weight: 600;
-    color: $text-dark;
+    color: var(--text-dark);
     letter-spacing: -0.5px;
     margin: 0;
   }
@@ -88,7 +46,7 @@ $radius-lg: var(--radius-lg);
 
 .header-subtitle {
   font-size: 15px;
-  color: $text-light;
+  color: var(--text-light);
   margin: 0;
 }
 
@@ -109,7 +67,7 @@ $radius-lg: var(--radius-lg);
   align-items: center;
   gap: 12px;
   padding: 12px 20px;
-  border-radius: $radius-md;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.2s;
 
@@ -121,26 +79,26 @@ $radius-lg: var(--radius-lg);
     background: rgba(91, 76, 219, 0.08);
 
     .step-indicator {
-      background: $primary;
-      color: $white;
-      border-color: $primary;
+      background: var(--primary);
+      color: var(--white);
+      border-color: var(--primary);
     }
 
     .step-title {
-      color: $primary;
+      color: var(--primary);
       font-weight: 600;
     }
   }
 
   &.completed {
     .step-indicator {
-      background: $success;
-      border-color: $success;
-      color: $white;
+      background: var(--success);
+      border-color: var(--success);
+      color: var(--white);
     }
 
     .step-title {
-      color: $success;
+      color: var(--success);
     }
   }
 }
@@ -149,14 +107,14 @@ $radius-lg: var(--radius-lg);
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 2px solid $border;
-  background: $white;
+  border: 2px solid var(--border);
+  background: var(--white);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
   font-size: 14px;
-  color: $text-light;
+  color: var(--text-light);
   transition: all 0.2s;
   flex-shrink: 0;
 }
@@ -170,31 +128,31 @@ $radius-lg: var(--radius-lg);
 .step-title {
   font-size: 14px;
   font-weight: 500;
-  color: $text-medium;
+  color: var(--text-medium);
   transition: color 0.2s;
 }
 
 .step-desc {
   font-size: 12px;
-  color: $text-light;
+  color: var(--text-light);
 }
 
 .step-connector {
   width: 40px;
   height: 2px;
-  background: $border;
+  background: var(--border);
   transition: background 0.2s;
 
   &.active {
-    background: $success;
+    background: var(--success);
   }
 }
 
 // Form Container
 .form-container {
-  background: $white;
-  border-radius: $radius-lg;
-  box-shadow: $shadow-md;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
   padding: 40px;
 }
 
@@ -210,17 +168,17 @@ $radius-lg: var(--radius-lg);
   font-family: 'Outfit', sans-serif;
   font-size: 20px;
   font-weight: 600;
-  color: $text-dark;
+  color: var(--text-dark);
   margin-bottom: 4px;
 }
 
 .section-desc {
   font-size: 14px;
-  color: $text-light;
+  color: var(--text-light);
   margin-bottom: 24px;
 }
 
-// Form Elements (matching register page)
+// Form Elements
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -235,7 +193,7 @@ $radius-lg: var(--radius-lg);
   display: block;
   font-size: 14px;
   font-weight: 500;
-  color: $text-medium;
+  color: var(--text-medium);
   margin-bottom: 8px;
 }
 
@@ -244,28 +202,28 @@ $radius-lg: var(--radius-lg);
   padding: 14px 18px;
   font-family: 'DM Sans', sans-serif;
   font-size: 15px;
-  color: $text-dark;
-  background: $white;
-  border: 2px solid $border;
-  border-radius: $radius-md;
+  color: var(--text-dark);
+  background: var(--white);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
   outline: none;
   transition: all 0.2s;
 
   &::placeholder {
-    color: $text-light;
+    color: var(--text-light);
   }
 
   &:focus {
-    border-color: $primary;
+    border-color: var(--primary);
     box-shadow: 0 0 0 4px rgba(91, 76, 219, 0.1);
   }
 
   &.error {
-    border-color: #dc3545;
+    border-color: var(--danger);
 
     &:focus {
-      border-color: #dc3545;
-      box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+      border-color: var(--danger);
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
     }
   }
 }
@@ -285,7 +243,7 @@ $radius-lg: var(--radius-lg);
 
   small {
     display: block;
-    color: #dc3545;
+    color: var(--danger);
     font-size: 13px;
     font-weight: 500;
   }
@@ -293,24 +251,8 @@ $radius-lg: var(--radius-lg);
 
 .input-hint {
   font-size: 12px;
-  color: $text-light;
+  color: var(--text-light);
   margin-top: 6px;
-}
-
-// Phone Input
-.phone-input-group {
-  display: flex;
-  gap: 12px;
-}
-
-.country-code {
-  width: 90px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.phone-number {
-  flex: 1;
 }
 
 // Seats Selector
@@ -318,28 +260,28 @@ $radius-lg: var(--radius-lg);
   display: flex;
   align-items: center;
   gap: 16px;
-  background: $bg-warm;
+  background: var(--bg-warm);
   padding: 8px 16px;
-  border-radius: $radius-md;
+  border-radius: var(--radius-md);
   width: fit-content;
 }
 
 .seats-btn {
   width: 40px;
   height: 40px;
-  border: 2px solid $border;
-  border-radius: $radius-sm;
-  background: $white;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--white);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
-  color: $text-medium;
+  color: var(--text-medium);
 
   &:hover:not(:disabled) {
-    border-color: $primary;
-    color: $primary;
+    border-color: var(--primary);
+    color: var(--primary);
   }
 
   &:disabled {
@@ -351,7 +293,7 @@ $radius-lg: var(--radius-lg);
 .seats-value {
   font-size: 24px;
   font-weight: 600;
-  color: $text-dark;
+  color: var(--text-dark);
   min-width: 40px;
   text-align: center;
 }
@@ -368,33 +310,33 @@ $radius-lg: var(--radius-lg);
   align-items: center;
   gap: 12px;
   padding: 16px;
-  background: $bg-warm;
-  border: 2px solid $border;
-  border-radius: $radius-md;
+  background: var(--bg-warm);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    border-color: $primary-light;
+    border-color: var(--primary-light);
   }
 
   &.active {
     background: rgba(91, 76, 219, 0.08);
-    border-color: $primary;
+    border-color: var(--primary);
 
     .feature-icon {
-      color: $primary;
+      color: var(--primary);
     }
 
     .feature-check {
-      background: $primary;
-      border-color: $primary;
+      background: var(--primary);
+      border-color: var(--primary);
     }
   }
 }
 
 .feature-icon {
-  color: $text-light;
+  color: var(--text-light);
   transition: color 0.2s;
 }
 
@@ -402,19 +344,19 @@ $radius-lg: var(--radius-lg);
   flex: 1;
   font-size: 14px;
   font-weight: 500;
-  color: $text-medium;
+  color: var(--text-medium);
 }
 
 .feature-check {
   width: 24px;
   height: 24px;
-  border: 2px solid $border;
+  border: 2px solid var(--border);
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  color: $white;
+  color: var(--white);
 }
 
 // Info Note
@@ -424,19 +366,19 @@ $radius-lg: var(--radius-lg);
   gap: 12px;
   padding: 16px;
   background: rgba(91, 76, 219, 0.06);
-  border-radius: $radius-sm;
-  border-left: 3px solid $primary;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--primary);
   margin-bottom: 24px;
 
   svg {
-    color: $primary;
+    color: var(--primary);
     flex-shrink: 0;
     margin-top: 1px;
   }
 
   p {
     font-size: 13px;
-    color: $text-medium;
+    color: var(--text-medium);
     line-height: 1.5;
     margin: 0;
   }
@@ -448,7 +390,7 @@ $radius-lg: var(--radius-lg);
   justify-content: space-between;
   align-items: center;
   padding-top: 16px;
-  border-top: 1px solid $border;
+  border-top: 1px solid var(--border);
 }
 
 .btn-primary {
@@ -459,17 +401,17 @@ $radius-lg: var(--radius-lg);
   font-family: 'DM Sans', sans-serif;
   font-size: 15px;
   font-weight: 600;
-  color: $white;
-  background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+  color: var(--white);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   border: none;
-  border-radius: $radius-md;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: $shadow-md;
+  box-shadow: var(--shadow-md);
 
   &:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: $shadow-lg;
+    box-shadow: var(--shadow-lg);
   }
 
   &:active:not(:disabled) {
@@ -490,16 +432,16 @@ $radius-lg: var(--radius-lg);
   font-family: 'DM Sans', sans-serif;
   font-size: 15px;
   font-weight: 600;
-  color: $text-medium;
-  background: $white;
-  border: 2px solid $border;
-  border-radius: $radius-md;
+  color: var(--text-medium);
+  background: var(--white);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    border-color: $primary;
-    color: $primary;
+    border-color: var(--primary);
+    color: var(--primary);
   }
 }
 
@@ -508,7 +450,7 @@ $radius-lg: var(--radius-lg);
   width: 20px;
   height: 20px;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: $white;
+  border-top-color: var(--white);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -528,9 +470,9 @@ $radius-lg: var(--radius-lg);
 }
 
 .success-card {
-  background: $white;
-  border-radius: $radius-lg;
-  box-shadow: $shadow-md;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
   padding: 48px;
   text-align: center;
   max-width: 480px;
@@ -539,26 +481,26 @@ $radius-lg: var(--radius-lg);
 .success-icon {
   width: 80px;
   height: 80px;
-  background: $success-light;
+  background: var(--success-light);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 24px;
-  color: $success;
+  color: var(--success);
 }
 
 .success-title {
   font-family: 'Outfit', sans-serif;
   font-size: 24px;
   font-weight: 600;
-  color: $text-dark;
+  color: var(--text-dark);
   margin-bottom: 12px;
 }
 
 .success-message {
   font-size: 15px;
-  color: $text-medium;
+  color: var(--text-medium);
   line-height: 1.6;
   margin-bottom: 32px;
 }
