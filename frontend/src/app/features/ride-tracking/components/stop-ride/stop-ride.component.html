@@ -3,8 +3,11 @@
   <div class="passenger-card" *ngIf="stopInfo">
     <div class="passenger-header">
       <div class="passenger-avatar">
-        {{ stopInfo.passengerName.split(' ')[0].charAt(0)
-        }}{{ stopInfo.passengerName.split(' ')[1].charAt(0) }}
+        {{
+          (stopInfo.passengerName || '').trim().split(/\s+/)[0].charAt(0)
+        }}{{
+          (stopInfo.passengerName || '').trim().split(/\s+/)[1]?.charAt(0) || ''
+        }}
       </div>
       <div class="passenger-info">
         <div class="passenger-name">{{ stopInfo.passengerName }}</div>
