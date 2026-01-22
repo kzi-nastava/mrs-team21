@@ -1,0 +1,460 @@
+<div class="admin-container">
+  <!-- Header -->
+  <header class="admin-header">
+    <div class="header-content">
+      <div class="header-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <circle
+            cx="9"
+            cy="7"
+            r="4"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <line
+            x1="19"
+            y1="8"
+            x2="19"
+            y2="14"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <line
+            x1="22"
+            y1="11"
+            x2="16"
+            y2="11"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <h1>Register New Driver</h1>
+      </div>
+      <p class="header-subtitle">Create a new driver account with vehicle information</p>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="admin-main" *ngIf="!showSuccessMessage">
+    <!-- Progress Steps -->
+    <div class="progress-section">
+      <div class="progress-steps" role="tablist" aria-label="Registration steps">
+        <button
+          type="button"
+          class="step"
+          [class.active]="currentStep === 1"
+          [class.completed]="currentStep > 1"
+          (click)="goToStep(1)"
+          role="tab"
+          [attr.aria-selected]="currentStep === 1"
+          aria-controls="step-1-panel"
+        >
+          <div class="step-indicator">
+            <span class="step-number" *ngIf="currentStep <= 1">1</span>
+            <svg
+              *ngIf="currentStep > 1"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <polyline
+                points="20 6 9 17 4 12"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          <div class="step-info">
+            <span class="step-title">Driver Information</span>
+            <span class="step-desc">Personal details</span>
+          </div>
+        </button>
+
+        <div class="step-connector" [class.active]="currentStep > 1" aria-hidden="true"></div>
+
+        <button
+          type="button"
+          class="step"
+          [class.active]="currentStep === 2"
+          [class.completed]="false"
+          (click)="goToStep(2)"
+          role="tab"
+          [attr.aria-selected]="currentStep === 2"
+          aria-controls="step-2-panel"
+        >
+          <div class="step-indicator">
+            <span class="step-number">2</span>
+          </div>
+          <div class="step-info">
+            <span class="step-title">Vehicle Information</span>
+            <span class="step-desc">Car details & features</span>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Form Container -->
+    <div class="form-container">
+      <!-- Step 1: Driver Information -->
+      <form
+        *ngIf="currentStep === 1"
+        [formGroup]="driverForm"
+        (ngSubmit)="nextStep()"
+        class="registration-form"
+      >
+        <div class="form-section">
+          <h2 class="section-title">Personal Information</h2>
+          <p class="section-desc">Enter the driver's personal details</p>
+
+          <!-- Reusable Personal Info Form Component -->
+          <app-personal-info-form
+            [form]="driverForm"
+            [submitted]="driverSubmitted"
+            [showPasswordFields]="false"
+            emailHint="A password setup link will be sent to this email"
+          ></app-personal-info-form>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <div></div>
+          <button type="submit" class="btn-primary">
+            Continue to Vehicle
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M5 12h14M12 5l7 7-7 7"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+      </form>
+
+      <!-- Step 2: Vehicle Information -->
+      <form
+        *ngIf="currentStep === 2"
+        [formGroup]="vehicleForm"
+        (ngSubmit)="onSubmit()"
+        class="registration-form"
+      >
+        <div class="form-section">
+          <h2 class="section-title">Vehicle Information</h2>
+          <p class="section-desc">Enter the vehicle details and features</p>
+
+          <!-- Vehicle Model -->
+          <div class="form-group">
+            <label class="form-label" for="model">Vehicle model</label>
+            <input
+              type="text"
+              id="model"
+              class="form-input"
+              placeholder="e.g., Toyota Corolla 2020"
+              formControlName="model"
+              [class.error]="vehicleSubmitted && vf['model'].errors"
+            />
+            <div class="error-message" *ngIf="vehicleSubmitted && vf['model'].errors">
+              <small *ngIf="vf['model'].errors['required']">Vehicle model is required</small>
+              <small *ngIf="vf['model'].errors['minlength']"
+                >Model must be at least 2 characters</small
+              >
+            </div>
+          </div>
+
+          <!-- Category and License Plate -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="category">Vehicle category</label>
+              <select
+                id="category"
+                class="form-input form-select"
+                formControlName="category"
+                [class.error]="vehicleSubmitted && vf['category'].errors"
+              >
+                <option *ngFor="let cat of vehicleCategories" [value]="cat">{{ cat }}</option>
+              </select>
+              <div class="error-message" *ngIf="vehicleSubmitted && vf['category'].errors">
+                <small *ngIf="vf['category'].errors['required']">Category is required</small>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="licensePlate">License plate</label>
+              <input
+                type="text"
+                id="licensePlate"
+                class="form-input"
+                placeholder="e.g., NS-123-AB"
+                formControlName="licensePlate"
+                [class.error]="vehicleSubmitted && vf['licensePlate'].errors"
+              />
+              <div class="error-message" *ngIf="vehicleSubmitted && vf['licensePlate'].errors">
+                <small *ngIf="vf['licensePlate'].errors['required']"
+                  >License plate is required</small
+                >
+                <small *ngIf="vf['licensePlate'].errors['pattern']"
+                  >Enter a valid license plate format</small
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Number of Seats -->
+          <div class="form-group">
+            <label class="form-label">Number of passenger seats</label>
+            <div class="seats-selector">
+              <button
+                type="button"
+                class="seats-btn"
+                (click)="decrementSeats()"
+                [disabled]="vf['seats'].value <= 1"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <line
+                    x1="5"
+                    y1="12"
+                    x2="19"
+                    y2="12"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
+              <span class="seats-value">{{ vf['seats'].value }}</span>
+              <button
+                type="button"
+                class="seats-btn"
+                (click)="incrementSeats()"
+                [disabled]="vf['seats'].value >= 8"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <line
+                    x1="12"
+                    y1="5"
+                    x2="12"
+                    y2="19"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <line
+                    x1="5"
+                    y1="12"
+                    x2="19"
+                    y2="12"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Vehicle Features -->
+          <div class="form-group">
+            <label class="form-label">Special features</label>
+            <div class="features-grid">
+              <label class="feature-checkbox" [class.active]="vf['babySeats'].value">
+                <input type="checkbox" formControlName="babySeats" hidden />
+                <div class="feature-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2Z"
+                      fill="currentColor"
+                    />
+                    <path d="M19 13V11H17V9H15V11H13V13H15V22H17V13H19Z" fill="currentColor" />
+                    <path
+                      d="M9 13C9 11.34 7.66 10 6 10C4.34 10 3 11.34 3 13V22H5V18H7V22H9V13Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </div>
+                <span class="feature-label">Baby Seats</span>
+                <div class="feature-check">
+                  <svg
+                    *ngIf="vf['babySeats'].value"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <polyline
+                      points="20 6 9 17 4 12"
+                      stroke="currentColor"
+                      stroke-width="3"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </div>
+              </label>
+
+              <label class="feature-checkbox" [class.active]="vf['petFriendly'].value">
+                <input type="checkbox" formControlName="petFriendly" hidden />
+                <div class="feature-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M4.5 12.5C4.5 11.12 5.62 10 7 10C8.38 10 9.5 11.12 9.5 12.5C9.5 13.88 8.38 15 7 15C5.62 15 4.5 13.88 4.5 12.5Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M14.5 12.5C14.5 11.12 15.62 10 17 10C18.38 10 19.5 11.12 19.5 12.5C19.5 13.88 18.38 15 17 15C15.62 15 14.5 13.88 14.5 12.5Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M6 6.5C6 5.12 7.12 4 8.5 4C9.88 4 11 5.12 11 6.5C11 7.88 9.88 9 8.5 9C7.12 9 6 7.88 6 6.5Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M13 6.5C13 5.12 14.12 4 15.5 4C16.88 4 18 5.12 18 6.5C18 7.88 16.88 9 15.5 9C14.12 9 13 7.88 13 6.5Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M12 17C14.21 17 16 18.79 16 21H8C8 18.79 9.79 17 12 17Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </div>
+                <span class="feature-label">Pet Friendly</span>
+                <div class="feature-check">
+                  <svg
+                    *ngIf="vf['petFriendly'].value"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <polyline
+                      points="20 6 9 17 4 12"
+                      stroke="currentColor"
+                      stroke-width="3"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info Note -->
+        <div class="info-note">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+            <line
+              x1="12"
+              y1="16"
+              x2="12"
+              y2="12"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <line
+              x1="12"
+              y1="8"
+              x2="12.01"
+              y2="8"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+          <p>
+            After registration, an email will be sent to the driver with a link to set their
+            password.
+          </p>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="prevStep()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M19 12H5M12 19l-7-7 7-7"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            Back
+          </button>
+          <button type="submit" class="btn-primary" [disabled]="isSubmitting">
+            <span *ngIf="!isSubmitting">Register Driver</span>
+            <span *ngIf="isSubmitting" class="loading-spinner"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <!-- Success Message -->
+  <div class="success-container" *ngIf="showSuccessMessage">
+    <div class="success-card">
+      <div class="success-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+          <polyline
+            points="9 12 11 14 15 10"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+      <h2 class="success-title">Driver Registered Successfully!</h2>
+      <p class="success-message">
+        The driver account has been created. An email with password setup instructions has been sent
+        to the driver's email address.
+      </p>
+      <div class="success-actions">
+        <button class="btn-primary" (click)="addAnotherDriver()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <line
+              x1="12"
+              y1="5"
+              x2="12"
+              y2="19"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <line
+              x1="5"
+              y1="12"
+              x2="19"
+              y2="12"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+          Register Another Driver
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

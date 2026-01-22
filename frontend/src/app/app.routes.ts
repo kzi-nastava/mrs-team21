@@ -7,6 +7,13 @@ export const routes: Routes = [
       import('./features/auth/login/login.component').then((m) => m.LoginComponent),
   },
   {
+    path: 'admin/register-driver',
+    loadComponent: () =>
+      import('./features/admin/driver-registration/driver-registration.component').then(
+        (m) => m.DriverRegistrationComponent,
+      ),
+  },
+  {
     path: 'forgot-password',
     loadComponent: () =>
       import('./features/auth/forgot-password/forgot-password.component').then(
