@@ -1,0 +1,181 @@
+<div class="cancel-dialog-overlay">
+  <div class="cancel-dialog">
+    <!-- Ride Summary -->
+    <div class="ride-summary">
+      <div class="ride-header">
+        <div class="ride-status">
+          <div class="status-dot"></div>
+          <span class="status-text">
+            @switch (ride.status) {
+              @case ('pending') {
+                Ride assigned
+              }
+              @case ('driver_arriving') {
+                En route to pickup
+              }
+              @case ('in_progress') {
+                Ride in progress
+              }
+            }
+          </span>
+        </div>
+        <span class="ride-id">Ride #{{ ride.id }}</span>
+      </div>
+
+      <div class="ride-route">
+        <div class="route-markers">
+          <div class="marker start"></div>
+          <div class="marker-line"></div>
+          <div class="marker end"></div>
+        </div>
+        <div class="route-details">
+          <div class="route-point">
+            <div class="route-label">Pickup</div>
+            <div class="route-address">{{ ride.pickup }}</div>
+          </div>
+          <div class="route-point">
+            <div class="route-label">Drop-off</div>
+            <div class="route-address">{{ ride.dropoff }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Passenger Info -->
+      @if (ride.passenger) {
+        <div class="passenger-info">
+          <div class="passenger-avatar">{{ ride.passenger.initials }}</div>
+          <div class="passenger-details">
+            <div class="passenger-name">{{ ride.passenger.name }}</div>
+            <div class="passenger-meta">Passenger</div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Cancel Form -->
+    <div class="cancel-card">
+      <div class="cancel-icon">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <line x1="15" y1="9" x2="9" y2="15" />
+          <line x1="9" y1="9" x2="15" y2="15" />
+        </svg>
+      </div>
+
+      <h2 class="cancel-title">Cancel this ride?</h2>
+      <p class="cancel-description">
+        Please provide a reason for canceling this ride. This information will be shared with the
+        passenger and recorded in your history.
+      </p>
+
+      <!-- Driver status indicator -->
+      <div class="driver-status-notice">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+        <span>
+          @if (ride.status === 'driver_arriving') {
+            You can cancel before the passenger enters the vehicle
+          } @else if (ride.status === 'in_progress') {
+            Ride is in progress - contact support for assistance
+          } @else {
+            Cancellation reason will be recorded in your history
+          }
+        </span>
+      </div>
+
+      @if (canCancel) {
+        <form [formGroup]="form">
+          <div class="reason-label">Reason for cancellation <span class="required">*</span></div>
+
+          <div class="reason-options">
+            @for (reason of reasons; track reason.id) {
+              <div
+                class="reason-option"
+                [class.selected]="selectedReason?.id === reason.id"
+                (click)="selectReason(reason)"
+              >
+                <div class="reason-radio">
+                  <div class="reason-radio-inner"></div>
+                </div>
+                <span class="reason-text">{{ reason.label }}</span>
+                @if (reason.requiresExplanation) {
+                  <span class="requires-explanation">Requires explanation</span>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Explanation textarea -->
+          @if (selectedReason?.requiresExplanation) {
+            <div class="explanation-field">
+              <textarea
+                formControlName="explanation"
+                placeholder="Please describe your reason for canceling (minimum 10 characters)..."
+                rows="4"
+              ></textarea>
+              @if (form.get('explanation')?.touched && form.get('explanation')?.invalid) {
+                <div class="field-error">
+                  Please provide a detailed explanation (at least 10 characters)
+                </div>
+              }
+            </div>
+          }
+        </form>
+
+        <!-- Warning Notice -->
+        <div class="warning-notice">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+            />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          <p>
+            Frequent ride cancellations may affect your driver rating and availability for future
+            rides. Please only cancel when absolutely necessary.
+          </p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button type="button" class="btn-secondary" (click)="onKeepRide()">Keep ride</button>
+          <button
+            type="button"
+            class="btn-danger"
+            [disabled]="!isFormValid"
+            (click)="onCancelRide()"
+          >
+            Cancel ride
+          </button>
+        </div>
+      } @else {
+        <!-- Cannot cancel - ride in progress -->
+        <div class="cannot-cancel-notice">
+          <p>
+            You cannot cancel a ride that is already in progress. Please contact support if you need
+            assistance.
+          </p>
+          <button type="button" class="btn-secondary full-width" (click)="onKeepRide()">
+            Go back
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</div>

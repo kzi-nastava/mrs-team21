@@ -1,0 +1,95 @@
+@use '../cancel-ride.styles' as *;
+
+// Driver-specific styles
+.cancel-icon {
+  background: var(--warning-light);
+
+  svg {
+    color: var(--warning);
+  }
+}
+
+.driver-status-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(91, 76, 219, 0.08);
+  border-radius: var(--radius-sm);
+  margin-bottom: 20px;
+
+  svg {
+    width: 20px;
+    height: 20px;
+    color: var(--primary);
+    flex-shrink: 0;
+  }
+
+  span {
+    font-size: 14px;
+    color: var(--text-medium);
+  }
+}
+
+.warning-notice {
+  background: rgba(91, 76, 219, 0.08);
+
+  svg {
+    color: var(--primary);
+  }
+}
+
+.passenger-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.passenger-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.passenger-details {
+  flex: 1;
+}
+
+.passenger-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 2px;
+}
+
+.passenger-meta {
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+.cannot-cancel-notice {
+  text-align: center;
+  padding: 20px 0;
+
+  p {
+    font-size: 15px;
+    color: var(--text-medium);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+}
+
+.full-width {
+  width: 100%;
+}
