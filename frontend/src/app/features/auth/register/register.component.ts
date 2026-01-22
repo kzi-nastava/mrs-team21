@@ -9,11 +9,12 @@ import {
   ValidationErrors,
 } from '@angular/forms';
 import { NgIf, CommonModule } from '@angular/common';
+import { PersonalInfoFormComponent } from '../../../shared/components/personal-info-form/personal-info-form.component';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, NgIf, CommonModule],
+  imports: [RouterLink, ReactiveFormsModule, NgIf, CommonModule, PersonalInfoFormComponent],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss',
 })
