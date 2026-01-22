@@ -250,9 +250,15 @@
 
   <!-- Stop Ride Modal -->
   <div class="stop-modal-overlay" *ngIf="showStopModal()" (click)="closeStopModal()">
-    <div class="stop-modal-content" (click)="$event.stopPropagation()">
+    <div
+      class="stop-modal-content"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="stop-modal-title"
+      (click)="$event.stopPropagation()"
+    >
       <div class="stop-modal-header">
-        <h2 class="stop-modal-title">Stop Ride</h2>
+        <h2 id="stop-modal-title" class="stop-modal-title">Stop Ride</h2>
         <button
           class="stop-modal-close"
           (click)="closeStopModal()"
