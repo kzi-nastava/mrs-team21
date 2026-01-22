@@ -1,31 +1,53 @@
 // Variables - matching project style
-$primary: #5b4cdb;
-$primary-light: #7b6ee8;
-$primary-dark: #4338ca;
-$accent: #ff7f5c;
-$accent-light: #ffa07a;
-$bg-cream: #fdfbf7;
-$bg-warm: #f9f7f3;
-$text-dark: #1f1f1f;
-$text-medium: #4a4a4a;
-$text-light: #8a8a8a;
-$border: #e8e4dd;
-$white: #ffffff;
-$success: #22c55e;
-$success-light: #dcfce7;
-$shadow-sm: 0 2px 8px rgba(91, 76, 219, 0.08);
-$shadow-md: 0 8px 24px rgba(91, 76, 219, 0.12);
-$shadow-lg: 0 16px 48px rgba(91, 76, 219, 0.16);
-$radius-sm: 12px;
-$radius-md: 16px;
-$radius-lg: 24px;
+$primary: var(--primary);
+$primary-light: var(--primary-light);
+$primary-dark: var(--primary-dark);
+$accent: var(--accent);
+$accent-light: var(--accent-light);
+$bg-cream: var(--bg-cream);
+$bg-warm: var(--bg-warm);
+$text-dark: var(--text-dark);
+$text-medium: var(--text-medium);
+$text-light: var(--text-light);
+$border: var(--border);
+$white: var(--white);
+$success: var(--success);
+$success-light: var(--success-light);
+$shadow-sm: var(--shadow-sm);
+$shadow-md: var(--shadow-md);
+$shadow-lg: var(--shadow-lg);
+$radius-sm: var(--radius-sm);
+$radius-md: var(--radius-md);
+$radius-lg: var(--radius-lg);
 
 :host {
+  // Component-scoped design tokens as CSS custom properties
+  --primary: #5b4cdb;
+  --primary-light: #7b6ee8;
+  --primary-dark: #4338ca;
+  --accent: #ff7f5c;
+  --accent-light: #ffa07a;
+  --bg-cream: #fdfbf7;
+  --bg-warm: #f9f7f3;
+  --text-dark: #1f1f1f;
+  --text-medium: #4a4a4a;
+  --text-light: #8a8a8a;
+  --border: #e8e4dd;
+  --white: #ffffff;
+  --success: #22c55e;
+  --success-light: #dcfce7;
+  --shadow-sm: 0 2px 8px rgba(91, 76, 219, 0.08);
+  --shadow-md: 0 8px 24px rgba(91, 76, 219, 0.12);
+  --shadow-lg: 0 16px 48px rgba(91, 76, 219, 0.16);
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
   display: block;
   min-height: 100vh;
   font-family: 'DM Sans', sans-serif;
-  background: $bg-cream;
-  color: $text-dark;
+  background: var(--bg-cream);
+  color: var(--text-dark);
 }
 
 .admin-container {
