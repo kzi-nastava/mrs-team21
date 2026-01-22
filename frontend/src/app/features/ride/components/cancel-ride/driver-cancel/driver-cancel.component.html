@@ -4,7 +4,7 @@
     <div class="ride-summary">
       <div class="ride-header">
         <div class="ride-status">
-          <div class="status-dot"></div>
+          <div class="status-dot" [class.arriving]="ride.status === 'driver_arriving'"></div>
           <span class="status-text">
             @switch (ride.status) {
               @case ('pending') {
