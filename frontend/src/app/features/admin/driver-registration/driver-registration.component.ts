@@ -103,12 +103,20 @@ export class DriverRegistrationComponent implements OnInit {
   prevStep(): void {
     if (this.currentStep > 1) {
       this.currentStep--;
+      // Reset validation state when going back
+      if (this.currentStep === 1) {
+        this.driverSubmitted = false;
+      }
     }
   }
 
   goToStep(step: number): void {
     // Only allow going back or to completed steps
     if (step < this.currentStep) {
+      // Reset validation state when navigating back
+      if (step === 1) {
+        this.driverSubmitted = false;
+      }
       this.currentStep = step;
     } else if (step === 2 && this.driverForm.valid) {
       this.currentStep = step;
