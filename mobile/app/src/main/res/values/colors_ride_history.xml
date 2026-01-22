@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Colors for the Ride History screen.
+        This file previously contained only a comment which caused an XML parser "Premature end of file" error.
+        Keep this file minimal and well-formed. Actual shared colors are defined in `res/values/colors.xml`.
+    -->
+</resources>
+

@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_card"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_lg">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="@dimen/spacing_lg">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/btn_edit_vehicle"
+                style="@style/TextStyle.Title"
+                android:textSize="@dimen/text_xl" />
+
+            <ImageView
+                android:id="@+id/btnClose"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_close_circle"
+                android:padding="4dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="@string/btn_cancel" />
+        </LinearLayout>
+
+        <!-- Vehicle Name Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/vehicleNameLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/spacing_md"
+            style="@style/Widget.Drumigo.TextInputLayout"
+            android:hint="@string/label_vehicle_name">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editVehicleName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                style="@style/Widget.Drumigo.TextInputEditText"
+                tools:text="Tesla Model 3" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Vehicle Type Dropdown -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/vehicleTypeLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/spacing_md"
+            style="@style/Widget.Drumigo.TextInputLayout"
+            android:hint="@string/label_vehicle_type"
+            app:endIconMode="dropdown_menu">
+
+            <AutoCompleteTextView
+                android:id="@+id/editVehicleType"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                style="@style/Widget.Drumigo.TextInputEditText"
+                tools:text="Luxury Sedan" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- License Plate Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/licensePlateLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/spacing_md"
+            style="@style/Widget.Drumigo.TextInputLayout"
+            android:hint="@string/label_license_plate">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editLicensePlate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapCharacters"
+                style="@style/Widget.Drumigo.TextInputEditText"
+                tools:text="BG-123-AB" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Number of Seats Dropdown -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/seatsLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/spacing_md"
+            style="@style/Widget.Drumigo.TextInputLayout"
+            android:hint="@string/label_seats"
+            app:endIconMode="dropdown_menu">
+
+            <AutoCompleteTextView
+                android:id="@+id/editSeats"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                style="@style/Widget.Drumigo.TextInputEditText"
+                tools:text="4" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Vehicle Features -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/label_vehicle_features"
+            android:textColor="@color/text_medium"
+            android:textSize="@dimen/text_sm"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginBottom="@dimen/spacing_sm" />
+
+        <com.google.android.material.checkbox.MaterialCheckBox
+            android:id="@+id/checkBabySeats"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/feature_baby_seats"
+            style="@style/Widget.Drumigo.CheckBox"
+            android:layout_marginBottom="@dimen/spacing_xs" />
+
+        <com.google.android.material.checkbox.MaterialCheckBox
+            android:id="@+id/checkPetFriendly"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/feature_pet_friendly"
+            style="@style/Widget.Drumigo.CheckBox"
+            android:layout_marginBottom="@dimen/spacing_lg" />
+
+        <!-- Admin Approval Notice -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@drawable/bg_info_box"
+            android:padding="@dimen/spacing_md"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="@dimen/spacing_lg">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_info"
+                app:tint="@color/primary"
+                android:layout_marginEnd="@dimen/spacing_sm"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/admin_approval_notice"
+                android:textColor="@color/text_medium"
+                android:textSize="@dimen/text_xs" />
+        </LinearLayout>
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancelVehicle"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/button_height"
+                android:layout_weight="1"
+                android:layout_marginEnd="@dimen/spacing_sm"
+                android:text="@string/btn_cancel"
+                style="@style/Widget.Drumigo.Button.Secondary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSaveVehicle"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/button_height"
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/spacing_sm"
+                android:text="@string/btn_save_changes"
+                style="@style/Widget.Drumigo.Button.Primary" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

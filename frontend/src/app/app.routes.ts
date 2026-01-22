@@ -7,17 +7,24 @@ export const routes: Routes = [
       import('./features/auth/login/login.component').then((m) => m.LoginComponent),
   },
   {
+    path: 'admin/register-driver',
+    loadComponent: () =>
+      import('./features/admin/driver-registration/driver-registration.component').then(
+        (m) => m.DriverRegistrationComponent,
+      ),
+  },
+  {
     path: 'forgot-password',
     loadComponent: () =>
       import('./features/auth/forgot-password/forgot-password.component').then(
-        (m) => m.ForgotPasswordComponent
+        (m) => m.ForgotPasswordComponent,
       ),
   },
   {
     path: 'reset-password/:token',
     loadComponent: () =>
       import('./features/auth/reset-password/reset-password.component').then(
-        (m) => m.ResetPasswordComponent
+        (m) => m.ResetPasswordComponent,
       ),
   },
   {
@@ -30,24 +37,38 @@ export const routes: Routes = [
     path: 'profile',
     loadComponent: () =>
       import('./features/profile/profile-page/profile-page.component').then(
-        (m) => m.ProfilePageComponent
+        (m) => m.ProfilePageComponent,
       ),
   },
   {
     path: 'driver-history',
     loadComponent: () =>
       import('./features/driver-history/driver-history.component').then(
-        (m) => m.DriverHistoryComponent
+        (m) => m.DriverHistoryComponent,
+      ),
+  },
+  {
+    path: 'ride-tracking/:rideId',
+    loadComponent: () =>
+      import('./features/ride-tracking/ride-tracking.component').then(
+        (m) => m.RideTrackingComponent,
+      ),
+  },
+  {
+    path: 'landing',
+    loadComponent: () =>
+      import('./features/landing/landing-page/landing-page.component').then(
+        (m) => m.LandingPageComponent,
       ),
   },
 
   {
     path: '',
-    redirectTo: 'login',
+    redirectTo: 'landing',
     pathMatch: 'full',
   },
   {
     path: '**',
-    redirectTo: 'login',
+    redirectTo: 'landing',
   },
 ];

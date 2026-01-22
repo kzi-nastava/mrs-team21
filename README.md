@@ -35,7 +35,7 @@ Drumigo is a multi-platform ride-hailing system featuring:
 - Mobile: Android (Java/Kotlin), MVVM
 - Backend: Spring Boot, Java, PostgreSQL
 - Real-time: WebSocket
-- Maps: Leaflet / OpenStreetMap (or Mapbox where used)
+- Maps: Mapbox GL JS
 
 (Exact versions and tools are kept in each subproject's `package.json`, `pom.xml`, or project config.)
 

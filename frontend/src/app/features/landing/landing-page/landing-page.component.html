@@ -1,0 +1,42 @@
+<div class="app-container">
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <img src="images/logo/logo-blue-v2.svg" alt="Drumigo Logo" class="logo-img" />
+      <span class="logo-text">Drumigo</span>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/login" class="btn-header btn-header-secondary">Sign in</a>
+      <a routerLink="/register" class="btn-header btn-header-primary">Sign up</a>
+    </div>
+  </header>
+
+  <!-- Map Section -->
+  <div class="map-section">
+    <app-map [markers]="vehicleMarkers()" [config]="mapConfig"></app-map>
+
+    <!-- Floating Estimate Button -->
+    <div class="estimate-cta">
+      <button class="btn-estimate" (click)="openPanel()">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 10" />
+        </svg>
+        Estimate your ride
+      </button>
+    </div>
+  </div>
+
+  <!-- Side Panel -->
+  <app-ride-estimate-panel
+    [isOpen]="isPanelOpen()"
+    (panelClosed)="closePanel()"
+  ></app-ride-estimate-panel>
+</div>

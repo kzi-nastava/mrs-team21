@@ -11,7 +11,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './login.component.scss',
 })
 export class LoginComponent implements OnInit {
-  logoSrc = '../../assets/images/logo/logo-white-v2.svg';
+  logoSrc = 'images/logo/logo-white-v2.svg';
   loginForm!: FormGroup;
   submitted = false;
 

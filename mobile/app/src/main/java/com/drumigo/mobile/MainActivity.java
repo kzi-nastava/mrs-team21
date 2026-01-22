@@ -1,5 +1,6 @@
 package com.drumigo.mobile;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
@@ -57,6 +58,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         toolbar = binding.getRoot().findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        // Ensure the hamburger icon is visible (set after setSupportActionBar)
+        toolbar.setNavigationIcon(R.drawable.ic_menu);
+
         // Handle navigation icon (hamburger menu) clicks
         toolbar.setNavigationOnClickListener(v -> openDrawer());
     }
@@ -109,6 +113,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             menuItemId = R.id.nav_forgot_password;
         } else if (destinationId == R.id.resetPasswordFragment) {
             menuItemId = R.id.nav_reset_password;
+        } else if (destinationId == R.id.profileFragment) {
+            menuItemId = R.id.nav_profile;
         } else {
             return;
         }
@@ -130,6 +136,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if (itemId == R.id.nav_logout) {
             // Handle logout - for now just go to login
             navController.navigate(R.id.loginFragment);
+        } else if (itemId == R.id.nav_ride_history) {
+            // Launch RideHistoryActivity
+            Intent intent = new Intent(this, com.ridesharing.app.ui.history.RideHistoryActivity.class);
+            startActivity(intent);
+        } else if (itemId == R.id.nav_profile) {
+            // Navigate to profile fragment
+            navController.navigate(R.id.profileFragment);
         }
         
         drawerLayout.closeDrawer(GravityCompat.START);

@@ -11,6 +11,10 @@
 npm-debug.log
 yarn-error.log
 
+# Bun
+bun-debug.log
+.install-state
+
 # IDEs and editors
 .idea/
 .project
@@ -29,7 +33,7 @@ yarn-error.log
 .history/*
 
 # Miscellaneous
-/.angular/cache
+/.angular
 .sass-cache/
 /connect.lock
 /coverage
@@ -41,3 +45,8 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+/.vscode
+
+# Environment files - each team member adds their own Mapbox API key in environment.dev.ts
+src/environments/environment.dev.ts

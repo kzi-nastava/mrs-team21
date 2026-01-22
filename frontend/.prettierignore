@@ -1,0 +1,18 @@
+# Dependencies
+node_modules
+bun.lock
+
+# Build outputs
+dist
+.angular
+out-tsc
+
+# Logs
+*.log
+
+# IDE
+.vscode
+.idea
+
+# Coverage
+coverage
