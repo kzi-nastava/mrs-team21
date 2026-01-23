@@ -1,0 +1,99 @@
+<!-- Report Button -->
+<button class="btn-report" (click)="openModal()" type="button">
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M12 9v4M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+  Report Inconsistency
+</button>
+
+<!-- Modal -->
+<div class="modal-overlay" *ngIf="showModal()" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2 class="modal-title">Report Driver Inconsistency</h2>
+      <button
+        class="modal-close"
+        (click)="closeModal()"
+        type="button"
+        aria-label="Close"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p class="modal-description">
+        If you notice the driver is taking an inappropriate route, please describe the issue
+        below. This report will be reviewed and included in ride history.
+      </p>
+
+      <div class="success-message" *ngIf="reportSubmitted()" role="alert">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        Report submitted successfully!
+      </div>
+
+      <form (ngSubmit)="submitReport()" *ngIf="!reportSubmitted()">
+        <div class="form-group">
+          <label for="inconsistency-note" class="form-label"> Describe the issue </label>
+          <textarea
+            id="inconsistency-note"
+            class="form-textarea"
+            [ngModel]="inconsistencyNote()"
+            (ngModelChange)="inconsistencyNote.set($event)"
+            name="inconsistencyNote"
+            placeholder="e.g., Driver is taking a longer route than necessary..."
+            rows="5"
+            required
+            minlength="10"
+          ></textarea>
+          <div class="form-hint">Minimum 10 characters required</div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" (click)="closeModal()">
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="btn-submit"
+            [disabled]="
+              isSubmittingReport() ||
+              !inconsistencyNote().trim() ||
+              inconsistencyNote().trim().length < 10
+            "
+          >
+            <span *ngIf="!isSubmittingReport()">Submit Report</span>
+            <span *ngIf="isSubmittingReport()">Submitting...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
