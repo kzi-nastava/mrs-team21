@@ -23,6 +23,7 @@ import {
   PanicRideInfo,
 } from './components/panic-button/panic-button.component';
 import { StopRideComponent, StopRideInfo } from './components/stop-ride/stop-ride.component';
+import { InconsistencyReportComponent } from './components/inconsistency-report/inconsistency-report.component';
 
 @Component({
   selector: 'app-ride-tracking',
@@ -33,12 +34,14 @@ import { StopRideComponent, StopRideInfo } from './components/stop-ride/stop-rid
     MapComponent,
     PanicButtonComponent,
     StopRideComponent,
+    InconsistencyReportComponent,
   ],
   templateUrl: './ride-tracking.component.html',
   styleUrl: './ride-tracking.component.scss',
 })
 export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(MapComponent) mapComponent!: MapComponent;
+  @ViewChild(InconsistencyReportComponent) inconsistencyReportComponent?: InconsistencyReportComponent;
 
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
@@ -56,10 +59,6 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   markers = signal<MapMarker[]>([]);
   routeCoordinates = signal<[number, number][] | undefined>(undefined);
   carBearing = signal<number | undefined>(undefined);
-  showInconsistencyForm = signal<boolean>(false);
-  inconsistencyNote = signal<string>('');
-  isSubmittingReport = signal<boolean>(false);
-  reportSubmitted = signal<boolean>(false);
   showPanicModal = signal<boolean>(false);
   showStopModal = signal<boolean>(false);
 
@@ -114,6 +113,10 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
       if (this.mapComponent && this.currentLocation()) {
         this.updateMapView();
       }
+      // Pass active ride to inconsistency report component
+      if (this.inconsistencyReportComponent && this.activeRide()) {
+        this.inconsistencyReportComponent.setActiveRide(this.activeRide());
+      }
     }, 500);
     this.destroyRef.onDestroy(() => clearTimeout(timeoutId));
   }
@@ -137,6 +140,10 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
           this.etaSeconds.set(ride.estimatedArrivalTime);
           this.requestRouteFromCurrent(ride.currentLocation, ride.destinationLocation, true, ride);
           this.updateMarkers();
+          // Pass active ride to inconsistency report component
+          if (this.inconsistencyReportComponent) {
+            this.inconsistencyReportComponent.setActiveRide(ride);
+          }
           this.startLocationUpdates(rideId);
         },
         error: (error) => {
@@ -356,51 +363,15 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   openInconsistencyForm(): void {
-    this.showInconsistencyForm.set(true);
-    this.reportSubmitted.set(false);
-    this.inconsistencyNote.set('');
+    this.inconsistencyReportComponent?.openModal();
   }
 
   closeInconsistencyForm(): void {
-    this.showInconsistencyForm.set(false);
-    this.inconsistencyNote.set('');
+    this.inconsistencyReportComponent?.closeModal();
   }
 
   submitInconsistencyReport(): void {
-    const note = this.inconsistencyNote().trim();
-    if (!note || note.length < 10) {
-      return; // Basic validation
-    }
-
-    const ride = this.activeRide();
-    if (!ride) return;
-
-    this.isSubmittingReport.set(true);
-
-    // Mock user data - in real app, get from auth service
-    const reportedBy = {
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@example.com',
-    };
-
-    this.rideTrackingService
-      .reportInconsistency(ride.id, note, reportedBy)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.reportSubmitted.set(true);
-          this.isSubmittingReport.set(false);
-          const timeoutId = setTimeout(() => {
-            this.closeInconsistencyForm();
-          }, 2000);
-          this.destroyRef.onDestroy(() => clearTimeout(timeoutId));
-        },
-        error: (error) => {
-          console.error('Error submitting report:', error);
-          this.isSubmittingReport.set(false);
-        },
-      });
+    this.inconsistencyReportComponent?.submitReport();
   }
 
   // Panic button methods
