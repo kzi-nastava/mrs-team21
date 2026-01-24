@@ -1,14 +1,14 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+
 import { DriverHistoryMockService } from './services/driver-history-mock.service';
 import { RideHistory } from './models/ride-history.model';
 
 @Component({
   selector: 'app-driver-history',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, FormsModule],
   templateUrl: './driver-history.component.html',
   styleUrl: './driver-history.component.scss',
 })
@@ -67,7 +67,11 @@ export class DriverHistoryComponent implements OnInit {
   }
 
   selectRide(ride: RideHistory): void {
-    this.selectedRide.set(ride);
+    if (this.selectedRide() === ride) {
+      this.selectedRide.set(null);
+    } else {
+      this.selectedRide.set(ride);
+    }
   }
 
   closeDetails(): void {

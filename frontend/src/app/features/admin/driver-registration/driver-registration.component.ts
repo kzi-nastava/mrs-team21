@@ -5,7 +5,7 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
-import { NgIf, CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { PersonalInfoFormComponent } from '../../../shared/components/personal-info-form/personal-info-form.component';
 
 type VehicleCategory = 'Standard' | 'Luxury' | 'Van';
@@ -31,7 +31,7 @@ interface VehicleFormData {
 @Component({
   selector: 'app-driver-registration',
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf, CommonModule, PersonalInfoFormComponent],
+  imports: [ReactiveFormsModule, CommonModule, PersonalInfoFormComponent],
   templateUrl: './driver-registration.component.html',
   styleUrl: './driver-registration.component.scss',
 })

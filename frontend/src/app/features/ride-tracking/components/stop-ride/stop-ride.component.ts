@@ -1,6 +1,5 @@
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DecimalPipe } from '@angular/common';
 
 export interface StopRideInfo {
   passengerName: string;
@@ -20,7 +19,7 @@ export interface StopRideInfo {
 @Component({
   selector: 'app-stop-ride',
   standalone: true,
-  imports: [CommonModule, DecimalPipe],
+  imports: [CommonModule],
   templateUrl: './stop-ride.component.html',
   styleUrl: './stop-ride.component.scss',
 })

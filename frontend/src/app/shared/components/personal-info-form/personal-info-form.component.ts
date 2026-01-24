@@ -3,12 +3,12 @@ import {
   ReactiveFormsModule,
   FormGroup,
 } from '@angular/forms';
-import { NgIf, CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-personal-info-form',
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf, CommonModule],
+  imports: [ReactiveFormsModule, CommonModule],
   templateUrl: './personal-info-form.component.html',
   styleUrl: './personal-info-form.component.scss',
 })

@@ -8,13 +8,13 @@ import {
   AbstractControl,
   ValidationErrors,
 } from '@angular/forms';
-import { NgIf, CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { PersonalInfoFormComponent } from '../../../shared/components/personal-info-form/personal-info-form.component';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, NgIf, CommonModule, PersonalInfoFormComponent],
+  imports: [RouterLink, ReactiveFormsModule, CommonModule, PersonalInfoFormComponent],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss',
 })

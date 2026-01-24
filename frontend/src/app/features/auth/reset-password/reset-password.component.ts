@@ -7,12 +7,12 @@ import {
   AbstractControl,
   ValidationErrors,
 } from '@angular/forms';
-import { NgClass, NgIf, CommonModule } from '@angular/common';
+import { NgClass, CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [ReactiveFormsModule, NgClass, NgIf, CommonModule],
+  imports: [ReactiveFormsModule, NgClass, CommonModule],
   templateUrl: './reset-password.component.html',
   styleUrl: './reset-password.component.scss',
 })
