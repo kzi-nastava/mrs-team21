@@ -1,17 +1,16 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
+  // Auth routes
   {
     path: 'login',
     loadComponent: () =>
       import('./features/auth/login/login.component').then((m) => m.LoginComponent),
   },
   {
-    path: 'admin/register-driver',
+    path: 'register-customer',
     loadComponent: () =>
-      import('./features/admin/driver-registration/driver-registration.component').then(
-        (m) => m.DriverRegistrationComponent,
-      ),
+      import('./features/auth/register/register.component').then((m) => m.RegisterComponent),
   },
   {
     path: 'forgot-password',
@@ -27,12 +26,17 @@ export const routes: Routes = [
         (m) => m.ResetPasswordComponent,
       ),
   },
+
+  // Admin routes
   {
-    path: 'register',
+    path: 'register-driver',
     loadComponent: () =>
-      import('./features/auth/register/register.component').then((m) => m.RegisterComponent),
+      import('./features/admin/driver-registration/driver-registration.component').then(
+        (m) => m.DriverRegistrationComponent,
+      ),
   },
 
+  // User routes
   {
     path: 'profile',
     loadComponent: () =>
@@ -47,6 +51,8 @@ export const routes: Routes = [
         (m) => m.DriverHistoryComponent,
       ),
   },
+
+  // Ride routes
   {
     path: 'ride-tracking/:rideId',
     loadComponent: () =>
@@ -54,6 +60,8 @@ export const routes: Routes = [
         (m) => m.RideTrackingComponent,
       ),
   },
+
+  // Landing page
   {
     path: 'landing',
     loadComponent: () =>
@@ -62,6 +70,7 @@ export const routes: Routes = [
       ),
   },
 
+  // Catch-all routes
   {
     path: '',
     redirectTo: 'landing',
