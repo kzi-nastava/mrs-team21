@@ -303,7 +303,7 @@
             </div>
             <div class="vehicle-title">
               <h4>{{ v.model }}</h4>
-              <span [class]="getVehicleTypeClass(v.category)">
+              <span class="vehicle-type-badge" [ngClass]="getVehicleTypeClass(v.category)">
                 {{ v.category }}
               </span>
             </div>
