@@ -9,7 +9,6 @@ import {
   EventEmitter,
   OnChanges,
   SimpleChanges,
-  effect,
 } from '@angular/core';
 import mapboxgl from 'mapbox-gl';
 import { environment } from '../../../environments/environment';

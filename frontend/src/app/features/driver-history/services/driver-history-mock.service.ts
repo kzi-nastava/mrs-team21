@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { RideHistory, Passenger } from '../models/ride-history.model';
+import { RideHistory } from '../models/ride-history.model';
 
 @Injectable({ providedIn: 'root' })
 export class DriverHistoryMockService {
