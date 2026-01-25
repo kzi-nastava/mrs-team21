@@ -11,17 +11,19 @@ export interface PanicRideInfo {
 }
 
 @Component({
-  selector: 'app-panic-button',
+  selector: 'app-panic',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './panic-button.component.html',
-  styleUrl: './panic-button.component.scss',
+  templateUrl: './panic.component.html',
+  styleUrl: './panic.component.scss',
 })
-export class PanicButtonComponent {
+export class PanicComponent {
   @Input() rideInfo: PanicRideInfo | null = null;
+  @Input() showModal = signal<boolean>(false);
   @Output() panicActivated = new EventEmitter<void>();
   @Output() contactSupport = new EventEmitter<void>();
   @Output() cancelRide = new EventEmitter<void>();
+  @Output() closeModal = new EventEmitter<void>();
 
   isPressing = signal(false);
   holdProgress = signal(0);
@@ -82,6 +84,10 @@ export class PanicButtonComponent {
 
   onCancelRide(): void {
     this.cancelRide.emit();
+  }
+
+  onCloseModal(): void {
+    this.closeModal.emit();
   }
 
   resetPanic(): void {

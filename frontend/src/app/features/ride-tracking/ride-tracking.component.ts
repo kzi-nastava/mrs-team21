@@ -18,10 +18,7 @@ import { MapMarker } from '../map/models/vehicle.model';
 import { RideTrackingMockService } from './services/ride-tracking-mock.service';
 import { MapboxDirectionsService } from './services/mapbox-directions.service';
 import { ActiveRide, LocationUpdate } from './models/active-ride.model';
-import {
-  PanicButtonComponent,
-  PanicRideInfo,
-} from './components/panic-button/panic-button.component';
+import { PanicComponent, PanicRideInfo } from './components/panic/panic.component';
 import { StopRideComponent, StopRideInfo } from './components/stop-ride/stop-ride.component';
 import { InconsistencyReportComponent } from './components/inconsistency-report/inconsistency-report.component';
 
@@ -32,7 +29,7 @@ import { InconsistencyReportComponent } from './components/inconsistency-report/
     CommonModule,
     RouterLink,
     MapComponent,
-    PanicButtonComponent,
+    PanicComponent,
     StopRideComponent,
     InconsistencyReportComponent,
   ],
@@ -41,7 +38,8 @@ import { InconsistencyReportComponent } from './components/inconsistency-report/
 })
 export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(MapComponent) mapComponent!: MapComponent;
-  @ViewChild(InconsistencyReportComponent) inconsistencyReportComponent?: InconsistencyReportComponent;
+  @ViewChild(InconsistencyReportComponent)
+  inconsistencyReportComponent?: InconsistencyReportComponent;
 
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
@@ -157,7 +155,7 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
       console.warn('Cannot calculate route coordinates: ride is null');
       return;
     }
-    
+
     if (ride.route && ride.route.length > 0) {
       // Use waypoints from route
       const coordinates: [number, number][] = [...ride.route]

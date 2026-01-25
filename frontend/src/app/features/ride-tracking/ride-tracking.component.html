@@ -124,40 +124,15 @@
   </main>
 
   <!-- Panic Modal -->
-  @if (showPanicModal()) {
-    <div class="panic-modal-overlay" (click)="closePanicModal()">
-      <div class="panic-modal-content" (click)="$event.stopPropagation()">
-        <div class="panic-modal-header">
-          <h2 class="panic-modal-title">Emergency</h2>
-          <button
-            class="panic-modal-close"
-            (click)="closePanicModal()"
-            type="button"
-            aria-label="Close"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-        <app-panic-button
-          [rideInfo]="panicRideInfo()"
-          (panicActivated)="onPanicActivated()"
-          (contactSupport)="onContactSupport()"
-          (cancelRide)="onCancelRideFromPanic()"
-        >
-        </app-panic-button>
-      </div>
-    </div>
-  }
+  <app-panic
+    [rideInfo]="panicRideInfo()"
+    [showModal]="showPanicModal"
+    (panicActivated)="onPanicActivated()"
+    (contactSupport)="onContactSupport()"
+    (cancelRide)="onCancelRideFromPanic()"
+    (closeModal)="closePanicModal()"
+  >
+  </app-panic>
 
   <!-- Stop Ride Modal -->
   @if (showStopModal()) {
