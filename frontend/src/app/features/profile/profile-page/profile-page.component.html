@@ -435,14 +435,14 @@
         </button>
       </div>
 
-      <div class="modal-body">
+      <div class="modal-body" [formGroup]="personalForm">
         <div class="form-row">
           <div class="form-group">
             <label for="firstName">First Name</label>
             <input
               type="text"
               id="firstName"
-              [(ngModel)]="editPersonalForm.firstName"
+              formControlName="firstName"
               placeholder="Enter first name"
             />
           </div>
@@ -451,7 +451,7 @@
             <input
               type="text"
               id="lastName"
-              [(ngModel)]="editPersonalForm.lastName"
+              formControlName="lastName"
               placeholder="Enter last name"
             />
           </div>
@@ -462,7 +462,7 @@
           <input
             type="email"
             id="email"
-            [(ngModel)]="editPersonalForm.email"
+            formControlName="email"
             placeholder="Enter email address"
           />
         </div>
@@ -472,7 +472,7 @@
           <input
             type="tel"
             id="phone"
-            [(ngModel)]="editPersonalForm.phone"
+            formControlName="phone"
             placeholder="Enter phone number"
           />
         </div>
@@ -482,7 +482,7 @@
           <input
             type="text"
             id="address"
-            [(ngModel)]="editPersonalForm.address"
+            formControlName="address"
             placeholder="Enter address"
           />
         </div>
@@ -553,20 +553,20 @@
         </button>
       </div>
 
-      <div class="modal-body">
+      <div class="modal-body" [formGroup]="vehicleForm">
         <div class="form-row">
           <div class="form-group">
             <label for="vehicleModel">Vehicle Model</label>
             <input
               type="text"
               id="vehicleModel"
-              [(ngModel)]="editVehicleForm.model"
+              formControlName="model"
               placeholder="e.g., Toyota Camry 2022"
             />
           </div>
           <div class="form-group">
             <label for="vehicleCategory">Category</label>
-            <select id="vehicleCategory" [(ngModel)]="editVehicleForm.category">
+            <select id="vehicleCategory" formControlName="category">
               @for (cat of vehicleCategories; track cat) {
                 <option [value]="cat">{{ cat }}</option>
               }
@@ -580,7 +580,7 @@
             <input
               type="text"
               id="licensePlate"
-              [(ngModel)]="editVehicleForm.licensePlate"
+              formControlName="licensePlate"
               placeholder="e.g., NS-123-AB"
             />
           </div>
@@ -589,7 +589,7 @@
             <input
               type="number"
               id="seats"
-              [(ngModel)]="editVehicleForm.seats"
+              formControlName="seats"
               min="1"
               max="8"
               placeholder="Number of seats"
@@ -601,12 +601,12 @@
           <label>Special Features</label>
           <div class="checkbox-row">
             <label class="checkbox-label">
-              <input type="checkbox" [(ngModel)]="editVehicleForm.babySeats" />
+              <input type="checkbox" formControlName="babySeats" />
               <span class="checkbox-custom"></span>
               Baby Seats Available
             </label>
             <label class="checkbox-label">
-              <input type="checkbox" [(ngModel)]="editVehicleForm.petFriendly" />
+              <input type="checkbox" formControlName="petFriendly" />
               <span class="checkbox-custom"></span>
               Pet Friendly
             </label>

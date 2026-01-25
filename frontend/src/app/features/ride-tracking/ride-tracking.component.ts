@@ -12,7 +12,6 @@ import {
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { MapComponent, MapConfig } from '../map/map.component';
 import { MapMarker } from '../map/models/vehicle.model';
@@ -30,7 +29,6 @@ import { StopRideComponent, StopRideInfo } from './components/stop-ride/stop-rid
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     RouterLink,
     MapComponent,
     PanicButtonComponent,
