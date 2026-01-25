@@ -1,6 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import { DriverHistoryMockService } from './services/driver-history-mock.service';
 import { RideHistory } from './models/ride-history.model';
@@ -8,7 +9,7 @@ import { RideHistory } from './models/ride-history.model';
 @Component({
   selector: 'app-driver-history',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive],
   templateUrl: './driver-history.component.html',
   styleUrl: './driver-history.component.scss',
 })
