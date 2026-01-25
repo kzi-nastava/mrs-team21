@@ -26,7 +26,7 @@ export interface MapConfig {
   styleUrl: './map.component.scss',
 })
 export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
-  @ViewChild('mapContainer', { static: true }) mapContainer!: ElementRef;
+  @ViewChild('mapContainer') mapContainer!: ElementRef;
 
   @Input() config: MapConfig = {
     center: [19.8200, 45.2500], // Novi Sad [lng, lat] - Mapbox uses lng,lat order

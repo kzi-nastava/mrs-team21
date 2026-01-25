@@ -1,5 +1,6 @@
-import { Component, signal, OnInit, DestroyRef, inject } from '@angular/core';
+import { Component, signal, OnInit, OnDestroy, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subscription } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { RideEstimatePanelComponent } from '../components/ride-estimate-panel/ride-estimate-panel.component';
 import { MapComponent, MapConfig } from '../../map/map.component';
@@ -13,7 +14,7 @@ import { MapMarker, vehicleToMapMarker } from '../../map/models/vehicle.model';
   templateUrl: './landing-page.component.html',
   styleUrl: './landing-page.component.scss',
 })
-export class LandingPageComponent implements OnInit {
+export class LandingPageComponent implements OnInit, OnDestroy {
   isPanelOpen = signal(false);
   vehicleMarkers = signal<MapMarker[]>([]);
   mapConfig: MapConfig = {
@@ -22,6 +23,7 @@ export class LandingPageComponent implements OnInit {
   };
 
   private destroyRef = inject(DestroyRef);
+  private subscription!: Subscription;
 
   constructor(private vehicleService: VehicleMockService) {}
 
@@ -29,8 +31,13 @@ export class LandingPageComponent implements OnInit {
     this.loadVehicles();
   }
 
+  ngOnDestroy(): void {
+    // Clean up subscriptions
+    this.subscription.unsubscribe();
+  }
+
   private loadVehicles(): void {
-    this.vehicleService
+    this.subscription = this.vehicleService
       .getActiveVehicles()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((vehicles) => {
