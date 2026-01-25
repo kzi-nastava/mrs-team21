@@ -185,7 +185,9 @@
                     formControlName="category"
                     [class.error]="vehicleSubmitted && vf['category'].errors"
                   >
-                    <option *ngFor="let cat of vehicleCategories" [value]="cat">{{ cat }}</option>
+                    @for (cat of vehicleCategories; track cat) {
+                      <option [value]="cat">{{ cat }}</option>
+                    }
                   </select>
                   @if (vehicleSubmitted && vf['category'].errors) {
                     <div class="error-message">

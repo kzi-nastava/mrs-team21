@@ -215,13 +215,14 @@
               [class.danger]="getActiveHoursPercentage() >= 100"
             ></div>
             <div class="graph-markers">
-              <span
-                class="marker"
-                *ngFor="let hour of [0, 2, 4, 6, 8]"
-                [style.left.%]="hour * 12.5"
-              >
-                {{ hour }}h
-              </span>
+              @for (hour of [0, 2, 4, 6, 8]; track hour) {
+                <span
+                  class="marker"
+                  [style.left.%]="hour * 12.5"
+                >
+                  {{ hour }}h
+                </span>
+              }
             </div>
           </div>
           <p class="hours-description">
@@ -566,7 +567,9 @@
           <div class="form-group">
             <label for="vehicleCategory">Category</label>
             <select id="vehicleCategory" [(ngModel)]="editVehicleForm.category">
-              <option *ngFor="let cat of vehicleCategories" [value]="cat">{{ cat }}</option>
+              @for (cat of vehicleCategories; track cat) {
+                <option [value]="cat">{{ cat }}</option>
+              }
             </select>
           </div>
         </div>

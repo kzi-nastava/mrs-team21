@@ -195,69 +195,101 @@
           </tr>
         </thead>
         <tbody>
-          <tr
-            *ngFor="let ride of filteredRides()"
-            (click)="selectRide(ride)"
-            style="cursor: pointer"
-          >
-            <td>
-              <div class="date-cell">
-                <span class="date-value">{{ formatDate(ride.startTime) }}</span>
-                <span class="time-value">{{
-                  formatDateTimeRange(ride.startTime, ride.endTime)
-                }}</span>
-              </div>
-            </td>
-            <td>
-              <div class="passengers-cell">
-                <div class="passenger-avatars">
-                  <div
-                    *ngFor="let passenger of ride.passengers.slice(0, 3)"
-                    class="passenger-avatar"
-                  >
-                    {{ getPassengerInitials(passenger) }}
+          @for (ride of filteredRides(); track ride.id) {
+            <tr (click)="selectRide(ride)" style="cursor: pointer">
+              <td>
+                <div class="date-cell">
+                  <span class="date-value">{{ formatDate(ride.startTime) }}</span>
+                  <span class="time-value">{{
+                    formatDateTimeRange(ride.startTime, ride.endTime)
+                  }}</span>
+                </div>
+              </td>
+              <td>
+                <div class="passengers-cell">
+                  <div class="passenger-avatars">
+                    @for (passenger of ride.passengers.slice(0, 3); track passenger.email) {
+                      <div class="passenger-avatar">
+                        {{ getPassengerInitials(passenger) }}
+                      </div>
+                    }
+                    @if (ride.passengers.length > 3) {
+                      <div class="passenger-avatar">+{{ ride.passengers.length - 3 }}</div>
+                    }
                   </div>
-                  @if (ride.passengers.length > 3) {
-                    <div class="passenger-avatar">+{{ ride.passengers.length - 3 }}</div>
+                  <span class="passenger-count">{{
+                    getPassengerDisplayCount(ride.passengers.length)
+                  }}</span>
+                </div>
+              </td>
+              <td>
+                <div class="route-cell">
+                  <div class="route-markers">
+                    <div class="route-dot start"></div>
+                    <div class="route-line-small"></div>
+                    <div class="route-dot end"></div>
+                  </div>
+                  <div class="route-addresses">
+                    <span class="route-from">{{ ride.origin }}</span>
+                    <span class="route-to">{{ ride.destination }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span
+                  class="status-badge"
+                  [class.completed]="!ride.isCancelled && !ride.panicActivated"
+                  [class.cancelled]="ride.isCancelled"
+                >
+                  @if (!ride.isCancelled) {
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
                   }
-                </div>
-                <span class="passenger-count">{{
-                  getPassengerDisplayCount(ride.passengers.length)
-                }}</span>
-              </div>
-            </td>
-            <td>
-              <div class="route-cell">
-                <div class="route-markers">
-                  <div class="route-dot start"></div>
-                  <div class="route-line-small"></div>
-                  <div class="route-dot end"></div>
-                </div>
-                <div class="route-addresses">
-                  <span class="route-from">{{ ride.origin }}</span>
-                  <span class="route-to">{{ ride.destination }}</span>
-                </div>
-              </div>
-            </td>
-            <td>
-              <span
-                class="status-badge"
-                [class.completed]="!ride.isCancelled && !ride.panicActivated"
-                [class.cancelled]="ride.isCancelled"
-              >
+                  @if (ride.isCancelled) {
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="15" y1="9" x2="9" y2="15" />
+                      <line x1="9" y1="9" x2="15" y2="15" />
+                    </svg>
+                  }
+                  {{ ride.isCancelled ? 'Cancelled' : 'Completed' }}
+                </span>
+              </td>
+              <td>
+                @if (ride.isCancelled) {
+                  <span class="cancelled-by">
+                    By <span>{{ ride.cancelledBy === 'DRIVER' ? 'Driver' : 'Passenger' }}</span>
+                  </span>
+                }
                 @if (!ride.isCancelled) {
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
+                  <span class="cancelled-by">—</span>
+                }
+              </td>
+              <td class="price-cell">
+                @if (!ride.isCancelled) {
+                  <span>{{ formatCurrency(ride.cost) }}</span>
                 }
                 @if (ride.isCancelled) {
+                  <span>—</span>
+                }
+              </td>
+              <td>
+                <div class="panic-indicator" [class.active]="ride.panicActivated">
                   <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -266,51 +298,16 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                   >
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="15" y1="9" x2="9" y2="15" />
-                    <line x1="9" y1="9" x2="15" y2="15" />
+                    <path
+                      d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+                    />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
                   </svg>
-                }
-                {{ ride.isCancelled ? 'Cancelled' : 'Completed' }}
-              </span>
-            </td>
-            <td>
-              @if (ride.isCancelled) {
-                <span class="cancelled-by">
-                  By <span>{{ ride.cancelledBy === 'DRIVER' ? 'Driver' : 'Passenger' }}</span>
-                </span>
-              }
-              @if (!ride.isCancelled) {
-                <span class="cancelled-by">—</span>
-              }
-            </td>
-            <td class="price-cell">
-              @if (!ride.isCancelled) {
-                <span>{{ formatCurrency(ride.cost) }}</span>
-              }
-              @if (ride.isCancelled) {
-                <span>—</span>
-              }
-            </td>
-            <td>
-              <div class="panic-indicator" [class.active]="ride.panicActivated">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path
-                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-                  />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-              </div>
-            </td>
-          </tr>
+                </div>
+              </td>
+            </tr>
+          }
         </tbody>
       </table>
 
@@ -468,15 +465,17 @@
       <div class="detail-section">
         <div class="detail-section-title">Passengers ({{ selectedRide()!.passengers.length }})</div>
         <div class="passengers-list">
-          <div *ngFor="let passenger of selectedRide()!.passengers" class="passenger-card">
-            <div class="passenger-info">
-              <div class="passenger-name">{{ passenger.firstName }} {{ passenger.lastName }}</div>
-              <div class="passenger-contact">
-                <span>{{ passenger.email }}</span>
-                <span>{{ passenger.phone }}</span>
+          @for (passenger of selectedRide()!.passengers; track passenger.email) {
+            <div class="passenger-card">
+              <div class="passenger-info">
+                <div class="passenger-name">{{ passenger.firstName }} {{ passenger.lastName }}</div>
+                <div class="passenger-contact">
+                  <span>{{ passenger.email }}</span>
+                  <span>{{ passenger.phone }}</span>
+                </div>
               </div>
             </div>
-          </div>
+          }
         </div>
       </div>
     </div>
