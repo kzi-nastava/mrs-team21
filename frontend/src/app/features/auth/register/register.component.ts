@@ -74,15 +74,19 @@ export class RegisterComponent implements OnInit {
     this.showConfirmPassword = !this.showConfirmPassword;
   }
 
-  onFileSelected(event: Event): void {
+  async onFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.avatarPreview = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Modern approach using async file reading
+        const arrayBuffer = await file.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: file.type });
+        this.avatarPreview = URL.createObjectURL(blob);
+      } catch (error) {
+        console.error('Error reading file:', error);
+        this.avatarPreview = null;
+      }
     }
   }
 

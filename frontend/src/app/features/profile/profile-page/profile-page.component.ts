@@ -109,17 +109,20 @@ export class ProfilePageComponent {
    * Handle file selection for profile photo upload.
    * Shows preview before confirming.
    */
-  onFileSelected(event: Event): void {
+  async onFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       this.selectedFile = input.files[0];
       
-      // Create preview URL
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.previewUrl = e.target?.result as string;
-      };
-      reader.readAsDataURL(this.selectedFile);
+      try {
+        // Modern approach using async file reading
+        const arrayBuffer = await this.selectedFile.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: this.selectedFile.type });
+        this.previewUrl = URL.createObjectURL(blob);
+      } catch (error) {
+        console.error('Error reading file:', error);
+        this.previewUrl = null;
+      }
     }
   }
 
