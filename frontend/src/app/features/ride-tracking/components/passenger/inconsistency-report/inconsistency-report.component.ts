@@ -2,8 +2,8 @@ import { Component, inject, signal, OnInit, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RideTrackingMockService } from '../../services/ride-tracking-mock.service';
-import { ActiveRide } from '../../models/active-ride.model';
+import { RideTrackingMockService } from '../../../services/ride-tracking-mock.service';
+import { ActiveRide } from '../../../models/active-ride.model';
 
 @Component({
   selector: 'app-inconsistency-report',
