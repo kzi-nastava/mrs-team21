@@ -96,7 +96,7 @@ export class RegisterComponent implements OnInit {
       email: formValue.email,
       phone: formValue.countryCode + formValue.phone,
       address: formValue.address,
-      profilePhoto: this.selectedPhotoFile ? this.selectedPhotoFile.name : 'None',
+      profilePhoto: this.selectedPhotoFile ? this.selectedPhotoFile.name : null,
     });
     
     // TODO: Upload photo file to backend storage
