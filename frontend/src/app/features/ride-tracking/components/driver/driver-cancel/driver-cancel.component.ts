@@ -6,7 +6,7 @@ import {
   CancelRideResult,
   RideSummaryForCancel,
   DRIVER_CANCEL_REASONS,
-} from '../../models/cancel-ride.model';
+} from '../../../models/cancel-ride.model';
 
 @Component({
   selector: 'app-driver-cancel',

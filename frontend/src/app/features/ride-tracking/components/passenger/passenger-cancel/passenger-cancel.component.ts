@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CancelRideResult, RideSummaryForCancel } from '../../models/cancel-ride.model';
+import { CancelRideResult, RideSummaryForCancel } from '../../../models/cancel-ride.model';
 
 @Component({
   selector: 'app-passenger-cancel',

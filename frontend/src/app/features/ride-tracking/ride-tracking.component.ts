@@ -18,9 +18,9 @@ import { MapMarker } from '../map/models/vehicle.model';
 import { RideTrackingMockService } from './services/ride-tracking-mock.service';
 import { MapboxDirectionsService } from './services/mapbox-directions.service';
 import { ActiveRide, LocationUpdate } from './models/active-ride.model';
-import { PanicComponent, PanicRideInfo } from './components/panic/panic.component';
-import { StopRideComponent, StopRideInfo } from './components/stop-ride/stop-ride.component';
-import { InconsistencyReportComponent } from './components/inconsistency-report/inconsistency-report.component';
+import { PanicComponent, PanicRideInfo } from './components/shared/panic/panic.component';
+import { StopRideComponent, StopRideInfo } from './components/driver/stop-ride/stop-ride.component';
+import { InconsistencyReportComponent } from './components/passenger/inconsistency-report/inconsistency-report.component';
 
 @Component({
   selector: 'app-ride-tracking',
