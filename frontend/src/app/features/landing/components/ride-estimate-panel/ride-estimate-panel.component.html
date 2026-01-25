@@ -1,6 +1,6 @@
 <div class="side-panel" [class.open]="isOpen">
   <!-- Retract tab button -->
-  <button class="btn-retract" (click)="closePanel()" title="Close panel">
+  <button type="button" class="btn-retract" (click)="closePanel()" title="Close panel">
     <svg
       viewBox="0 0 24 24"
       fill="none"
@@ -18,7 +18,7 @@
       <h2>Estimate your ride</h2>
       <p>Enter locations to see price & time</p>
     </div>
-    <button class="btn-close-panel" (click)="closePanel()">
+    <button type="button" class="btn-close-panel" (click)="closePanel()">
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -91,6 +91,7 @@
       </div>
 
       <button
+        type="button"
         class="btn-calculate"
         (click)="calculateEstimate()"
         [disabled]="!pickupLocation() || !destinationLocation()"
@@ -148,7 +149,7 @@
         Create a free account to book rides, track your driver in real-time, and enjoy seamless
         travel.
       </p>
-      <a routerLink="/register" class="btn-cta">Sign up to book</a>
+      <a routerLink="/register-customer" class="btn-cta">Sign up to book</a>
     </div>
 
     <div class="guest-note">

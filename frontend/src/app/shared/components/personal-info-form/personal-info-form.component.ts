@@ -1,28 +1,27 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import {
-  ReactiveFormsModule,
-  FormGroup,
-} from '@angular/forms';
-import { NgIf, CommonModule } from '@angular/common';
+import { Component, Input, Output, EventEmitter, input, output } from '@angular/core';
+import { ReactiveFormsModule, FormGroup } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-personal-info-form',
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf, CommonModule],
+  imports: [ReactiveFormsModule, CommonModule],
   templateUrl: './personal-info-form.component.html',
   styleUrl: './personal-info-form.component.scss',
 })
 export class PersonalInfoFormComponent {
+  // need to mutate it
   @Input() form!: FormGroup;
-  @Input() submitted = false;
-  @Input() showPasswordFields = true;
-  @Input() emailHint = '';
   
-  @Output() togglePassword = new EventEmitter<void>();
-  @Output() toggleConfirmPassword = new EventEmitter<void>();
-
-  @Input() showPassword = false;
-  @Input() showConfirmPassword = false;
+  // read-only configuration
+  submitted = input(false);
+  showPasswordFields = input(true);
+  emailHint = input('');
+  showPassword = input(false);
+  showConfirmPassword = input(false);
+  
+  togglePassword = output<void>();
+  toggleConfirmPassword = output<void>();
 
   get f() {
     return this.form.controls;

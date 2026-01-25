@@ -1,5 +1,6 @@
-import { Component, signal, OnInit, DestroyRef, inject } from '@angular/core';
+import { Component, signal, OnInit, OnDestroy, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subscription } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { RideEstimatePanelComponent } from '../components/ride-estimate-panel/ride-estimate-panel.component';
 import { MapComponent, MapConfig } from '../../map/map.component';
@@ -22,20 +23,25 @@ export class LandingPageComponent implements OnInit {
   };
 
   private destroyRef = inject(DestroyRef);
-
-  constructor(private vehicleService: VehicleMockService) {}
+  private vehicleService = inject(VehicleMockService);
+  private subscription!: Subscription;
 
   ngOnInit(): void {
     this.loadVehicles();
   }
 
   private loadVehicles(): void {
-    this.vehicleService
+    this.subscription = this.vehicleService
       .getActiveVehicles()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((vehicles) => {
-        const markers = vehicles.map((v) => vehicleToMapMarker(v));
-        this.vehicleMarkers.set(markers);
+      .subscribe({
+        next: (vehicles) => {
+          const markers = vehicles.map((v) => vehicleToMapMarker(v));
+          this.vehicleMarkers.set(markers);
+        },
+        error: (error) => {
+          console.error('Error loading active vehicles:', error);
+        },
       });
   }
 

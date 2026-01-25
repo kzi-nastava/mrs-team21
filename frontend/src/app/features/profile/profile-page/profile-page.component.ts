@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ProfileMockService } from '../services/profile-mock.service';
 import { ProfileData, PersonalInfoForm, VehicleInfoForm, VehicleCategory } from '../models/profile.model';
@@ -8,13 +8,14 @@ import { ProfileData, PersonalInfoForm, VehicleInfoForm, VehicleCategory } from 
 @Component({
   selector: 'app-profile-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './profile-page.component.html',
   styleUrls: ['./profile-page.component.scss'],
 })
 export class ProfilePageComponent {
   private readonly profileService = inject(ProfileMockService);
   private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder);
 
   readonly profile: ProfileData = this.profileService.getProfile();
 
@@ -29,23 +30,23 @@ export class ProfilePageComponent {
   showPendingMessage = false;
   successMessage = '';
 
-  // Edit form data
-  editPersonalForm: PersonalInfoForm = {
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    address: '',
-  };
+  // Reactive forms
+  personalForm = this.fb.group({
+    firstName: [''],
+    lastName: [''],
+    email: [''],
+    phone: [''],
+    address: [''],
+  });
 
-  editVehicleForm: VehicleInfoForm = {
-    model: '',
-    category: 'Standard',
-    licensePlate: '',
-    seats: 4,
-    babySeats: false,
-    petFriendly: false,
-  };
+  vehicleForm = this.fb.group({
+    model: [''],
+    category: ['Standard'],
+    licensePlate: [''],
+    seats: [4],
+    babySeats: [false],
+    petFriendly: [false],
+  });
 
   // Vehicle category options
   vehicleCategories: VehicleCategory[] = ['Standard', 'Luxury', 'Van'];
@@ -108,17 +109,20 @@ export class ProfilePageComponent {
    * Handle file selection for profile photo upload.
    * Shows preview before confirming.
    */
-  onFileSelected(event: Event): void {
+  async onFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       this.selectedFile = input.files[0];
       
-      // Create preview URL
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.previewUrl = e.target?.result as string;
-      };
-      reader.readAsDataURL(this.selectedFile);
+      try {
+        // Modern approach using async file reading
+        const arrayBuffer = await this.selectedFile.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: this.selectedFile.type });
+        this.previewUrl = URL.createObjectURL(blob);
+      } catch (error) {
+        console.error('Error reading file:', error);
+        this.previewUrl = null;
+      }
     }
   }
 
@@ -168,13 +172,13 @@ export class ProfilePageComponent {
    */
   onEditProfile(): void {
     // Pre-fill form with current data
-    this.editPersonalForm = {
+    this.personalForm.patchValue({
       firstName: this.profile.firstName,
       lastName: this.profile.lastName,
       email: this.profile.email,
       phone: this.profile.phone,
       address: this.profile.address,
-    };
+    });
     this.showEditPersonalModal = true;
   }
 
@@ -193,7 +197,7 @@ export class ProfilePageComponent {
   savePersonalInfo(): void {
     if (this.isDriver()) {
       // Driver: Submit change request for admin approval
-      this.submitDriverChangeRequest('personal', this.editPersonalForm);
+      this.submitDriverChangeRequest('personal', this.personalForm.value as PersonalInfoForm);
     } else {
       // Passenger: Save directly
       this.savePassengerPersonalInfo();
@@ -206,17 +210,18 @@ export class ProfilePageComponent {
    */
   private savePassengerPersonalInfo(): void {
     // Update profile data locally
-    this.profile.firstName = this.editPersonalForm.firstName;
-    this.profile.lastName = this.editPersonalForm.lastName;
-    this.profile.email = this.editPersonalForm.email;
-    this.profile.phone = this.editPersonalForm.phone;
-    this.profile.address = this.editPersonalForm.address;
+    const values = this.personalForm.value as PersonalInfoForm;
+    this.profile.firstName = values.firstName;
+    this.profile.lastName = values.lastName;
+    this.profile.email = values.email;
+    this.profile.phone = values.phone;
+    this.profile.address = values.address;
 
     // TODO: Call backend API
     // this.profileService.updateProfile(this.editPersonalForm).subscribe(...)
 
     this.showSuccess('Your profile has been updated successfully!');
-    console.log('Passenger profile updated:', this.editPersonalForm);
+    console.log('Passenger profile updated:', values);
   }
 
   /**
@@ -251,14 +256,14 @@ export class ProfilePageComponent {
   onEditVehicle(): void {
     if (this.profile.vehicle) {
       // Pre-fill form with current data
-      this.editVehicleForm = {
+      this.vehicleForm.patchValue({
         model: this.profile.vehicle.model,
         category: this.profile.vehicle.category,
         licensePlate: this.profile.vehicle.licensePlate,
         seats: this.profile.vehicle.seats,
         babySeats: this.profile.vehicle.features.babySeats,
         petFriendly: this.profile.vehicle.features.petFriendly,
-      };
+      });
     }
     this.showEditVehicleModal = true;
   }
@@ -275,7 +280,7 @@ export class ProfilePageComponent {
    * Always submits as change request for admin approval (driver only)
    */
   saveVehicleInfo(): void {
-    this.submitDriverChangeRequest('vehicle', this.editVehicleForm);
+    this.submitDriverChangeRequest('vehicle', this.vehicleForm.value as VehicleInfoForm);
     this.closeEditVehicleModal();
   }
 

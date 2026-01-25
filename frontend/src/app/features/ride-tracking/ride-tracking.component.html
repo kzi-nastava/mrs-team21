@@ -16,22 +16,26 @@
           </svg>
           Back
         </a>
-        <div class="ride-info" *ngIf="activeRide()">
-          <h1 class="ride-title">Tracking Ride</h1>
-          <p class="ride-id">Ride #{{ rideId() }}</p>
-        </div>
-      </div>
-      <div class="header-right" *ngIf="activeRide()">
-        <div class="driver-info">
-          <div class="driver-name">
-            {{ activeRide()!.driver.firstName }}
-            {{ activeRide()!.driver.lastName }}
+        @if (activeRide()) {
+          <div class="ride-info">
+            <h1 class="ride-title">Tracking Ride</h1>
+            <p class="ride-id">Ride #{{ rideId() }}</p>
           </div>
-          <div class="vehicle-info">
-            {{ activeRide()!.vehicle.model }} • {{ activeRide()!.vehicle.licensePlate }}
+        }
+      </div>
+      @if (activeRide()) {
+        <div class="header-right">
+          <div class="driver-info">
+            <div class="driver-name">
+              {{ activeRide()!.driver.firstName }}
+              {{ activeRide()!.driver.lastName }}
+            </div>
+            <div class="vehicle-info">
+              {{ activeRide()!.vehicle.model }} • {{ activeRide()!.vehicle.licensePlate }}
+            </div>
           </div>
         </div>
-      </div>
+      }
     </div>
   </header>
 
@@ -51,239 +55,255 @@
     </div>
 
     <!-- Side Panel -->
-    <aside class="tracking-panel" *ngIf="activeRide()">
-      <!-- ETA Display -->
-      <div class="eta-section">
-        <div class="eta-label">Estimated Arrival</div>
-        <div class="eta-value">{{ formatETA(etaSeconds()) }}</div>
-      </div>
-
-      <!-- Route Info -->
-      <div class="route-section">
-        <div class="route-item">
-          <div class="route-marker start"></div>
-          <div class="route-content">
-            <div class="route-label">From</div>
-            <div class="route-address">{{ activeRide()!.startAddress }}</div>
-          </div>
+    @if (activeRide()) {
+      <aside class="tracking-panel">
+        <!-- ETA Display -->
+        <div class="eta-section">
+          <div class="eta-label">Estimated Arrival</div>
+          <div class="eta-value">{{ formatETA(etaSeconds()) }}</div>
         </div>
-        <div class="route-line"></div>
-        <div class="route-item">
-          <div class="route-marker end"></div>
-          <div class="route-content">
-            <div class="route-label">To</div>
-            <div class="route-address">
-              {{ activeRide()!.destinationAddress }}
+
+        <!-- Route Info -->
+        <div class="route-section">
+          <div class="route-item">
+            <div class="route-marker start"></div>
+            <div class="route-content">
+              <div class="route-label">From</div>
+              <div class="route-address">{{ activeRide()!.startAddress }}</div>
+            </div>
+          </div>
+          <div class="route-line"></div>
+          <div class="route-item">
+            <div class="route-marker end"></div>
+            <div class="route-content">
+              <div class="route-label">To</div>
+              <div class="route-address">
+                {{ activeRide()!.destinationAddress }}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Action Button -->
-      <div class="action-section">
-        <button class="btn-stop-ride" (click)="openStopModal()" type="button">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect x="6" y="4" width="4" height="16" />
-            <rect x="14" y="4" width="4" height="16" />
-          </svg>
-          Stop Ride
-        </button>
-        <button class="btn-panic" (click)="openPanicModal()" type="button">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-            />
-            <line x1="12" y1="9" x2="12" y2="13" />
-            <line x1="12" y1="17" x2="12.01" y2="17" />
-          </svg>
-          Emergency / Panic
-        </button>
-        <button class="btn-report" (click)="openInconsistencyForm()" type="button">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M12 9v4M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Report Inconsistency
-        </button>
-      </div>
-    </aside>
+        <!-- Action Button -->
+        <div class="action-section">
+          <button class="btn-stop-ride" (click)="openStopModal()" type="button">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="6" y="4" width="4" height="16" />
+              <rect x="14" y="4" width="4" height="16" />
+            </svg>
+            Stop Ride
+          </button>
+          <button class="btn-panic" (click)="openPanicModal()" type="button">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+              />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            Emergency / Panic
+          </button>
+          <button class="btn-report" (click)="openInconsistencyForm()" type="button">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 9v4M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Report Inconsistency
+          </button>
+        </div>
+      </aside>
+    }
   </main>
 
   <!-- Inconsistency Report Modal -->
-  <div class="modal-overlay" *ngIf="showInconsistencyForm()" (click)="closeInconsistencyForm()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2 class="modal-title">Report Driver Inconsistency</h2>
-        <button
-          class="modal-close"
-          (click)="closeInconsistencyForm()"
-          type="button"
-          aria-label="Close"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+  @if (showInconsistencyForm()) {
+    <div class="modal-overlay" (click)="closeInconsistencyForm()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">Report Driver Inconsistency</h2>
+          <button
+            class="modal-close"
+            (click)="closeInconsistencyForm()"
+            type="button"
+            aria-label="Close"
           >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <p class="modal-description">
-          If you notice the driver is taking an inappropriate route, please describe the issue
-          below. This report will be reviewed and included in ride history.
-        </p>
-
-        <div class="success-message" *ngIf="reportSubmitted()" role="alert">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-          </svg>
-          Report submitted successfully!
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
 
-        <form (ngSubmit)="submitInconsistencyReport()" *ngIf="!reportSubmitted()">
-          <div class="form-group">
-            <label for="inconsistency-note" class="form-label"> Describe the issue </label>
-            <textarea
-              id="inconsistency-note"
-              class="form-textarea"
-              [ngModel]="inconsistencyNote()"
-              (ngModelChange)="inconsistencyNote.set($event)"
-              name="inconsistencyNote"
-              placeholder="e.g., Driver is taking a longer route than necessary..."
-              rows="5"
-              required
-              minlength="10"
-            ></textarea>
-            <div class="form-hint">Minimum 10 characters required</div>
-          </div>
+        <div class="modal-body">
+          <p class="modal-description">
+            If you notice the driver is taking an inappropriate route, please describe the issue
+            below. This report will be reviewed and included in ride history.
+          </p>
 
-          <div class="form-actions">
-            <button type="button" class="btn-cancel" (click)="closeInconsistencyForm()">
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="btn-submit"
-              [disabled]="
-                isSubmittingReport() ||
-                !inconsistencyNote().trim() ||
-                inconsistencyNote().trim().length < 10
-              "
-            >
-              <span *ngIf="!isSubmittingReport()">Submit Report</span>
-              <span *ngIf="isSubmittingReport()">Submitting...</span>
-            </button>
-          </div>
-        </form>
+          @if (reportSubmitted()) {
+            <div class="success-message" role="alert">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              Report submitted successfully!
+            </div>
+          }
+
+          @if (!reportSubmitted()) {
+            <form (ngSubmit)="submitInconsistencyReport()">
+              <div class="form-group">
+                <label for="inconsistency-note" class="form-label"> Describe the issue </label>
+                <textarea
+                  id="inconsistency-note"
+                  class="form-textarea"
+                  [value]="inconsistencyNote()"
+                  (input)="inconsistencyNote.set($any($event.target).value)"
+                  name="inconsistencyNote"
+                  placeholder="e.g., Driver is taking a longer route than necessary..."
+                  rows="5"
+                  required
+                  minlength="10"
+                ></textarea>
+                <div class="form-hint">Minimum 10 characters required</div>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn-cancel" (click)="closeInconsistencyForm()">
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  class="btn-submit"
+                  [disabled]="
+                    isSubmittingReport() ||
+                    !inconsistencyNote().trim() ||
+                    inconsistencyNote().trim().length < 10
+                  "
+                >
+                  @if (!isSubmittingReport()) {
+                    <span>Submit Report</span>
+                  }
+                  @if (isSubmittingReport()) {
+                    <span>Submitting...</span>
+                  }
+                </button>
+              </div>
+            </form>
+          }
+        </div>
       </div>
     </div>
-  </div>
+  }
 
   <!-- Panic Modal -->
-  <div class="panic-modal-overlay" *ngIf="showPanicModal()" (click)="closePanicModal()">
-    <div class="panic-modal-content" (click)="$event.stopPropagation()">
-      <div class="panic-modal-header">
-        <h2 class="panic-modal-title">Emergency</h2>
-        <button
-          class="panic-modal-close"
-          (click)="closePanicModal()"
-          type="button"
-          aria-label="Close"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+  @if (showPanicModal()) {
+    <div class="panic-modal-overlay" (click)="closePanicModal()">
+      <div class="panic-modal-content" (click)="$event.stopPropagation()">
+        <div class="panic-modal-header">
+          <h2 class="panic-modal-title">Emergency</h2>
+          <button
+            class="panic-modal-close"
+            (click)="closePanicModal()"
+            type="button"
+            aria-label="Close"
           >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <app-panic-button
+          [rideInfo]="panicRideInfo()"
+          (panicActivated)="onPanicActivated()"
+          (contactSupport)="onContactSupport()"
+          (cancelRide)="onCancelRideFromPanic()"
+        >
+        </app-panic-button>
       </div>
-      <app-panic-button
-        [rideInfo]="panicRideInfo()"
-        (panicActivated)="onPanicActivated()"
-        (contactSupport)="onContactSupport()"
-        (cancelRide)="onCancelRideFromPanic()"
-      >
-      </app-panic-button>
     </div>
-  </div>
+  }
 
   <!-- Stop Ride Modal -->
-  <div class="stop-modal-overlay" *ngIf="showStopModal()" (click)="closeStopModal()">
-    <div
-      class="stop-modal-content"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="stop-modal-title"
-      (click)="$event.stopPropagation()"
-    >
-      <div class="stop-modal-header">
-        <h2 id="stop-modal-title" class="stop-modal-title">Stop Ride</h2>
-        <button
-          class="stop-modal-close"
-          (click)="closeStopModal()"
-          type="button"
-          aria-label="Close"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-      <app-stop-ride
-        [stopInfo]="stopRideInfo()"
-        (stopRide)="onStopRide()"
-        (continueRide)="onContinueRide()"
+  @if (showStopModal()) {
+    <div class="stop-modal-overlay" (click)="closeStopModal()">
+      <div
+        class="stop-modal-content"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="stop-modal-title"
+        (click)="$event.stopPropagation()"
       >
-      </app-stop-ride>
+        <div class="stop-modal-header">
+          <h2 id="stop-modal-title" class="stop-modal-title">Stop Ride</h2>
+          <button
+            class="stop-modal-close"
+            (click)="closeStopModal()"
+            type="button"
+            aria-label="Close"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <app-stop-ride
+          [stopInfo]="stopRideInfo()"
+          (stopRide)="onStopRide()"
+          (continueRide)="onContinueRide()"
+        >
+        </app-stop-ride>
+      </div>
     </div>
-  </div>
+  }
 </div>

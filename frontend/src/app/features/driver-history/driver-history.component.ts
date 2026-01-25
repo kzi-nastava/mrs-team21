@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+
 import { DriverHistoryMockService } from './services/driver-history-mock.service';
 import { RideHistory } from './models/ride-history.model';
 
@@ -67,7 +68,11 @@ export class DriverHistoryComponent implements OnInit {
   }
 
   selectRide(ride: RideHistory): void {
-    this.selectedRide.set(ride);
+    if (this.selectedRide() === ride) {
+      this.selectedRide.set(null);
+    } else {
+      this.selectedRide.set(ride);
+    }
   }
 
   closeDetails(): void {
@@ -106,7 +111,7 @@ export class DriverHistoryComponent implements OnInit {
   }
 
   getVehicleTypeLabel(type: string): string {
-    const labels: { [key: string]: string } = {
+    const labels: Record<string, string> = {
       STANDARD: 'Standard',
       LUXURY: 'Luxury',
       VAN: 'Van',
@@ -131,7 +136,7 @@ export class DriverHistoryComponent implements OnInit {
     return `${diffMins} min`;
   }
 
-  calculateDistance(origin: string, destination: string): string {
+  calculateDistance(_origin: string, _destination: string): string {
     // Mock distance calculation - in real app this would use map API
     return '3.2 km';
   }
