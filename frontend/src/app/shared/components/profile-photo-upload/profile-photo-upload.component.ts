@@ -100,10 +100,10 @@ export class ProfilePhotoUploadComponent implements ControlValueAccessor {
       this.selectedFile = croppedFile;
 
       // Create preview URL
+      if (this.previewUrl) {
+        URL.revokeObjectURL(this.previewUrl);
+      }
       this.previewUrl = URL.createObjectURL(croppedFile);
-
-      // Update current photo URL to show the new photo immediately
-      this.currentPhotoUrl = this.previewUrl;
 
       // Emit file selection
       this.fileSelected.emit(croppedFile);
@@ -113,6 +113,9 @@ export class ProfilePhotoUploadComponent implements ControlValueAccessor {
     } catch (error) {
       console.error('Error processing image:', error);
       this.errorMessage = 'Error processing image. Please try again.';
+      if (this.previewUrl) {
+        URL.revokeObjectURL(this.previewUrl);
+      }
       this.previewUrl = null;
       this.selectedFile = null;
     } finally {
@@ -205,7 +208,7 @@ export class ProfilePhotoUploadComponent implements ControlValueAccessor {
    * Get the display URL for the avatar
    */
   get displayUrl(): string {
-    return this.currentPhotoUrl || 'images/default-avatar.svg';
+    return this.previewUrl || this.currentPhotoUrl || 'images/default-avatar.svg';
   }
 
   // ControlValueAccessor implementation
