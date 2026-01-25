@@ -110,7 +110,7 @@ export class DriverHistoryComponent implements OnInit {
   }
 
   getVehicleTypeLabel(type: string): string {
-    const labels: { [key: string]: string } = {
+    const labels: Record<string, string> = {
       STANDARD: 'Standard',
       LUXURY: 'Luxury',
       VAN: 'Van',

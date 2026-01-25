@@ -19,8 +19,8 @@ import { NgClass, CommonModule } from '@angular/common';
 export class ResetPasswordComponent implements OnInit {
   resetPasswordForm!: FormGroup;
   submitted = false;
-  showPassword: boolean = false;
-  showConfirmPassword: boolean = false;
+  showPassword = false;
+  showConfirmPassword = false;
 
   constructor(private fb: FormBuilder) {}
 

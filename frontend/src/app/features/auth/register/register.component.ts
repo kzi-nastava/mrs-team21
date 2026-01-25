@@ -23,8 +23,8 @@ export class RegisterComponent implements OnInit {
 
   registerForm!: FormGroup;
   submitted = false;
-  showPassword: boolean = false;
-  showConfirmPassword: boolean = false;
+  showPassword = false;
+  showConfirmPassword = false;
   avatarPreview: string | null = null;
 
   ngOnInit(): void {
