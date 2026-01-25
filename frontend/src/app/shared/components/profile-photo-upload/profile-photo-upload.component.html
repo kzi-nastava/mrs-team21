@@ -3,9 +3,6 @@
   <div
     class="avatar-container"
     [class.disabled]="disabled"
-    [class.hovering]="isHovering"
-    (mouseenter)="isHovering = true"
-    (mouseleave)="isHovering = false"
     (click)="triggerFileInput(fileInput)"
     role="button"
     [attr.aria-label]="'Upload profile photo'"

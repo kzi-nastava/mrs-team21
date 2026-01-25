@@ -64,7 +64,6 @@ export class ProfilePhotoUploadComponent implements ControlValueAccessor {
   previewUrl: string | null = null;
   selectedFile: File | null = null;
   errorMessage: string | null = null;
-  isHovering = false;
 
   // ControlValueAccessor properties
   private onChange: (value: File | null) => void = () => {};
