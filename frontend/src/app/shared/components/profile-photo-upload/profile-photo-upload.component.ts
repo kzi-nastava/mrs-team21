@@ -115,6 +115,9 @@ export class ProfilePhotoUploadComponent implements ControlValueAccessor {
       this.errorMessage = 'Error processing image. Please try again.';
       this.previewUrl = null;
       this.selectedFile = null;
+    } finally {
+      // Reset input so users can re-select the same file
+      input.value = '';
     }
   }
 
@@ -153,8 +156,9 @@ export class ProfilePhotoUploadComponent implements ControlValueAccessor {
           (blob) => {
             if (blob) {
               // Create new file with original name
+              // Use blob.type (actual MIME type) in case browser fell back to different format
               const croppedFile = new File([blob], file.name, {
-                type: file.type,
+                type: blob.type || file.type,
                 lastModified: Date.now(),
               });
               resolve(croppedFile);
