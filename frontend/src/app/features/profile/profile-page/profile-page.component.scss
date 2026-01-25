@@ -159,56 +159,13 @@
   align-items: flex-start;
 }
 
-.photo-section {
+/* Photo and user info wrapper */
+.photo-and-info {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 16px;
   min-width: 180px;
-}
-
-.avatar-wrapper {
-  position: relative;
-  margin-bottom: 16px;
-}
-
-.avatar {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: var(--bg-warm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  box-shadow: var(--shadow-md);
-  
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-}
-
-.avatar-upload-btn {
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  width: 34px;
-  height: 34px;
-  background: var(--primary);
-  border: 3px solid var(--white);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  padding: 0;
-  
-  &:hover {
-    background: var(--primary-dark);
-    transform: scale(1.05);
-  }
 }
 
 .user-name {
@@ -237,36 +194,12 @@
   }
 }
 
-/* Photo Preview */
-.photo-preview {
-  background: var(--bg-warm);
-  border-radius: var(--radius-md);
-  padding: 12px;
-  margin-top: 16px;
-  text-align: center;
-}
-
-.preview-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-light);
-  margin-bottom: 8px;
-}
-
-.preview-image {
-  width: 100px;
-  height: 100px;
-  object-fit: cover;
-  border-radius: var(--radius-sm);
-  margin-bottom: 12px;
-}
-
-.preview-actions {
+/* User info section - wraps name and role badge */
+.user-info-section {
   display: flex;
-  gap: 8px;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
 }
 
 /* Personal Info Section */

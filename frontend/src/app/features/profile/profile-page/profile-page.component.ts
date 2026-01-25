@@ -4,11 +4,12 @@ import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ProfileMockService } from '../services/profile-mock.service';
 import { ProfileData, PersonalInfoForm, VehicleInfoForm, VehicleCategory } from '../models/profile.model';
+import { ProfilePhotoUploadComponent } from '../../../shared/components/profile-photo-upload/profile-photo-upload.component';
 
 @Component({
   selector: 'app-profile-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ProfilePhotoUploadComponent],
   templateUrl: './profile-page.component.html',
   styleUrls: ['./profile-page.component.scss'],
 })
@@ -19,8 +20,7 @@ export class ProfilePageComponent {
 
   readonly profile: ProfileData = this.profileService.getProfile();
 
-  // Photo upload preview
-  previewUrl: string | null = null;
+  // Photo upload
   private selectedFile: File | null = null;
 
   // Edit modal states
@@ -106,49 +106,28 @@ export class ProfilePageComponent {
   }
 
   /**
-   * Handle file selection for profile photo upload.
-   * Shows preview before confirming.
+   * Handle file selection from shared component.
+   * File is already cropped to 1:1 by the component.
    */
-  async onFileSelected(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.selectedFile = input.files[0];
-      
-      try {
-        // Modern approach using async file reading
-        const arrayBuffer = await this.selectedFile.arrayBuffer();
-        const blob = new Blob([arrayBuffer], { type: this.selectedFile.type });
-        this.previewUrl = URL.createObjectURL(blob);
-      } catch (error) {
-        console.error('Error reading file:', error);
-        this.previewUrl = null;
-      }
-    }
-  }
-
-  /**
-   * Confirm and save the selected photo.
-   * TODO: Implement actual upload to backend
-   */
-  confirmPhotoUpload(): void {
-    if (this.selectedFile && this.previewUrl) {
-      // TODO: Upload to backend
-      // this.profileService.uploadAvatar(this.selectedFile).subscribe(...)
-      
-      // For now, just update the local preview
-      this.profile.avatarUrl = this.previewUrl;
-      console.log('Photo uploaded:', this.selectedFile.name);
-      
-      this.cancelPhotoUpload();
-    }
-  }
-
-  /**
-   * Cancel photo upload and clear preview.
-   */
-  cancelPhotoUpload(): void {
-    this.previewUrl = null;
-    this.selectedFile = null;
+  onPhotoSelected(file: File): void {
+    this.selectedFile = file;
+    console.log('Photo selected (auto-cropped to 1:1):', file.name, file.size, 'bytes');
+    
+    // TODO: Upload to backend immediately
+    // this.uploadService.uploadProfilePhoto(file).subscribe({
+    //   next: (url) => {
+    //     this.userService.updateProfile({ profilePictureUrl: url }).subscribe({
+    //       next: () => {
+    //         this.profile.avatarUrl = url;
+    //         this.showSuccessMessage('Profile photo updated successfully');
+    //       }
+    //     });
+    //   },
+    //   error: (err) => console.error('Upload failed:', err)
+    // });
+    
+    // For now, update preview only (backend integration pending)
+    this.profile.avatarUrl = URL.createObjectURL(file);
   }
 
   /**

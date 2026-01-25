@@ -10,11 +10,12 @@ import {
 } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { PersonalInfoFormComponent } from '../../../shared/components/personal-info-form/personal-info-form.component';
+import { ProfilePhotoUploadComponent } from '../../../shared/components/profile-photo-upload/profile-photo-upload.component';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, CommonModule, PersonalInfoFormComponent],
+  imports: [RouterLink, ReactiveFormsModule, CommonModule, PersonalInfoFormComponent, ProfilePhotoUploadComponent],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss',
 })
@@ -25,7 +26,7 @@ export class RegisterComponent implements OnInit {
   submitted = false;
   showPassword = false;
   showConfirmPassword = false;
-  avatarPreview: string | null = null;
+  selectedPhotoFile: File | null = null;
 
   ngOnInit(): void {
     this.registerForm = this.fb.group(
@@ -73,20 +74,11 @@ export class RegisterComponent implements OnInit {
     this.showConfirmPassword = !this.showConfirmPassword;
   }
 
-  async onFileSelected(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      try {
-        // Modern approach using async file reading
-        const arrayBuffer = await file.arrayBuffer();
-        const blob = new Blob([arrayBuffer], { type: file.type });
-        this.avatarPreview = URL.createObjectURL(blob);
-      } catch (error) {
-        console.error('Error reading file:', error);
-        this.avatarPreview = null;
-      }
-    }
+  onPhotoSelected(file: File): void {
+    this.selectedPhotoFile = file;
+    console.log('Photo selected (auto-cropped to 1:1):', file.name, file.size, 'bytes');
+    // TODO: Upload to backend storage and get URL
+    // this.uploadService.uploadProfilePhoto(file).subscribe(url => ...);
   }
 
   onSubmit(): void {
@@ -104,6 +96,14 @@ export class RegisterComponent implements OnInit {
       email: formValue.email,
       phone: formValue.countryCode + formValue.phone,
       address: formValue.address,
+      profilePhoto: this.selectedPhotoFile ? this.selectedPhotoFile.name : null,
     });
+    
+    // TODO: Upload photo file to backend storage
+    // if (this.selectedPhotoFile) {
+    //   this.uploadService.uploadProfilePhoto(this.selectedPhotoFile).subscribe(
+    //     url => { formData.profilePictureUrl = url; }
+    //   );
+    // }
   }
 }

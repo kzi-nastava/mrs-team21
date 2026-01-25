@@ -1,0 +1,101 @@
+// Unified Profile Photo Upload Component
+:host {
+  display: inline-block;
+}
+
+.profile-photo-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+// Avatar Container - clickable with hover effect
+.avatar-container {
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+
+  &:hover:not(.disabled) {
+    transform: scale(1.02);
+
+    .upload-overlay {
+      opacity: 1;
+    }
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--primary, #5b4cdb);
+    outline-offset: 4px;
+    border-radius: 50%;
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+// Avatar Image
+.avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--bg-warm, #f9f7f3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(91, 76, 219, 0.12));
+  border: 3px solid var(--white, #ffffff);
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+// Upload Overlay - shows on hover
+.upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+
+  svg {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  }
+}
+
+.upload-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--white, #ffffff);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+// Error Message
+.error-message {
+  font-size: 12px;
+  color: #dc3545;
+  text-align: center;
+  padding: 8px 12px;
+  background: rgba(220, 53, 69, 0.1);
+  border-radius: var(--radius-sm, 12px);
+  border: 1px solid rgba(220, 53, 69, 0.2);
+  max-width: 200px;
+}

@@ -7,6 +7,7 @@ import {
 } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { PersonalInfoFormComponent } from '../../../shared/components/personal-info-form/personal-info-form.component';
+import { ProfilePhotoUploadComponent } from '../../../shared/components/profile-photo-upload/profile-photo-upload.component';
 
 type VehicleCategory = 'Standard' | 'Luxury' | 'Van';
 
@@ -31,7 +32,7 @@ interface VehicleFormData {
 @Component({
   selector: 'app-driver-registration',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule, PersonalInfoFormComponent],
+  imports: [ReactiveFormsModule, CommonModule, PersonalInfoFormComponent, ProfilePhotoUploadComponent],
   templateUrl: './driver-registration.component.html',
   styleUrl: './driver-registration.component.scss',
 })
@@ -49,6 +50,8 @@ export class DriverRegistrationComponent implements OnInit {
   
   showSuccessMessage = false;
   isSubmitting = false;
+  
+  selectedPhotoFile: File | null = null;
 
   vehicleCategories: VehicleCategory[] = ['Standard', 'Luxury', 'Van'];
 
@@ -85,6 +88,13 @@ export class DriverRegistrationComponent implements OnInit {
 
   get vf() {
     return this.vehicleForm.controls;
+  }
+
+  onPhotoSelected(file: File): void {
+    this.selectedPhotoFile = file;
+    console.log('Driver photo selected (auto-cropped to 1:1):', file.name, file.size, 'bytes');
+    // TODO: Upload to backend storage and get URL
+    // this.uploadService.uploadProfilePhoto(file).subscribe(url => ...);
   }
 
   nextStep(): void {
@@ -149,6 +159,7 @@ export class DriverRegistrationComponent implements OnInit {
         email: driverData.email,
         phone: driverData.countryCode + driverData.phone,
         address: driverData.address,
+        profilePhoto: this.selectedPhotoFile ? this.selectedPhotoFile.name : null,
       },
       vehicle: {
         model: vehicleData.model,
@@ -164,8 +175,9 @@ export class DriverRegistrationComponent implements OnInit {
 
     // TODO: Implement API call to create driver
     // The backend will:
-    // 1. Create the driver account with a generated password
-    // 2. Send an email with password reset link to the driver
+    // 1. Upload profile photo to storage if provided
+    // 2. Create the driver account with a generated password
+    // 3. Send an email with password reset link to the driver
     console.log('Driver registration submitted:', registrationPayload);
 
     // Simulate API call
@@ -180,6 +192,7 @@ export class DriverRegistrationComponent implements OnInit {
     this.currentStep = 1;
     this.driverSubmitted = false;
     this.vehicleSubmitted = false;
+    this.selectedPhotoFile = null;
     this.driverForm.reset({
       countryCode: '+381',
     });

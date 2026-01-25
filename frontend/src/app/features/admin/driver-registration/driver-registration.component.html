@@ -117,6 +117,13 @@
               <h2 class="section-title">Personal Information</h2>
               <p class="section-desc">Enter the driver's personal details</p>
 
+              <!-- Profile Photo Upload (auto-crops to 1:1) -->
+              <div class="photo-upload-section">
+                <div class="photo-label">Profile picture</div>
+                <app-profile-photo-upload (fileSelected)="onPhotoSelected($event)">
+                </app-profile-photo-upload>
+              </div>
+
               <!-- Reusable Personal Info Form Component -->
               <app-personal-info-form
                 [form]="driverForm"

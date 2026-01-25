@@ -184,8 +184,33 @@
 .section-desc {
   font-size: 14px;
   color: var(--text-light);
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
+
+// Photo Upload Section
+.photo-upload-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(91, 76, 219, 0.02) 0%, transparent 100%);
+}
+
+.photo-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-medium);
+  text-align: center;
+}
+
+app-profile-photo-upload {
+  display: inline-block;
+}
+
+// Photo Feedback (removed - using static label instead)
 
 // Form Elements
 .form-row {
