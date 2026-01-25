@@ -11,7 +11,7 @@
     [attr.aria-label]="'Upload profile photo'"
     [tabindex]="disabled ? -1 : 0"
     (keydown.enter)="triggerFileInput(fileInput)"
-    (keydown.space)="triggerFileInput(fileInput)"
+    (keydown.space)="$event.preventDefault(); triggerFileInput(fileInput)"
   >
     <!-- Avatar Image -->
     <div class="avatar" [style.width.px]="size" [style.height.px]="size">
