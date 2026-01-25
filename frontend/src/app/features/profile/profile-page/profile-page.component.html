@@ -70,62 +70,20 @@
       </button>
 
       <div class="personal-card-layout">
-        <!-- Left: Photo Section -->
-        <div class="photo-section">
-          <div class="avatar-wrapper">
-            <div class="avatar">
-              <img
-                [src]="profile.avatarUrl || 'images/default-avatar.svg'"
-                alt="Profile photo"
-                (error)="onImageError($event)"
-              />
-            </div>
-            <input
-              type="file"
-              #fileInput
-              hidden
-              accept="image/*"
-              (change)="onFileSelected($event)"
-            />
-            <button
-              class="avatar-upload-btn"
-              type="button"
-              (click)="fileInput.click()"
-              aria-label="Upload profile photo"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path
-                  d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
-                  stroke="white"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <circle cx="12" cy="13" r="4" stroke="white" stroke-width="2" />
-              </svg>
-            </button>
+        <!-- Left: Photo Section - Shared Component (auto-crops to 1:1) -->
+        <div class="photo-and-info">
+          <app-profile-photo-upload
+            [currentPhotoUrl]="profile.avatarUrl"
+            (fileSelected)="onPhotoSelected($event)"
+          >
+          </app-profile-photo-upload>
+
+          <div class="user-info-section">
+            <h2 class="user-name">{{ fullName() }}</h2>
+            <span class="user-role-badge" [class.driver]="isDriver()">
+              {{ profile.role === 'DRIVER' ? 'Driver' : 'Passenger' }}
+            </span>
           </div>
-
-          <h2 class="user-name">{{ fullName() }}</h2>
-          <span class="user-role-badge" [class.driver]="isDriver()">
-            {{ profile.role === 'DRIVER' ? 'Driver' : 'Passenger' }}
-          </span>
-
-          <!-- Photo Preview -->
-          @if (previewUrl) {
-            <div class="photo-preview">
-              <p class="preview-label">Preview</p>
-              <img [src]="previewUrl" alt="Photo preview" class="preview-image" />
-              <div class="preview-actions">
-                <button class="btn-secondary btn-sm" type="button" (click)="cancelPhotoUpload()">
-                  Cancel
-                </button>
-                <button class="btn-primary btn-sm" type="button" (click)="confirmPhotoUpload()">
-                  Save
-                </button>
-              </div>
-            </div>
-          }
         </div>
 
         <!-- Right: Personal Info Grid -->
