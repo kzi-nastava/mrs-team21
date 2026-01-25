@@ -67,48 +67,9 @@
     </div>
 
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
-      <!-- Avatar Upload -->
-      <div class="avatar-section">
-        <div class="avatar-preview">
-          @if (avatarPreview) {
-            <img [src]="avatarPreview" alt="Avatar preview" />
-          }
-          @if (!avatarPreview) {
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          }
-        </div>
-        <div class="avatar-info">
-          <h4>Profile photo <span class="optional-badge">Optional</span></h4>
-          <p>Upload a photo so drivers can recognize you</p>
-          <input
-            type="file"
-            id="avatar-input"
-            accept="image/*"
-            (change)="onFileSelected($event)"
-            hidden
-          />
-          <button type="button" class="btn-upload" (click)="avatarInput.click()">
-            Upload photo
-          </button>
-          <input
-            #avatarInput
-            type="file"
-            accept="image/*"
-            (change)="onFileSelected($event)"
-            hidden
-          />
-        </div>
-      </div>
+      <!-- Avatar Upload - Shared Component (auto-crops to 1:1) -->
+      <app-profile-photo-upload (fileSelected)="onPhotoSelected($event)">
+      </app-profile-photo-upload>
 
       <!-- Personal Info - Reusable Component -->
       <app-personal-info-form
