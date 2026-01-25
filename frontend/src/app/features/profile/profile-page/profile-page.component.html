@@ -430,7 +430,7 @@
         </button>
       </div>
 
-      <div class="modal-body" [formGroup]="personalForm">
+      <form class="modal-body" [formGroup]="personalForm">
         <div class="form-row">
           <div class="form-group">
             <label for="firstName">First Name</label>
@@ -500,7 +500,7 @@
             </p>
           </div>
         }
-      </div>
+      </form>
 
       <div class="modal-footer">
         <button class="btn-secondary" type="button" (click)="closeEditPersonalModal()">
@@ -538,7 +538,7 @@
         </button>
       </div>
 
-      <div class="modal-body" [formGroup]="vehicleForm">
+      <form class="modal-body" [formGroup]="vehicleForm">
         <div class="form-row">
           <div class="form-group">
             <label for="vehicleModel">Vehicle Model</label>
@@ -622,7 +622,7 @@
           </svg>
           <p>Vehicle changes require admin approval before taking effect.</p>
         </div>
-      </div>
+      </form>
 
       <div class="modal-footer">
         <button class="btn-secondary" type="button" (click)="closeEditVehicleModal()">
