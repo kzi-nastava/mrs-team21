@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   ReactiveFormsModule,
@@ -20,13 +20,13 @@ import { PersonalInfoFormComponent } from '../../../shared/components/personal-i
   styleUrl: './register.component.scss',
 })
 export class RegisterComponent implements OnInit {
+  private fb = inject(FormBuilder);
+
   registerForm!: FormGroup;
   submitted = false;
   showPassword: boolean = false;
   showConfirmPassword: boolean = false;
   avatarPreview: string | null = null;
-
-  constructor(private fb: FormBuilder) {}
 
   ngOnInit(): void {
     this.registerForm = this.fb.group(

@@ -23,9 +23,8 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   };
 
   private destroyRef = inject(DestroyRef);
+  private vehicleService = inject(VehicleMockService);
   private subscription!: Subscription;
-
-  constructor(private vehicleService: VehicleMockService) {}
 
   ngOnInit(): void {
     this.loadVehicles();

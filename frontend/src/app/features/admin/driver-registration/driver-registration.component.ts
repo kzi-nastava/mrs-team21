@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import {
   ReactiveFormsModule,
   FormBuilder,
@@ -36,6 +36,8 @@ interface VehicleFormData {
   styleUrl: './driver-registration.component.scss',
 })
 export class DriverRegistrationComponent implements OnInit {
+  private fb = inject(FormBuilder);
+
   currentStep = 1;
   totalSteps = 2;
   
@@ -49,8 +51,6 @@ export class DriverRegistrationComponent implements OnInit {
   isSubmitting = false;
 
   vehicleCategories: VehicleCategory[] = ['Standard', 'Luxury', 'Van'];
-
-  constructor(private fb: FormBuilder) {}
 
   ngOnInit(): void {
     this.initDriverForm();
