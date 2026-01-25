@@ -12,7 +12,7 @@ import { ActiveRide } from '../../../models/active-ride.model';
   templateUrl: './inconsistency-report.component.html',
   styleUrl: './inconsistency-report.component.scss',
 })
-export class InconsistencyReportComponent implements OnInit {
+export class InconsistencyReportComponent {
   private destroyRef = inject(DestroyRef);
   private rideTrackingService = inject(RideTrackingMockService);
 
@@ -21,8 +21,6 @@ export class InconsistencyReportComponent implements OnInit {
   inconsistencyNote = signal<string>('');
   isSubmittingReport = signal<boolean>(false);
   reportSubmitted = signal<boolean>(false);
-
-  ngOnInit(): void {}
 
   openModal(): void {
     this.showModal.set(true);
