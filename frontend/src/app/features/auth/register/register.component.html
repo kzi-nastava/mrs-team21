@@ -68,8 +68,11 @@
 
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
       <!-- Avatar Upload - Shared Component (auto-crops to 1:1) -->
-      <app-profile-photo-upload (fileSelected)="onPhotoSelected($event)">
-      </app-profile-photo-upload>
+      <div class="photo-upload-wrapper">
+        <div class="photo-label">Set your profile picture</div>
+        <app-profile-photo-upload (fileSelected)="onPhotoSelected($event)">
+        </app-profile-photo-upload>
+      </div>
 
       <!-- Personal Info - Reusable Component -->
       <app-personal-info-form

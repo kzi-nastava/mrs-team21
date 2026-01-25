@@ -164,7 +164,27 @@ $radius-lg: 24px;
   }
 }
 
-// Avatar Upload styles are now in the shared component
+// Photo Upload Section
+.photo-upload-wrapper {
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid $border;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.photo-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: $text-medium;
+  text-align: center;
+}
+
+app-profile-photo-upload {
+  display: block;
+}
 
 // Form Elements
 .form-row {
@@ -286,6 +306,9 @@ $radius-lg: 24px;
 // Terms Section
 .terms-section {
   margin-bottom: 24px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid $border;
 }
 
 .checkbox-wrapper {
@@ -346,6 +369,33 @@ $radius-lg: 24px;
 }
 
 // Activation Note
+.activation-note {
+  margin-top: 20px;
+  padding: 16px;
+  background: rgba(91, 76, 219, 0.05);
+  border: 1px solid rgba(91, 76, 219, 0.15);
+  border-radius: $radius-md;
+  display: flex;
+  gap: 12px;
+
+  svg {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    color: $primary;
+    margin-top: 2px;
+  }
+
+  p {
+    font-size: 13px;
+    color: $text-medium;
+    margin: 0;
+    line-height: 1.5;
+  }
+}
+
+// Photo Upload Feedback (removed - using static label instead)
+
 .activation-note {
   display: flex;
   align-items: flex-start;
