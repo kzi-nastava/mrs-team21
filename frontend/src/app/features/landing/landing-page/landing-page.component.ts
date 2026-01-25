@@ -39,9 +39,14 @@ export class LandingPageComponent implements OnInit, OnDestroy {
     this.subscription = this.vehicleService
       .getActiveVehicles()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((vehicles) => {
-        const markers = vehicles.map((v) => vehicleToMapMarker(v));
-        this.vehicleMarkers.set(markers);
+      .subscribe({
+        next: (vehicles) => {
+          const markers = vehicles.map((v) => vehicleToMapMarker(v));
+          this.vehicleMarkers.set(markers);
+        },
+        error: (error) => {
+          console.error('Error loading active vehicles:', error);
+        },
       });
   }
 

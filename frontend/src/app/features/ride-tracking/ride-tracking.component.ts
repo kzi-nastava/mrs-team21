@@ -128,6 +128,10 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (ride) => {
+          if (!ride) {
+            console.error('Received null ride data');
+            return;
+          }
           this.activeRide.set(ride);
           this.currentLocation.set(ride.currentLocation);
           this.etaSeconds.set(ride.estimatedArrivalTime);
@@ -142,6 +146,11 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private calculateRouteCoordinates(ride: ActiveRide): void {
+    if (!ride) {
+      console.warn('Cannot calculate route coordinates: ride is null');
+      return;
+    }
+    
     if (ride.route && ride.route.length > 0) {
       // Use waypoints from route
       const coordinates: [number, number][] = [...ride.route]
@@ -252,7 +261,7 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private updateMapView(): void {
     const displayLoc = this.getDisplayLocation();
-    if (displayLoc && this.mapComponent) {
+    if (displayLoc && this.mapComponent?.getMap()) {
       this.mapComponent.setView(displayLoc.lat, displayLoc.lng);
     }
   }
