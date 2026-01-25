@@ -21,6 +21,7 @@ export interface RideSummaryForCancel {
     id: string;
     firstName: string;
     lastName: string;
+    initials: string;
     rating: number;
     vehicle: string;
   };
@@ -28,6 +29,7 @@ export interface RideSummaryForCancel {
     id: string;
     firstName: string;
     lastName: string;
+    initials: string;
     rating: number;
     totalRides: number;
   };
