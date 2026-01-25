@@ -23,19 +23,19 @@
       <div class="route-summary">
         <div class="route-point">
           <span class="dot start"></span>
-          <span class="address">{{ ride.pickup }}</span>
+          <span class="address">{{ ride.startAddress }}</span>
         </div>
         <div class="route-point">
           <span class="dot end"></span>
-          <span class="address">{{ ride.dropoff }}</span>
+          <span class="address">{{ ride.destinationAddress }}</span>
         </div>
       </div>
 
       @if (ride.driver) {
         <div class="driver-summary">
           <span class="driver-avatar">{{ ride.driver.initials }}</span>
-          <span class="driver-name">{{ ride.driver.name }}</span>
-          <span class="driver-car">{{ ride.driver.car }}</span>
+          <span class="driver-name">{{ ride.driver.firstName }} {{ ride.driver.lastName }}</span>
+          <span class="driver-car">{{ ride.driver.vehicle }}</span>
         </div>
       }
     </div>

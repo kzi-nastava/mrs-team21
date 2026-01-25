@@ -19,7 +19,7 @@
             }
           </span>
         </div>
-        <span class="ride-id">Ride #{{ ride.id }}</span>
+        <span class="ride-id">Ride #{{ ride.rideId }}</span>
       </div>
 
       <div class="ride-route">
@@ -31,11 +31,11 @@
         <div class="route-details">
           <div class="route-point">
             <div class="route-label">Pickup</div>
-            <div class="route-address">{{ ride.pickup }}</div>
+            <div class="route-address">{{ ride.startAddress }}</div>
           </div>
           <div class="route-point">
             <div class="route-label">Drop-off</div>
-            <div class="route-address">{{ ride.dropoff }}</div>
+            <div class="route-address">{{ ride.destinationAddress }}</div>
           </div>
         </div>
       </div>
@@ -45,7 +45,9 @@
         <div class="passenger-info">
           <div class="passenger-avatar">{{ ride.passenger.initials }}</div>
           <div class="passenger-details">
-            <div class="passenger-name">{{ ride.passenger.name }}</div>
+            <div class="passenger-name">
+              {{ ride.passenger.firstName }} {{ ride.passenger.lastName }}
+            </div>
             <div class="passenger-meta">Passenger</div>
           </div>
         </div>
