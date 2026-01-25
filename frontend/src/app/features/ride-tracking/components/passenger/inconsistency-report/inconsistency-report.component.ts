@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, DestroyRef } from '@angular/core';
+import { Component, inject, signal, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -13,6 +13,8 @@ import { ActiveRide } from '../../../models/active-ride.model';
   styleUrl: './inconsistency-report.component.scss',
 })
 export class InconsistencyReportComponent {
+  private readonly MODAL_CLOSE_DELAY_MS = 2000;
+
   private destroyRef = inject(DestroyRef);
   private rideTrackingService = inject(RideTrackingMockService);
 
@@ -60,7 +62,7 @@ export class InconsistencyReportComponent {
           this.isSubmittingReport.set(false);
           const timeoutId = setTimeout(() => {
             this.closeModal();
-          }, 2000);
+          }, this.MODAL_CLOSE_DELAY_MS);
           this.destroyRef.onDestroy(() => clearTimeout(timeoutId));
         },
         error: (error) => {
