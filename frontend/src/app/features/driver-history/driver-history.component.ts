@@ -135,7 +135,7 @@ export class DriverHistoryComponent implements OnInit {
     return `${diffMins} min`;
   }
 
-  calculateDistance(origin: string, destination: string): string {
+  calculateDistance(_origin: string, _destination: string): string {
     // Mock distance calculation - in real app this would use map API
     return '3.2 km';
   }
