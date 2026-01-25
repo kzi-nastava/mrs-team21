@@ -14,7 +14,7 @@ import { MapMarker, vehicleToMapMarker } from '../../map/models/vehicle.model';
   templateUrl: './landing-page.component.html',
   styleUrl: './landing-page.component.scss',
 })
-export class LandingPageComponent implements OnInit, OnDestroy {
+export class LandingPageComponent implements OnInit {
   isPanelOpen = signal(false);
   vehicleMarkers = signal<MapMarker[]>([]);
   mapConfig: MapConfig = {
@@ -28,11 +28,6 @@ export class LandingPageComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadVehicles();
-  }
-
-  ngOnDestroy(): void {
-    // Clean up subscriptions
-    this.subscription.unsubscribe();
   }
 
   private loadVehicles(): void {
