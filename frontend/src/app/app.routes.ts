@@ -73,6 +73,11 @@ export const routes: Routes = [
             (m) => m.RideTrackingComponent,
           ),
       },
+      {
+        path: 'order-ride',
+        loadComponent: () =>
+          import('./features/order-ride/order-ride.component').then((m) => m.OrderRideComponent),
+      },
     ],
   },
   // Catch-all

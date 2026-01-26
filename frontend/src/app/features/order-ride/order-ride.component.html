@@ -1,0 +1,396 @@
+<div class="order-ride-container">
+  <!-- Map Section -->
+  <div class="map-section">
+    <app-map class="full-map" [showControls]="true" [showRoute]="false"></app-map>
+  </div>
+
+  <!-- Form Section -->
+  <div class="form-section">
+    <!-- Step Indicator -->
+    <div class="step-indicator">
+      <div
+        class="step"
+        [class.active]="getStepStatus(1) === 'active'"
+        [class.completed]="getStepStatus(1) === 'completed'"
+        (click)="goToStep(1)"
+      >
+        <div class="step-number">
+          <span *ngIf="getStepStatus(1) !== 'completed'">1</span>
+          <svg *ngIf="getStepStatus(1) === 'completed'" class="check-icon" viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <span class="step-label">Route</span>
+      </div>
+
+      <div class="step-line" [class.active]="currentStep > 1"></div>
+
+      <div
+        class="step"
+        [class.active]="getStepStatus(2) === 'active'"
+        [class.completed]="getStepStatus(2) === 'completed'"
+        (click)="goToStep(2)"
+      >
+        <div class="step-number">
+          <span *ngIf="getStepStatus(2) !== 'completed'">2</span>
+          <svg *ngIf="getStepStatus(2) === 'completed'" class="check-icon" viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <span class="step-label">Options</span>
+      </div>
+
+      <div class="step-line" [class.active]="currentStep > 2"></div>
+
+      <div
+        class="step"
+        [class.active]="getStepStatus(3) === 'active'"
+        [class.completed]="getStepStatus(3) === 'completed'"
+        (click)="goToStep(3)"
+      >
+        <div class="step-number">
+          <span *ngIf="getStepStatus(3) !== 'completed'">3</span>
+          <svg *ngIf="getStepStatus(3) === 'completed'" class="check-icon" viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <span class="step-label">Confirm</span>
+      </div>
+    </div>
+
+    <!-- Form Content -->
+    <div class="form-content">
+      <!-- Step 1: Route -->
+      @if (currentStep === 1) {
+        <div class="step-content">
+          <h2 class="step-title">Where are you going?</h2>
+
+          <!-- Pickup Address -->
+          <div class="form-group">
+            <label for="pickup">Pickup Location</label>
+            <input
+              id="pickup"
+              type="text"
+              [(ngModel)]="rideOrder.pickup"
+              (change)="onRouteChange()"
+              placeholder="Enter pickup address"
+              class="form-input"
+            />
+          </div>
+
+          <!-- Dropoff Address -->
+          <div class="form-group">
+            <label for="destination">Destination Location</label>
+            <input
+              id="destination"
+              type="text"
+              [(ngModel)]="rideOrder.destination"
+              (change)="onRouteChange()"
+              placeholder="Enter destination address"
+              class="form-input"
+            />
+          </div>
+
+          <!-- Stops -->
+          <div class="stops-section">
+            <div class="stops-header">
+              <h3 class="stops-title">Add Stops</h3>
+              <button type="button" class="btn-add-stop" (click)="addStop()">
+                <svg viewBox="0 0 24 24">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add Stop
+              </button>
+            </div>
+
+            @for (stop of rideOrder.stops; track stop.id) {
+              <div class="stop-input-group">
+                <input
+                  type="text"
+                  [(ngModel)]="stop.address"
+                  (change)="onRouteChange()"
+                  placeholder="Stop address"
+                  class="form-input"
+                />
+                <button
+                  type="button"
+                  class="btn-remove-stop"
+                  (click)="removeStop(stop.id)"
+                  title="Remove stop"
+                >
+                  <svg viewBox="0 0 24 24">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </button>
+              </div>
+            }
+          </div>
+
+          <!-- Vehicle Type Selection -->
+          <div class="form-group">
+            <label>Vehicle Type</label>
+            <div class="vehicle-type-grid">
+              @for (vehicle of vehicleTypes; track vehicle.id) {
+                <label
+                  class="vehicle-option"
+                  [class.selected]="rideOrder.vehicleType === vehicle.id"
+                >
+                  <input
+                    type="radio"
+                    name="vehicleType"
+                    [value]="vehicle.id"
+                    [(ngModel)]="rideOrder.vehicleType"
+                    (change)="onRouteChange()"
+                  />
+                  <span class="vehicle-content">
+                    <span class="vehicle-name">{{ vehicle.name }}</span>
+                  </span>
+                </label>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Step 2: Options -->
+      @if (currentStep === 2) {
+        <div class="step-content">
+          <h2 class="step-title">Ride Options</h2>
+
+          <!-- Schedule -->
+          <div class="form-group">
+            <label class="schedule-label">Schedule Ride</label>
+            <div class="schedule-choice">
+              <label class="choice" [class.active]="rideOrder.scheduleNow">
+                <div class="choice-content">
+                  <input
+                    type="radio"
+                    name="scheduleMode"
+                    [checked]="rideOrder.scheduleNow"
+                    (change)="setScheduleMode('now')"
+                  />
+                  <span>For now</span>
+                </div>
+              </label>
+              <label class="choice" [class.active]="!rideOrder.scheduleNow">
+                <div class="choice-content">
+                  <input
+                    type="radio"
+                    name="scheduleMode"
+                    [checked]="!rideOrder.scheduleNow"
+                    (change)="setScheduleMode('later')"
+                  />
+                  <span>For later</span>
+                </div>
+              </label>
+            </div>
+
+            @if (!rideOrder.scheduleNow) {
+              <label class="time-label">Schedule ride in</label>
+              <div class="time-input-group">
+                <div class="time-input-item">
+                  <input
+                    type="number"
+                    [(ngModel)]="scheduleHours"
+                    min="0"
+                    max="5"
+                    class="form-input time-input"
+                    placeholder="0"
+                  />
+                  <span class="time-unit">hours</span>
+                </div>
+                <div class="time-input-item">
+                  <input
+                    type="number"
+                    [(ngModel)]="scheduleMinutes"
+                    min="0"
+                    max="59"
+                    class="form-input time-input"
+                    placeholder="0"
+                  />
+                  <span class="time-unit">minutes</span>
+                </div>
+              </div>
+              <p class="hint-text">Maximum 5 hours from now</p>
+            }
+          </div>
+
+          <!-- Special Requests -->
+          <div class="form-group">
+            <label for="specialRequests">Special Requests (Optional)</label>
+            <textarea
+              id="specialRequests"
+              [(ngModel)]="rideOrder.specialRequests"
+              placeholder="e.g., Large luggage, wheelchair accessible, etc."
+              class="form-textarea"
+              rows="4"
+            ></textarea>
+          </div>
+
+          <!-- Additional Options -->
+          <div class="options-section">
+            <label class="option-checkbox">
+              <input type="checkbox" [(ngModel)]="rideOrder.babySeat" />
+              <span>Baby seat required</span>
+            </label>
+            <label class="option-checkbox">
+              <input type="checkbox" [(ngModel)]="rideOrder.petTransport" />
+              <span>Pet transport</span>
+            </label>
+          </div>
+
+          <!-- Passengers -->
+          <div class="form-group passengers-section">
+            <div class="stops-header">
+              <h3 class="stops-title">Additional Passengers</h3>
+              <button
+                type="button"
+                class="btn-add-stop"
+                (click)="addPassenger()"
+                [disabled]="!canAddPassenger()"
+              >
+                <svg viewBox="0 0 24 24">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add Passenger
+              </button>
+            </div>
+            <p class="hint-text">Maximum {{ getVehicleCapacity() }} passengers</p>
+
+            @for (passenger of rideOrder.passengers; track passenger.id) {
+              <div class="passenger-input-group">
+                <input
+                  type="email"
+                  [(ngModel)]="passenger.email"
+                  placeholder="Passenger email"
+                  class="form-input"
+                />
+                <button
+                  type="button"
+                  class="btn-remove-stop"
+                  (click)="removePassenger(passenger.id)"
+                >
+                  <svg viewBox="0 0 24 24">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Step 3: Confirm -->
+      @if (currentStep === 3) {
+        <div class="step-content">
+          <h2 class="step-title">Confirm Your Ride</h2>
+
+          <!-- Route Summary -->
+          <div class="summary-card">
+            <h3 class="summary-title">Route Summary</h3>
+            <div class="route-summary">
+              <div class="route-point">
+                <div class="route-marker pickup"></div>
+                <div class="route-info">
+                  <span class="route-label">Pickup</span>
+                  <span class="route-address">{{ rideOrder.pickup }}</span>
+                </div>
+              </div>
+
+              @for (stop of rideOrder.stops; track stop.id) {
+                <div class="route-point">
+                  <div class="route-marker stop"></div>
+                  <div class="route-info">
+                    <span class="route-label">Stop</span>
+                    <span class="route-address">{{ stop.address }}</span>
+                  </div>
+                </div>
+              }
+
+              <div class="route-point">
+                <div class="route-marker destination"></div>
+                <div class="route-info">
+                  <span class="route-label">Dropoff</span>
+                  <span class="route-address">{{ rideOrder.destination }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trip Details -->
+          <div class="details-grid">
+            <div class="detail-item">
+              <span class="detail-label">Vehicle Type</span>
+              <span class="detail-value">
+                {{ getVehicleTypeName() }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Distance</span>
+              <span class="detail-value">{{ rideOrder.estimatedDistance }} km</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Duration</span>
+              <span class="detail-value">~{{ rideOrder.estimatedDuration }} min</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Scheduled</span>
+              <span class="detail-value">
+                {{ rideOrder.scheduleNow ? 'Now' : rideOrder.scheduledTime }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Price -->
+          <div class="price-card">
+            <span class="price-label">Estimated Fare</span>
+            <span class="price-value">{{ rideOrder.estimatedPrice | number: '1.2-2' }} RSD</span>
+          </div>
+
+          <!-- Terms -->
+          <label class="terms-checkbox">
+            <div class="terms-content">
+              <input type="checkbox" [(ngModel)]="termsAccepted" required />
+              <span>I agree to the terms and conditions</span>
+            </div>
+          </label>
+        </div>
+      }
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="form-actions">
+      <button
+        type="button"
+        class="btn-secondary"
+        (click)="previousStep()"
+        [disabled]="currentStep === 1"
+      >
+        Back
+      </button>
+
+      @if (currentStep < 3) {
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="nextStep()"
+          [disabled]="!isStepValid(currentStep)"
+        >
+          Continue
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="confirmRide()"
+          [disabled]="!termsAccepted || !isStepValid(currentStep)"
+        >
+          Request Ride
+        </button>
+      }
+    </div>
+  </div>
+</div>
