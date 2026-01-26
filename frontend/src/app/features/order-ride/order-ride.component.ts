@@ -80,6 +80,12 @@ export class OrderRideComponent implements OnInit {
 
   nextStep(): void {
     if (this.currentStep < 3 && this.isStepValid(this.currentStep)) {
+      // Build scheduled time string if scheduling for later
+      if (this.currentStep === 2 && !this.rideOrder.scheduleNow) {
+        const hours = this.scheduleHours ?? 0;
+        const minutes = this.scheduleMinutes ?? 0;
+        this.rideOrder.scheduledTime = `${hours}h ${minutes}m from now`;
+      }
       this.currentStep = (this.currentStep + 1) as 1 | 2 | 3;
     }
   }
