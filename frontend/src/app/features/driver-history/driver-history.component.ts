@@ -1,7 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import { DriverHistoryMockService } from './services/driver-history-mock.service';
 import { RideHistory } from './models/ride-history.model';
@@ -9,14 +8,14 @@ import { RideHistory } from './models/ride-history.model';
 @Component({
   selector: 'app-driver-history',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, FormsModule],
   templateUrl: './driver-history.component.html',
   styleUrl: './driver-history.component.scss',
 })
 export class DriverHistoryComponent implements OnInit {
   allRides = signal<RideHistory[]>([]);
   filteredRides = signal<RideHistory[]>([]);
-  
+
   startDate = signal<string>('');
   endDate = signal<string>('');
 
@@ -28,12 +27,12 @@ export class DriverHistoryComponent implements OnInit {
     const rides = this.historyService.getRideHistory();
     this.allRides.set(rides);
     this.filteredRides.set(rides);
-    
+
     // Set default date range (last 30 days)
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 30);
-    
+
     this.endDate.set(endDate.toISOString().split('T')[0]);
     this.startDate.set(startDate.toISOString().split('T')[0]);
   }
@@ -41,7 +40,7 @@ export class DriverHistoryComponent implements OnInit {
   onDateFilterChange(): void {
     const start = this.startDate() ? new Date(this.startDate()) : null;
     const end = this.endDate() ? new Date(this.endDate()) : null;
-    
+
     if (!start && !end) {
       this.filteredRides.set(this.allRides());
       return;
@@ -50,17 +49,17 @@ export class DriverHistoryComponent implements OnInit {
     const filtered = this.allRides().filter((ride) => {
       const rideDate = new Date(ride.startTime);
       rideDate.setHours(0, 0, 0, 0);
-      
+
       if (start) {
         start.setHours(0, 0, 0, 0);
         if (rideDate < start) return false;
       }
-      
+
       if (end) {
         end.setHours(23, 59, 59, 999);
         if (rideDate > end) return false;
       }
-      
+
       return true;
     });
 
@@ -145,4 +144,3 @@ export class DriverHistoryComponent implements OnInit {
     return `#RA-${ride.id.padStart(4, '0')}`;
   }
 }
-
