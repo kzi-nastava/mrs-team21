@@ -60,8 +60,6 @@ export class OrderRideComponent implements OnInit {
     { id: 'van', name: 'Van', capacity: 6 },
   ];
 
-  minDate = '';
-  maxDate = '';
   nextStopId = 0;
   nextPassengerId = 0;
   termsAccepted = false;
