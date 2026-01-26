@@ -2,6 +2,15 @@ import { Routes } from '@angular/router';
 import { LayoutComponent } from './layout/layout.component';
 
 export const routes: Routes = [
+  // Landing page (root - no layout)
+  {
+    path: '',
+    loadComponent: () =>
+      import('./features/landing/landing-page/landing-page.component').then(
+        (m) => m.LandingPageComponent,
+      ),
+  },
+
   // Auth routes (no layout)
   {
     path: 'login',
@@ -25,14 +34,6 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/auth/reset-password/reset-password.component').then(
         (m) => m.ResetPasswordComponent,
-      ),
-  },
-  // Landing page (no layout)
-  {
-    path: 'landing',
-    loadComponent: () =>
-      import('./features/landing/landing-page/landing-page.component').then(
-        (m) => m.LandingPageComponent,
       ),
   },
 
@@ -72,17 +73,11 @@ export const routes: Routes = [
             (m) => m.RideTrackingComponent,
           ),
       },
-      // Default
-      {
-        path: '',
-        redirectTo: 'landing',
-        pathMatch: 'full',
-      },
     ],
   },
   // Catch-all
   {
     path: '**',
-    redirectTo: 'landing',
+    redirectTo: '',
   },
 ];
