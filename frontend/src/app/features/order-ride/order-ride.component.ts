@@ -129,7 +129,8 @@ export class OrderRideComponent implements OnInit {
   }
 
   addPassenger(): void {
-    const vehicleCapacity = this.vehicleTypes.find((v) => v.id === this.rideOrder.vehicleType)?.capacity || 3;
+    const vehicleCapacity =
+      this.vehicleTypes.find((v) => v.id === this.rideOrder.vehicleType)?.capacity || 3;
     if (this.rideOrder.passengers.length < vehicleCapacity) {
       this.rideOrder.passengers.push({
         id: `passenger-${this.nextPassengerId++}`,
@@ -143,7 +144,8 @@ export class OrderRideComponent implements OnInit {
   }
 
   canAddPassenger(): boolean {
-    const vehicleCapacity = this.vehicleTypes.find((v) => v.id === this.rideOrder.vehicleType)?.capacity || 3;
+    const vehicleCapacity =
+      this.vehicleTypes.find((v) => v.id === this.rideOrder.vehicleType)?.capacity || 3;
     return this.rideOrder.passengers.length < vehicleCapacity;
   }
 
