@@ -15,10 +15,13 @@
         (click)="goToStep(1)"
       >
         <div class="step-number">
-          <span *ngIf="getStepStatus(1) !== 'completed'">1</span>
-          <svg *ngIf="getStepStatus(1) === 'completed'" class="check-icon" viewBox="0 0 24 24">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
+          @if (getStepStatus(1) !== 'completed') {
+            <span>1</span>
+          } @else {
+            <svg class="check-icon" viewBox="0 0 24 24">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          }
         </div>
         <span class="step-label">Route</span>
       </div>
@@ -32,10 +35,13 @@
         (click)="goToStep(2)"
       >
         <div class="step-number">
-          <span *ngIf="getStepStatus(2) !== 'completed'">2</span>
-          <svg *ngIf="getStepStatus(2) === 'completed'" class="check-icon" viewBox="0 0 24 24">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
+          @if (getStepStatus(2) !== 'completed') {
+            <span>2</span>
+          } @else {
+            <svg class="check-icon" viewBox="0 0 24 24">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          }
         </div>
         <span class="step-label">Options</span>
       </div>
@@ -49,10 +55,13 @@
         (click)="goToStep(3)"
       >
         <div class="step-number">
-          <span *ngIf="getStepStatus(3) !== 'completed'">3</span>
-          <svg *ngIf="getStepStatus(3) === 'completed'" class="check-icon" viewBox="0 0 24 24">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
+          @if (getStepStatus(3) !== 'completed') {
+            <span>3</span>
+          } @else {
+            <svg class="check-icon" viewBox="0 0 24 24">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          }
         </div>
         <span class="step-label">Confirm</span>
       </div>
@@ -235,11 +244,19 @@
           <!-- Additional Options -->
           <div class="options-section">
             <label class="option-checkbox">
-              <input type="checkbox" [ngModel]="rideOrder().babySeat" (ngModelChange)="updateBabySeat($event)" />
+              <input
+                type="checkbox"
+                [ngModel]="rideOrder().babySeat"
+                (ngModelChange)="updateBabySeat($event)"
+              />
               <span>Baby seat required</span>
             </label>
             <label class="option-checkbox">
-              <input type="checkbox" [ngModel]="rideOrder().petTransport" (ngModelChange)="updatePetTransport($event)" />
+              <input
+                type="checkbox"
+                [ngModel]="rideOrder().petTransport"
+                (ngModelChange)="updatePetTransport($event)"
+              />
               <span>Pet transport</span>
             </label>
           </div>
@@ -358,7 +375,12 @@
           <!-- Terms -->
           <label class="terms-checkbox">
             <div class="terms-content">
-              <input type="checkbox" [ngModel]="termsAccepted()" (ngModelChange)="termsAccepted.set($event)" required />
+              <input
+                type="checkbox"
+                [ngModel]="termsAccepted()"
+                (ngModelChange)="termsAccepted.set($event)"
+                required
+              />
               <span>I agree to the terms and conditions</span>
             </div>
           </label>
