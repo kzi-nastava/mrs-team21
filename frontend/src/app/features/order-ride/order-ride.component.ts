@@ -128,7 +128,9 @@ export class OrderRideComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.calculatePrice();
+    if (this.rideOrder.pickup && this.rideOrder.destination) {
+      this.calculatePrice();
+    }
   }
 
   goToStep(step: 1 | 2 | 3): void {
