@@ -14,7 +14,7 @@ export interface NavigationConfig {
 export const NAVIGATION_CONFIG: NavigationConfig = {
   passenger: [
     // Main Section
-    { label: 'Book a Ride', icon: 'clock', path: '/', section: 'main' },
+    { label: 'Order a Ride', icon: 'clock', path: '/order-ride', section: 'main' },
     { label: 'Ride Tracking', icon: 'map-pin', path: '/ride-tracking/1', section: 'main' },
     { label: 'Ride History', icon: 'file-text', path: '/driver-history', section: 'main' },
     { label: 'Favorite Routes', icon: 'bookmark', path: '#', section: 'main' },

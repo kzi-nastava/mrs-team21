@@ -8,28 +8,27 @@
   </a>
 
   <!-- Navigation Sections -->
-  <nav *ngFor="let sectionKey of getSectionKeys()" class="nav-section">
-    <div class="nav-label">{{ sectionLabels[sectionKey] }}</div>
-    <div class="nav-items">
-      <a
-        *ngFor="let item of groupedNavItems.get(sectionKey)"
-        [routerLink]="item.path"
-        routerLinkActive="active"
-        class="nav-item"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          [innerHTML]="getIconSvg(item.icon)"
-        ></svg>
-        {{ item.label }}
-      </a>
-    </div>
-  </nav>
+  @for (sectionKey of getSectionKeys(); track sectionKey) {
+    <nav class="nav-section">
+      <div class="nav-label">{{ sectionLabels[sectionKey] }}</div>
+      <div class="nav-items">
+        @for (item of groupedNavItems.get(sectionKey); track $index) {
+          <a [routerLink]="item.path" routerLinkActive="active" class="nav-item">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              [innerHTML]="getIconSvg(item.icon)"
+            ></svg>
+            {{ item.label }}
+          </a>
+        }
+      </div>
+    </nav>
+  }
 
   <!-- Spacer -->
   <div class="nav-spacer"></div>
