@@ -1,12 +1,8 @@
-:root {
-  --sidebar-width: 260px;
-}
-
 .app-container {
   min-height: 100vh;
 }
 
 .main-content {
-  margin-left: var(--sidebar-width);
+  margin-left: 260px;
   min-height: 100vh;
 }
