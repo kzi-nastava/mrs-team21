@@ -23,7 +23,7 @@
         <span class="step-label">Route</span>
       </div>
 
-      <div class="step-line" [class.active]="currentStep > 1"></div>
+      <div class="step-line" [class.active]="currentStep() > 1"></div>
 
       <div
         class="step"
@@ -40,7 +40,7 @@
         <span class="step-label">Options</span>
       </div>
 
-      <div class="step-line" [class.active]="currentStep > 2"></div>
+      <div class="step-line" [class.active]="currentStep() > 2"></div>
 
       <div
         class="step"
@@ -61,7 +61,7 @@
     <!-- Form Content -->
     <div class="form-content">
       <!-- Step 1: Route -->
-      @if (currentStep === 1) {
+      @if (currentStep() === 1) {
         <div class="step-content">
           <h2 class="step-title">Where are you going?</h2>
 
@@ -71,7 +71,8 @@
             <input
               id="pickup"
               type="text"
-              [(ngModel)]="rideOrder.pickup"
+              [ngModel]="rideOrder().pickup"
+              (ngModelChange)="updatePickup($event)"
               (change)="onRouteChange()"
               placeholder="Enter pickup address"
               class="form-input"
@@ -84,7 +85,8 @@
             <input
               id="destination"
               type="text"
-              [(ngModel)]="rideOrder.destination"
+              [ngModel]="rideOrder().destination"
+              (ngModelChange)="updateDestination($event)"
               (change)="onRouteChange()"
               placeholder="Enter destination address"
               class="form-input"
@@ -104,7 +106,7 @@
               </button>
             </div>
 
-            @for (stop of rideOrder.stops; track stop.id) {
+            @for (stop of rideOrder().stops; track stop.id) {
               <div class="stop-input-group">
                 <input
                   type="text"
@@ -134,13 +136,14 @@
               @for (vehicle of vehicleTypes; track vehicle.id) {
                 <label
                   class="vehicle-option"
-                  [class.selected]="rideOrder.vehicleType === vehicle.id"
+                  [class.selected]="rideOrder().vehicleType === vehicle.id"
                 >
                   <input
                     type="radio"
                     name="vehicleType"
                     [value]="vehicle.id"
-                    [(ngModel)]="rideOrder.vehicleType"
+                    [ngModel]="rideOrder().vehicleType"
+                    (ngModelChange)="updateVehicleType($event)"
                     (change)="onRouteChange()"
                   />
                   <span class="vehicle-content">
@@ -154,7 +157,7 @@
       }
 
       <!-- Step 2: Options -->
-      @if (currentStep === 2) {
+      @if (currentStep() === 2) {
         <div class="step-content">
           <h2 class="step-title">Ride Options</h2>
 
@@ -162,23 +165,23 @@
           <div class="form-group">
             <label class="schedule-label">Schedule Ride</label>
             <div class="schedule-choice">
-              <label class="choice" [class.active]="rideOrder.scheduleNow">
+              <label class="choice" [class.active]="rideOrder().scheduleNow">
                 <div class="choice-content">
                   <input
                     type="radio"
                     name="scheduleMode"
-                    [checked]="rideOrder.scheduleNow"
+                    [checked]="rideOrder().scheduleNow"
                     (change)="setScheduleMode('now')"
                   />
                   <span>For now</span>
                 </div>
               </label>
-              <label class="choice" [class.active]="!rideOrder.scheduleNow">
+              <label class="choice" [class.active]="!rideOrder().scheduleNow">
                 <div class="choice-content">
                   <input
                     type="radio"
                     name="scheduleMode"
-                    [checked]="!rideOrder.scheduleNow"
+                    [checked]="!rideOrder().scheduleNow"
                     (change)="setScheduleMode('later')"
                   />
                   <span>For later</span>
@@ -186,13 +189,14 @@
               </label>
             </div>
 
-            @if (!rideOrder.scheduleNow) {
+            @if (!rideOrder().scheduleNow) {
               <label class="time-label">Schedule ride in</label>
               <div class="time-input-group">
                 <div class="time-input-item">
                   <input
                     type="number"
-                    [(ngModel)]="scheduleHours"
+                    [ngModel]="scheduleHours()"
+                    (ngModelChange)="scheduleHours.set($event)"
                     min="0"
                     max="5"
                     class="form-input time-input"
@@ -203,7 +207,8 @@
                 <div class="time-input-item">
                   <input
                     type="number"
-                    [(ngModel)]="scheduleMinutes"
+                    [ngModel]="scheduleMinutes()"
+                    (ngModelChange)="scheduleMinutes.set($event)"
                     min="0"
                     max="59"
                     class="form-input time-input"
@@ -221,7 +226,8 @@
             <label for="specialRequests">Special Requests (Optional)</label>
             <textarea
               id="specialRequests"
-              [(ngModel)]="rideOrder.specialRequests"
+              [ngModel]="rideOrder().specialRequests"
+              (ngModelChange)="updateSpecialRequests($event)"
               placeholder="e.g., Large luggage, wheelchair accessible, etc."
               class="form-textarea"
               rows="4"
@@ -231,11 +237,11 @@
           <!-- Additional Options -->
           <div class="options-section">
             <label class="option-checkbox">
-              <input type="checkbox" [(ngModel)]="rideOrder.babySeat" />
+              <input type="checkbox" [ngModel]="rideOrder().babySeat" (ngModelChange)="updateBabySeat($event)" />
               <span>Baby seat required</span>
             </label>
             <label class="option-checkbox">
-              <input type="checkbox" [(ngModel)]="rideOrder.petTransport" />
+              <input type="checkbox" [ngModel]="rideOrder().petTransport" (ngModelChange)="updatePetTransport($event)" />
               <span>Pet transport</span>
             </label>
           </div>
@@ -259,11 +265,12 @@
             </div>
             <p class="hint-text">Maximum {{ getVehicleCapacity() }} passengers</p>
 
-            @for (passenger of rideOrder.passengers; track passenger.id) {
+            @for (passenger of rideOrder().passengers; track passenger.id) {
               <div class="passenger-input-group">
                 <input
                   type="email"
-                  [(ngModel)]="passenger.email"
+                  [ngModel]="passenger.email"
+                  (ngModelChange)="passenger.email = $event"
                   placeholder="Passenger email"
                   class="form-input"
                 />
@@ -284,7 +291,7 @@
       }
 
       <!-- Step 3: Confirm -->
-      @if (currentStep === 3) {
+      @if (currentStep() === 3) {
         <div class="step-content">
           <h2 class="step-title">Confirm Your Ride</h2>
 
@@ -296,11 +303,11 @@
                 <div class="route-marker pickup"></div>
                 <div class="route-info">
                   <span class="route-label">Pickup</span>
-                  <span class="route-address">{{ rideOrder.pickup }}</span>
+                  <span class="route-address">{{ rideOrder().pickup }}</span>
                 </div>
               </div>
 
-              @for (stop of rideOrder.stops; track stop.id) {
+              @for (stop of rideOrder().stops; track stop.id) {
                 <div class="route-point">
                   <div class="route-marker stop"></div>
                   <div class="route-info">
@@ -314,7 +321,7 @@
                 <div class="route-marker destination"></div>
                 <div class="route-info">
                   <span class="route-label">Dropoff</span>
-                  <span class="route-address">{{ rideOrder.destination }}</span>
+                  <span class="route-address">{{ rideOrder().destination }}</span>
                 </div>
               </div>
             </div>
@@ -330,16 +337,16 @@
             </div>
             <div class="detail-item">
               <span class="detail-label">Distance</span>
-              <span class="detail-value">{{ rideOrder.estimatedDistance }} km</span>
+              <span class="detail-value">{{ rideOrder().estimatedDistance }} km</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">Duration</span>
-              <span class="detail-value">~{{ rideOrder.estimatedDuration }} min</span>
+              <span class="detail-value">~{{ rideOrder().estimatedDuration }} min</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">Scheduled</span>
               <span class="detail-value">
-                {{ rideOrder.scheduleNow ? 'Now' : rideOrder.scheduledTime }}
+                {{ rideOrder().scheduleNow ? 'Now' : rideOrder().scheduledTime }}
               </span>
             </div>
           </div>
@@ -347,13 +354,13 @@
           <!-- Price -->
           <div class="price-card">
             <span class="price-label">Estimated Fare</span>
-            <span class="price-value">{{ rideOrder.estimatedPrice | number: '1.2-2' }} RSD</span>
+            <span class="price-value">{{ rideOrder().estimatedPrice | number: '1.2-2' }} RSD</span>
           </div>
 
           <!-- Terms -->
           <label class="terms-checkbox">
             <div class="terms-content">
-              <input type="checkbox" [(ngModel)]="termsAccepted" required />
+              <input type="checkbox" [ngModel]="termsAccepted()" (ngModelChange)="termsAccepted.set($event)" required />
               <span>I agree to the terms and conditions</span>
             </div>
           </label>
@@ -367,17 +374,17 @@
         type="button"
         class="btn-secondary"
         (click)="previousStep()"
-        [disabled]="currentStep === 1"
+        [disabled]="currentStep() === 1"
       >
         Back
       </button>
 
-      @if (currentStep < 3) {
+      @if (currentStep() < 3) {
         <button
           type="button"
           class="btn-primary"
           (click)="nextStep()"
-          [disabled]="!isStepValid(currentStep)"
+          [disabled]="!isStepValid(currentStep())"
         >
           Continue
         </button>
@@ -386,7 +393,7 @@
           type="button"
           class="btn-primary"
           (click)="confirmRide()"
-          [disabled]="!termsAccepted || !isStepValid(currentStep)"
+          [disabled]="!termsAccepted() || !isStepValid(currentStep())"
         >
           Request Ride
         </button>
