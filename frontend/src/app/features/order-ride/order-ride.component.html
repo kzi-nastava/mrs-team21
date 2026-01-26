@@ -134,10 +134,7 @@
             <label>Vehicle Type</label>
             <div class="vehicle-type-grid">
               @for (vehicle of vehicleTypes; track vehicle.id) {
-                <label
-                  class="vehicle-option"
-                  [class.selected]="rideOrder().vehicleType === vehicle.id"
-                >
+                <label class="vehicle-option">
                   <input
                     type="radio"
                     name="vehicleType"
