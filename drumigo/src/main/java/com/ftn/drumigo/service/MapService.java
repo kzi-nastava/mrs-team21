@@ -31,8 +31,10 @@ public class MapService {
         Point destination = Point.fromLngLat(request.destinationLocation().longitude(), request.destinationLocation().latitude());
         
         ArrayList<Point> waypoints = new ArrayList<>();
-        for (LocationDTO location : request.waypoints()) {
-            waypoints.add(Point.fromLngLat(location.longitude(), location.latitude()));
+        if (request.waypoints() != null) {
+            for (LocationDTO location : request.waypoints()) {
+                waypoints.add(Point.fromLngLat(location.longitude(), location.latitude()));
+            }
         }
 
         MapboxDirections client = MapboxDirections.builder()
