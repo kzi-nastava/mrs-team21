@@ -8,16 +8,22 @@ import {
   LocationDTO,
   VehicleTypeName,
 } from '../models/estimate.model';
-import mbxGeocoding from '@mapbox/mapbox-sdk/services/geocoding';
 
 @Injectable({
   providedIn: 'root',
 })
 export class EstimateService {
   private apiUrl = `${environment.apiBaseUrl}/rides/estimate`;
-  private geocodingClient = mbxGeocoding({ accessToken: environment.mapboxToken });
+  private geocodingClient: any;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    this.initGeocoding();
+  }
+
+  private async initGeocoding() {
+    const mbxGeocoding = (await import('@mapbox/mapbox-sdk/services/geocoding')).default;
+    this.geocodingClient = mbxGeocoding({ accessToken: environment.mapboxToken });
+  }
 
   getEstimate(
     startAddress: string,
