@@ -134,8 +134,9 @@
               class="status-badge"
               [class.completed]="!ride.isCancelled && !ride.panicActivated"
               [class.cancelled]="ride.isCancelled"
+              [class.panic]="!ride.isCancelled && ride.panicActivated"
             >
-              @if (!ride.isCancelled) {
+              @if (!ride.isCancelled && !ride.panicActivated) {
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -145,6 +146,20 @@
                   stroke-linejoin="round"
                 >
                   <polyline points="20 6 9 17 4 12" />
+                </svg>
+              }
+              @if (!ride.isCancelled && ride.panicActivated) {
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M12 2 2 22h20L12 2Z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12" y2="17" />
                 </svg>
               }
               @if (ride.isCancelled) {
@@ -161,7 +176,7 @@
                   <line x1="9" y1="9" x2="15" y2="15" />
                 </svg>
               }
-              {{ ride.isCancelled ? 'Cancelled' : 'Completed' }}
+              {{ ride.isCancelled ? 'Cancelled' : ride.panicActivated ? 'Panic' : 'Completed' }}
             </span>
           </td>
           @if (showEarnings()) {

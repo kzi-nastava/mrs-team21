@@ -1,4 +1,4 @@
-import { Component, output, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, output, input, ChangeDetectionStrategy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RideFilter } from '../../models';
@@ -27,9 +27,11 @@ export class RideHistoryFiltersComponent {
   localEndDate: string = '';
 
   constructor() {
-    // Initialize local state from inputs
-    this.localStartDate = this.startDate();
-    this.localEndDate = this.endDate();
+    // Keep local fields in sync with input signals
+    effect(() => {
+      this.localStartDate = this.startDate();
+      this.localEndDate = this.endDate();
+    });
   }
 
   onDateChange(): void {

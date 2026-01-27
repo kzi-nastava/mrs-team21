@@ -220,6 +220,11 @@
     background: var(--danger-light);
     color: var(--danger);
   }
+
+  &.panic {
+    background: #fff1e6; /* warm alert tone */
+    color: #c2410c;
+  }
 }
 
 /* Cancelled By */
