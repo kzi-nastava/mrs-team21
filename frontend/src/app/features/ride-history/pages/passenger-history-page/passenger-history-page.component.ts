@@ -95,4 +95,37 @@ export class PassengerHistoryPageComponent implements OnInit {
   onRideDetailsClosed(): void {
     this.selectedRide.set(null);
   }
+
+  onFavoriteToggled(ride: Ride): void {
+    // TODO: Backend Integration - Implement API call to mark ride as favorite
+    // 1. Create or update RidePassenger.isFavorite in the database
+    // 2. Call backend endpoint: PATCH /api/rides/{rideId}/favorite with { isFavorite: boolean }
+    // 3. Handle optimistic UI update vs. pessimistic (wait for response)
+    // 4. Add error handling and user feedback (toast notification)
+    // 5. Consider adding isFavorite to the Ride DTO in backend
+    
+    // For now: local toggle only
+    const updatedRide = { ...ride, isFavorite: !ride.isFavorite };
+    
+    // Update in allRides
+    const allRidesIndex = this.allRides().findIndex(r => r.id === ride.id);
+    if (allRidesIndex !== -1) {
+      const updated = [...this.allRides()];
+      updated[allRidesIndex] = updatedRide;
+      this.allRides.set(updated);
+    }
+    
+    // Update in filteredRides
+    const filteredIndex = this.filteredRides().findIndex(r => r.id === ride.id);
+    if (filteredIndex !== -1) {
+      const updated = [...this.filteredRides()];
+      updated[filteredIndex] = updatedRide;
+      this.filteredRides.set(updated);
+    }
+    
+    // Update selectedRide if it's the same ride
+    if (this.selectedRide()?.id === ride.id) {
+      this.selectedRide.set(updatedRide);
+    }
+  }
 }
