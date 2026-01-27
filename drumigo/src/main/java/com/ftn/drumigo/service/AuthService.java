@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ftn.drumigo.util.TokenUtil;
 import com.ftn.drumigo.util.PasswordUtil;
+import com.ftn.drumigo.util.JwtUtil;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -35,7 +36,8 @@ public class AuthService {
     private final UserTokenRepository userTokenRepository;
     private final DriverRepository driverRepository;
     private final RideRepository rideRepository;
-    
+    private final JwtUtil jwtUtil;
+
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
             .orElseThrow(() -> new BadRequestException("Invalid email or password"));
@@ -56,16 +58,16 @@ public class AuthService {
             throw new BadRequestException("Invalid email or password");
         }
         
-        // If user is a driver, mark as active driver (spec 2.2.1)
+        // If user is a driver, mark as active driver
         if (user instanceof Driver driver) {
             driver.setActiveDriver(true);
             driver.setLastStateChangeAt(Instant.now());
             driverRepository.save(driver);
         }
         
-        // Generate token (placeholder for JWT later)
-        String token = "token_" + UUID.randomUUID().toString();
-        
+        // Generate JWT token
+        String token = jwtUtil.generateToken(user);
+
         return new LoginResponse(
             user.getId(),
             user.getEmail(),
@@ -81,7 +83,7 @@ public class AuthService {
         // If user is a driver, check if they have an active ride (spec 2.2.1)
         if (user instanceof Driver driver) {
             // Check if driver has an ACTIVE ride
-            Ride activeRide = rideRepository.findByDriverAndStatus((Driver) user, RideStatus.ACTIVE)
+            Ride activeRide = rideRepository.findByDriverAndStatus(driver, RideStatus.ACTIVE)
                 .stream()
                 .findFirst()
                 .orElse(null);
@@ -115,7 +117,6 @@ public class AuthService {
         userTokenRepository.save(userToken);
         
         // In production, send email with token
-        // For KT1, token is stored in DB and can be retrieved via admin endpoint if needed
     }
     
     public void confirmPasswordReset(ResetPasswordConfirmRequest request) {
