@@ -1,7 +1,6 @@
 import { Component, output, input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RideFilter } from '../../models';
 
 /**
  * Reusable ride history filter component.
