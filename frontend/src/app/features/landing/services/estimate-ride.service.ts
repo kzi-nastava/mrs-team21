@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { GeocodingCore } from '@mapbox/search-js-core';
 import { Observable, forkJoin, from, map, switchMap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
@@ -14,16 +15,10 @@ import {
 })
 export class EstimateService {
   private apiUrl = `${environment.apiBaseUrl}/rides/estimate`;
-  private geocodingClient: any;
-  private geocodingInitPromise: Promise<void>;
+  private geocodingClient: GeocodingCore;
 
   constructor(private http: HttpClient) {
-    this.geocodingInitPromise = this.initGeocoding();
-  }
-
-  private async initGeocoding(): Promise<void> {
-    const mbxGeocoding = (await import('@mapbox/mapbox-sdk/services/geocoding')).default;
-    this.geocodingClient = mbxGeocoding({ accessToken: environment.mapboxToken });
+    this.geocodingClient = new GeocodingCore({ accessToken: environment.mapboxToken });
   }
 
   getEstimate(
@@ -55,17 +50,15 @@ export class EstimateService {
   }
 
   private geocodeAddress(address: string): Observable<LocationDTO> {
-    const promise = this.geocodingInitPromise.then(() =>
-      this.geocodingClient.forwardGeocode({ query: address, limit: 1 }).send()
-    );
-    return from(promise).pipe(
+    return from(this.geocodingClient.forward(address, { limit: 1 })).pipe(
       map((response: any) => {
-        const feature = response?.body?.features?.[0];
+        const feature = response?.features?.[0];
         if (!feature) throw new Error('Geocoding failed: No results');
+        const coords = feature?.properties?.coordinates;
         return {
-          latitude: feature.center[1],
-          longitude: feature.center[0],
-          address: feature.place_name,
+          latitude: coords?.latitude ?? feature.geometry.coordinates[1],
+          longitude: coords?.longitude ?? feature.geometry.coordinates[0],
+          address: feature?.properties?.full_address ?? feature?.properties?.name ?? address,
         } as LocationDTO;
       }),
     );
