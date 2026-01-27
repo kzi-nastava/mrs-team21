@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("api/rides")
+@RequestMapping("/api/rides")
 @RequiredArgsConstructor
 public class MapController {
 
