@@ -20,17 +20,14 @@ import com.ftn.drumigo.repository.UserRepository;
 import com.ftn.drumigo.repository.UserTokenRepository;
 import com.ftn.drumigo.repository.VehicleRepository;
 import com.ftn.drumigo.repository.VehicleTypeRepository;
+import com.ftn.drumigo.util.PasswordUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.UUID;
 
 @Service
@@ -182,8 +179,8 @@ public class DriverService {
         // Note: usedAt check is redundant since query already filters by usedAtIsNull, but kept for clarity
         
         // Set password hash (for KT1, simple hash; in production use BCrypt)
-        String passwordHash = hashPassword(request.password());
-        
+        String passwordHash = PasswordUtil.hashPassword(request.password());
+
         Driver driver = (Driver) userToken.getUser();
         driver.setPasswordHash(passwordHash);
         driver.setActive(true);
@@ -194,17 +191,6 @@ public class DriverService {
         // Mark token as used
         userToken.setUsedAt(Instant.now());
         userTokenRepository.save(userToken);
-    }
-    
-    
-    private String hashPassword(String password) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(password.getBytes(StandardCharsets.UTF_8));
-            return Base64.getEncoder().encodeToString(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Error hashing password", e);
-        }
     }
     
     public Driver updateDriverState(Long id, Boolean activeDriver) {
