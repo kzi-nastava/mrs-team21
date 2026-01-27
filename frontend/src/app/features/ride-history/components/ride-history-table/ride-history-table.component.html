@@ -2,6 +2,7 @@
   <table class="rides-table">
     <thead>
       <tr>
+        <th *ngIf="showFavoriteButton()" class="favorite-col"></th>
         <th
           (click)="onHeaderClick('dateTime')"
           [class.sortable]="isSortable('dateTime')"
@@ -9,36 +10,32 @@
           class="sortable-header"
         >
           Date & Time
-          @if (isSortable('dateTime')) {
-            <span class="sort-icon">{{ getSortIcon('dateTime') }}</span>
-          }
+          <span *ngIf="isSortable('dateTime')" class="sort-icon">{{
+            getSortIcon('dateTime')
+          }}</span>
         </th>
-        @if (isColumnVisible('driver')) {
-          <th
-            (click)="onHeaderClick('driver')"
-            [class.sortable]="isSortable('driver')"
-            [class.active]="sortState.field === 'driver'"
-            class="sortable-header"
-          >
-            Driver
-            @if (isSortable('driver')) {
-              <span class="sort-icon">{{ getSortIcon('driver') }}</span>
-            }
-          </th>
-        }
-        @if (isColumnVisible('passengers')) {
-          <th
-            (click)="onHeaderClick('passengers')"
-            [class.sortable]="isSortable('passengers')"
-            [class.active]="sortState.field === 'passengers'"
-            class="sortable-header"
-          >
-            Passengers
-            @if (isSortable('passengers')) {
-              <span class="sort-icon">{{ getSortIcon('passengers') }}</span>
-            }
-          </th>
-        }
+        <th
+          *ngIf="isColumnVisible('driver')"
+          (click)="onHeaderClick('driver')"
+          [class.sortable]="isSortable('driver')"
+          [class.active]="sortState.field === 'driver'"
+          class="sortable-header"
+        >
+          Driver
+          <span *ngIf="isSortable('driver')" class="sort-icon">{{ getSortIcon('driver') }}</span>
+        </th>
+        <th
+          *ngIf="isColumnVisible('passengers')"
+          (click)="onHeaderClick('passengers')"
+          [class.sortable]="isSortable('passengers')"
+          [class.active]="sortState.field === 'passengers'"
+          class="sortable-header"
+        >
+          Passengers
+          <span *ngIf="isSortable('passengers')" class="sort-icon">{{
+            getSortIcon('passengers')
+          }}</span>
+        </th>
         <th
           (click)="onHeaderClick('route')"
           [class.sortable]="isSortable('route')"
@@ -46,9 +43,7 @@
           class="sortable-header"
         >
           Route
-          @if (isSortable('route')) {
-            <span class="sort-icon">{{ getSortIcon('route') }}</span>
-          }
+          <span *ngIf="isSortable('route')" class="sort-icon">{{ getSortIcon('route') }}</span>
         </th>
         <th
           (click)="onHeaderClick('status')"
@@ -57,146 +52,164 @@
           class="sortable-header"
         >
           Status
-          @if (isSortable('status')) {
-            <span class="sort-icon">{{ getSortIcon('status') }}</span>
-          }
+          <span *ngIf="isSortable('status')" class="sort-icon">{{ getSortIcon('status') }}</span>
         </th>
-        @if (showEarnings()) {
-          <th
-            (click)="onHeaderClick('earnings')"
-            [class.sortable]="isSortable('earnings')"
-            [class.active]="sortState.field === 'earnings'"
-            class="sortable-header"
-          >
-            Earnings
-            @if (isSortable('earnings')) {
-              <span class="sort-icon">{{ getSortIcon('earnings') }}</span>
-            }
-          </th>
-        }
+        <th
+          *ngIf="showEarnings()"
+          (click)="onHeaderClick('earnings')"
+          [class.sortable]="isSortable('earnings')"
+          [class.active]="sortState.field === 'earnings'"
+          class="sortable-header"
+        >
+          Earnings
+          <span *ngIf="isSortable('earnings')" class="sort-icon">{{
+            getSortIcon('earnings')
+          }}</span>
+        </th>
       </tr>
     </thead>
     <tbody>
-      @for (ride of rides(); track ride.id) {
-        <tr (click)="selectRide(ride)" style="cursor: pointer">
-          <td>
-            <div class="date-cell">
-              <span class="date-value">{{ formatDate(ride.startTime) }}</span>
-              <span class="time-value">{{
-                formatDateTimeRange(ride.startTime, ride.endTime)
-              }}</span>
+      <tr *ngFor="let ride of rides()" (click)="selectRide(ride)" style="cursor: pointer">
+        <td *ngIf="showFavoriteButton()" class="favorite-cell" (click)="$event.stopPropagation()">
+          <button
+            type="button"
+            class="favorite-btn"
+            [class.is-favorite]="ride.isFavorite"
+            (click)="favoriteToggled.emit(ride)"
+            [title]="ride.isFavorite ? 'Remove from favorites' : 'Add to favorites'"
+            aria-label="Toggle favorite"
+          >
+            <ng-container *ngIf="!ride.isFavorite; else favoriteFilled">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polygon
+                  points="12 2 15.09 10.26 24 10.5 18 16.6 20.29 25.5 12 20.92 3.71 25.5 6 16.6 0 10.5 8.91 10.26 12 2"
+                />
+              </svg>
+            </ng-container>
+            <ng-template #favoriteFilled>
+              <svg
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polygon
+                  points="12 2 15.09 10.26 24 10.5 18 16.6 20.29 25.5 12 20.92 3.71 25.5 6 16.6 0 10.5 8.91 10.26 12 2"
+                />
+              </svg>
+            </ng-template>
+          </button>
+        </td>
+        <td>
+          <div class="date-cell">
+            <span class="date-value">{{ formatDate(ride.startTime) }}</span>
+            <span class="time-value">{{ formatDateTimeRange(ride.startTime, ride.endTime) }}</span>
+          </div>
+        </td>
+        <td *ngIf="isColumnVisible('driver')">
+          <div class="driver-cell">
+            <div class="driver-avatar">
+              {{ getDriverInitials(ride.driver) }}
             </div>
-          </td>
-          @if (isColumnVisible('driver')) {
-            <td>
-              <div class="driver-cell">
-                <div class="driver-avatar">
-                  {{ getDriverInitials(ride.driver) }}
-                </div>
-                <span class="driver-name">{{ getDriverName(ride.driver) }}</span>
+            <span class="driver-name">{{ getDriverName(ride.driver) }}</span>
+          </div>
+        </td>
+        <td *ngIf="isColumnVisible('passengers')">
+          <div class="passengers-cell">
+            <div class="passenger-avatars">
+              <div class="passenger-avatar" *ngFor="let passenger of ride.passengers.slice(0, 3)">
+                {{ getPassengerInitials(passenger) }}
               </div>
-            </td>
-          }
-          @if (isColumnVisible('passengers')) {
-            <td>
-              <div class="passengers-cell">
-                <div class="passenger-avatars">
-                  @for (passenger of ride.passengers.slice(0, 3); track passenger.email) {
-                    <div class="passenger-avatar">
-                      {{ getPassengerInitials(passenger) }}
-                    </div>
-                  }
-                  @if (ride.passengers.length > 3) {
-                    <div class="passenger-avatar">+{{ ride.passengers.length - 3 }}</div>
-                  }
-                </div>
-                <span class="passenger-count">{{
-                  getPassengerDisplayCount(ride.passengers.length)
-                }}</span>
-              </div>
-            </td>
-          }
-          <td>
-            <div class="route-cell">
-              <div class="route-markers">
-                <div class="route-dot start"></div>
-                <div class="route-line-small"></div>
-                <div class="route-dot end"></div>
-              </div>
-              <div class="route-addresses">
-                <span class="route-from">{{ ride.origin }}</span>
-                <span class="route-to">{{ ride.destination }}</span>
+              <div class="passenger-avatar" *ngIf="ride.passengers.length > 3">
+                +{{ ride.passengers.length - 3 }}
               </div>
             </div>
-          </td>
-          <td>
-            <span
-              class="status-badge"
-              [class.completed]="!ride.isCancelled && !ride.panicActivated"
-              [class.cancelled]="ride.isCancelled"
-              [class.panic]="!ride.isCancelled && ride.panicActivated"
-            >
-              @if (!ride.isCancelled && !ride.panicActivated) {
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              }
-              @if (!ride.isCancelled && ride.panicActivated) {
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M12 2 2 22h20L12 2Z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12" y2="17" />
-                </svg>
-              }
-              @if (ride.isCancelled) {
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="15" y1="9" x2="9" y2="15" />
-                  <line x1="9" y1="9" x2="15" y2="15" />
-                </svg>
-              }
-              {{ ride.isCancelled ? 'Cancelled' : ride.panicActivated ? 'Panic' : 'Completed' }}
-            </span>
-          </td>
-          @if (showEarnings()) {
-            <td class="price-cell">
-              @if (!ride.isCancelled) {
-                <span>{{ formatCurrency(ride.cost) }}</span>
-              }
-              @if (ride.isCancelled) {
-                <span>—</span>
-              }
-            </td>
-          }
-        </tr>
-      }
+            <span class="passenger-count">{{
+              getPassengerDisplayCount(ride.passengers.length)
+            }}</span>
+          </div>
+        </td>
+        <td>
+          <div class="route-cell">
+            <div class="route-markers">
+              <div class="route-dot start"></div>
+              <div class="route-line-small"></div>
+              <div class="route-dot end"></div>
+            </div>
+            <div class="route-addresses">
+              <span class="route-from">{{ ride.origin }}</span>
+              <span class="route-to">{{ ride.destination }}</span>
+            </div>
+          </div>
+        </td>
+        <td>
+          <span
+            class="status-badge"
+            [class.completed]="!ride.isCancelled && !ride.panicActivated"
+            [class.cancelled]="ride.isCancelled"
+            [class.panic]="!ride.isCancelled && ride.panicActivated"
+          >
+            <ng-container *ngIf="!ride.isCancelled && !ride.panicActivated">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </ng-container>
+            <ng-container *ngIf="!ride.isCancelled && ride.panicActivated">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M12 2 2 22h20L12 2Z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12" y2="17" />
+              </svg>
+            </ng-container>
+            <ng-container *ngIf="ride.isCancelled">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="15" y1="9" x2="9" y2="15" />
+                <line x1="9" y1="9" x2="15" y2="15" />
+              </svg>
+            </ng-container>
+            {{ ride.isCancelled ? 'Cancelled' : ride.panicActivated ? 'Panic' : 'Completed' }}
+          </span>
+        </td>
+        <td *ngIf="showEarnings()" class="price-cell">
+          <span *ngIf="!ride.isCancelled">{{ formatCurrency(ride.cost) }}</span>
+          <span *ngIf="ride.isCancelled">—</span>
+        </td>
+      </tr>
     </tbody>
   </table>
 
-  @if (rides().length === 0) {
-    <div class="empty-state">
-      <p>{{ emptyMessage() }}</p>
-    </div>
-  }
+  <div *ngIf="rides().length === 0" class="empty-state">
+    <p>{{ emptyMessage() }}</p>
+  </div>
 </div>

@@ -280,6 +280,48 @@
   }
 }
 
+/* Favorite Column */
+.favorite-col {
+  width: 50px;
+}
+
+.favorite-cell {
+  padding: 18px 12px !important;
+}
+
+.favorite-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    background: var(--bg-light);
+    color: var(--primary);
+  }
+
+  &.is-favorite {
+    color: #fbbf24;
+
+    &:hover {
+      background: rgba(251, 191, 36, 0.1);
+    }
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .rides-table-container {

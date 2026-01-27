@@ -25,4 +25,8 @@ export interface Ride {
   vehicleType: 'STANDARD' | 'LUXURY' | 'VAN';
   driverRating?: number;
   passengerRating?: number;
+  // TODO: Backend Integration - Link to RidePassenger.isFavorite
+  // This should be: isFavorite: boolean; (per user per ride)
+  // Currently local state only - Backend needs RidePassenger entity update
+  isFavorite?: boolean;
 }

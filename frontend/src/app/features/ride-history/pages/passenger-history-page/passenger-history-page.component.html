@@ -21,8 +21,10 @@
       [columns]="config.tableColumns"
       [showEarnings]="config.showEarningsInTable || false"
       [showPassengers]="false"
+      [showFavoriteButton]="true"
       (rideSelected)="onRideSelected($event)"
       (sortChanged)="onSortChanged($event)"
+      (favoriteToggled)="onFavoriteToggled($event)"
     />
   </main>
 </div>
