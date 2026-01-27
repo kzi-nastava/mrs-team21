@@ -59,13 +59,14 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'driver-history',
+        path: 'ride-history',
         loadComponent: () =>
-          import('./features/driver-history/driver-history.component').then(
-            (m) => m.DriverHistoryComponent,
-          ),
+          import(
+            './features/ride-history/pages/passenger-history-page/passenger-history-page.component'
+          ).then((m) => m.PassengerHistoryPageComponent),
       },
-      // Ride
+
+      // Ride Tracking
       {
         path: 'ride-tracking/:rideId',
         loadComponent: () =>
