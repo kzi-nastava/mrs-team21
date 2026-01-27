@@ -1,7 +1,9 @@
-import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { EstimateService } from '../../services/estimate-ride.service';
+import { VehicleTypeName } from '../../models/estimate.model';
 
 export interface RideEstimate {
   time: number; // minutes
@@ -22,29 +24,42 @@ export class RideEstimatePanelComponent {
 
   pickupLocation = signal('');
   destinationLocation = signal('');
+  vehicleType = signal<VehicleTypeName>(VehicleTypeName.STANDARD);
   showResults = signal(false);
+  isLoading = signal(false);
 
-  estimate: RideEstimate = {
-    time: 12,
-    price: 450,
-    distance: 3.2,
-  };
+  estimate = signal<RideEstimate | null>(null);
+
+  private estimateService = inject(EstimateService);
+
+  vehicleTypes = Object.values(VehicleTypeName);
 
   closePanel(): void {
     this.panelClosed.emit();
   }
 
   calculateEstimate(): void {
-    // Mock calculation - in real app this would call a service
-    if (this.pickupLocation() && this.destinationLocation()) {
-      // Simulate random estimate
-      this.estimate = {
-        time: Math.floor(Math.random() * 20) + 5,
-        price: Math.floor(Math.random() * 500) + 200,
-        distance: Math.round((Math.random() * 10 + 1) * 10) / 10,
-      };
-      this.showResults.set(true);
-    }
+    if (!this.pickupLocation() || !this.destinationLocation()) return;
+
+    this.isLoading.set(true);
+    this.estimateService
+      .getEstimate(this.pickupLocation(), this.destinationLocation(), this.vehicleType())
+      .subscribe({
+        next: (response) => {
+          this.estimate.set({
+            time: response.durationInMinutes,
+            price: response.estimatedPrice,
+            distance: response.distanceInKm,
+          });
+          this.showResults.set(true);
+          this.isLoading.set(false);
+        },
+        error: (err) => {
+          console.error('Estimate error:', err);
+          this.isLoading.set(false);
+          // TODO: Handle error (e.g., show message)
+        },
+      });
   }
 
   updatePickup(value: string): void {
