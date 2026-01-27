@@ -34,10 +34,12 @@ export class RideHistoryTableComponent {
   columns = input<TableColumnConfig[]>([]);
   showEarnings = input(false);
   showPassengers = input(true);
+  showFavoriteButton = input(false);
   emptyMessage = input('No rides found.');
 
   rideSelected = output<Ride>();
   sortChanged = output<SortState>();
+  favoriteToggled = output<Ride>();
 
   sortState: SortState = { field: null, order: 'asc' };
 

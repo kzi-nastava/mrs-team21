@@ -2,6 +2,9 @@
   <table class="rides-table">
     <thead>
       <tr>
+        @if (showFavoriteButton()) {
+          <th class="favorite-col"></th>
+        }
         <th
           (click)="onHeaderClick('dateTime')"
           [class.sortable]="isSortable('dateTime')"
@@ -79,6 +82,45 @@
     <tbody>
       @for (ride of rides(); track ride.id) {
         <tr (click)="selectRide(ride)" style="cursor: pointer">
+          @if (showFavoriteButton()) {
+            <td class="favorite-cell" (click)="$event.stopPropagation()">
+              <button
+                type="button"
+                class="favorite-btn"
+                [class.is-favorite]="ride.isFavorite"
+                (click)="favoriteToggled.emit(ride)"
+                [title]="ride.isFavorite ? 'Remove from favorites' : 'Add to favorites'"
+                aria-label="Toggle favorite"
+              >
+                <svg
+                  *ngIf="!ride.isFavorite"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polygon
+                    points="12 2 15.09 10.26 24 10.5 18 16.6 20.29 25.5 12 20.92 3.71 25.5 6 16.6 0 10.5 8.91 10.26 12 2"
+                  />
+                </svg>
+                <svg
+                  *ngIf="ride.isFavorite"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polygon
+                    points="12 2 15.09 10.26 24 10.5 18 16.6 20.29 25.5 12 20.92 3.71 25.5 6 16.6 0 10.5 8.91 10.26 12 2"
+                  />
+                </svg>
+              </button>
+            </td>
+          }
           <td>
             <div class="date-cell">
               <span class="date-value">{{ formatDate(ride.startTime) }}</span>
