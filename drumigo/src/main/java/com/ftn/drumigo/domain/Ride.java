@@ -37,6 +37,9 @@ public class Ride {
     
     @Column(name = "end_time")
     private Instant endTime;
+
+    @Column(name = "paid_at")
+    private Instant paidAt;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "driver_id")

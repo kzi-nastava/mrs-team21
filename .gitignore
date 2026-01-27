@@ -57,6 +57,9 @@ target/
 *.jar
 *.war
 
+# Local Spring Boot dev config
+**/application-dev.properties
+
 # Gradle (for mobile)
 .gradle/
 build/
