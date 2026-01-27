@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, OnInit, inject } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { LoginService, LoginRequest } from '../services/login.service';
 
 @Component({
   selector: 'app-login',
@@ -15,7 +16,9 @@ export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
   submitted = false;
 
-  constructor(private fb: FormBuilder) {}
+  private fb = inject(FormBuilder);
+  private loginService = inject(LoginService);
+  private router = inject(Router);
 
   ngOnInit(): void {
     this.loginForm = this.fb.group({
@@ -43,7 +46,28 @@ export class LoginComponent implements OnInit {
       return;
     }
 
-    // TODO: Implement login logic in KT2
-    console.log('Login attempt:', this.loginForm.value);
+    const formValue = this.loginForm.value;
+    const payload: LoginRequest = {
+      email: formValue.email,
+      password: formValue.password,
+    };
+
+    this.loginService.login(payload).subscribe({
+      next: (response) => {
+        console.log('Login successful:', response);
+        // Store token
+        localStorage.setItem('token', response.token);
+        // Navigate based on role
+        if (response.role === 'PASSENGER') {
+          this.router.navigate(['/order-ride']);
+        } else if (response.role === 'DRIVER') {
+          this.router.navigate(['/active-ride']);
+        }
+      },
+      error: (error) => {
+        console.error('Login failed:', error);
+        // TODO: Show error message
+      },
+    });
   }
 }
