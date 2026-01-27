@@ -6,8 +6,8 @@ import com.ftn.drumigo.domain.User;
 import com.ftn.drumigo.domain.UserToken;
 import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.domain.enums.TokenType;
-import com.ftn.drumigo.dto.LoginRequest;
-import com.ftn.drumigo.dto.LoginResponse;
+import com.ftn.drumigo.dto.auth.request.LoginRequest;
+import com.ftn.drumigo.dto.auth.response.LoginResponse;
 import com.ftn.drumigo.dto.PasswordUpdateRequest;
 import com.ftn.drumigo.dto.ResetPasswordConfirmRequest;
 import com.ftn.drumigo.dto.ResetPasswordRequestRequest;
@@ -22,8 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ftn.drumigo.util.TokenUtil;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import com.ftn.drumigo.util.PasswordUtil;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -52,7 +51,7 @@ public class AuthService {
         }
         
         // Verify password (CRUD-first: simple hash comparison)
-        String passwordHash = hashPassword(request.password());
+        String passwordHash = PasswordUtil.hashPassword(request.password());
         if (!passwordHash.equals(user.getPasswordHash())) {
             throw new BadRequestException("Invalid email or password");
         }
@@ -133,7 +132,7 @@ public class AuthService {
         
         // Update password
         User user = userToken.getUser();
-        user.setPasswordHash(hashPassword(request.newPassword()));
+        user.setPasswordHash(PasswordUtil.hashPassword(request.newPassword()));
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);
     }
@@ -143,34 +142,15 @@ public class AuthService {
             .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         
         // Verify current password
-        String currentPasswordHash = hashPassword(request.currentPassword());
+        String currentPasswordHash = PasswordUtil.hashPassword(request.currentPassword());
         if (!currentPasswordHash.equals(user.getPasswordHash())) {
             throw new BadRequestException("Current password is incorrect");
         }
         
         // Update password
-        user.setPasswordHash(hashPassword(request.newPassword()));
+        user.setPasswordHash(PasswordUtil.hashPassword(request.newPassword()));
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);
     }
-    
-    private String hashPassword(String password) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(password.getBytes());
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) {
-                    hexString.append('0');
-                }
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Error hashing password", e);
-        }
-    }
-    
-}
 
+}
