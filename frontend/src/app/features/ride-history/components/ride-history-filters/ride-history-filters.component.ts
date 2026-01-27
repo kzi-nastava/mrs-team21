@@ -1,0 +1,44 @@
+import { Component, output, input, ChangeDetectionStrategy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RideFilter } from '../../models';
+
+/**
+ * Reusable ride history filter component.
+ * Emits filter changes without managing state internally.
+ */
+@Component({
+  selector: 'app-ride-history-filters',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './ride-history-filters.component.html',
+  styleUrl: './ride-history-filters.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class RideHistoryFiltersComponent {
+  startDate = input<string>('');
+  endDate = input<string>('');
+  resultsCount = input<number>(0);
+
+  filterChanged = output<{ startDate: string; endDate: string }>();
+  filterCleared = output<void>();
+
+  localStartDate: string = '';
+  localEndDate: string = '';
+
+  constructor() {
+    // Initialize local state from inputs
+    this.localStartDate = this.startDate();
+    this.localEndDate = this.endDate();
+  }
+
+  onDateChange(): void {
+    this.filterChanged.emit({ startDate: this.localStartDate, endDate: this.localEndDate });
+  }
+
+  onClearFilter(): void {
+    this.localStartDate = '';
+    this.localEndDate = '';
+    this.filterCleared.emit();
+  }
+}
