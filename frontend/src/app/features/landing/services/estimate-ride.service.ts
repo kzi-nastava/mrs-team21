@@ -8,16 +8,23 @@ import {
   LocationDTO,
   VehicleTypeName,
 } from '../models/estimate.model';
-import mbxGeocoding from '@mapbox/mapbox-sdk/services/geocoding';
 
 @Injectable({
   providedIn: 'root',
 })
 export class EstimateService {
   private apiUrl = `${environment.apiBaseUrl}/rides/estimate`;
-  private geocodingClient = mbxGeocoding({ accessToken: environment.mapboxToken });
+  private geocodingClient: any;
+  private geocodingInitPromise: Promise<void>;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    this.geocodingInitPromise = this.initGeocoding();
+  }
+
+  private async initGeocoding(): Promise<void> {
+    const mbxGeocoding = (await import('@mapbox/mapbox-sdk/services/geocoding')).default;
+    this.geocodingClient = mbxGeocoding({ accessToken: environment.mapboxToken });
+  }
 
   getEstimate(
     startAddress: string,
@@ -48,7 +55,9 @@ export class EstimateService {
   }
 
   private geocodeAddress(address: string): Observable<LocationDTO> {
-    const promise = this.geocodingClient.forwardGeocode({ query: address, limit: 1 }).send();
+    const promise = this.geocodingInitPromise.then(() =>
+      this.geocodingClient.forwardGeocode({ query: address, limit: 1 }).send()
+    );
     return from(promise).pipe(
       map((response: any) => {
         const feature = response?.body?.features?.[0];
