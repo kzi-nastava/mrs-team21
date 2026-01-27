@@ -109,9 +109,9 @@ public class PassengerService {
         return token;
     }
 
-    // Password must be at least 6 chars, contain at least one uppercase and one lowercase letter
+    // Password must be 6-64 chars, contain at least one uppercase letter, one lowercase letter, and one digit or special character
     private boolean isValidPassword(String password) {
         if (password == null) return false;
-        return password.matches("(?=.*[a-z])(?=.*[A-Z]).{6,}");
+        return password.matches("(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9\\W]).{6,64}");
     }
 }
