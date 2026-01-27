@@ -73,10 +73,26 @@ export const routes: Routes = [
             (m) => m.RideTrackingComponent,
           ),
       },
+
+      // Order Ride
       {
         path: 'order-ride',
         loadComponent: () =>
           import('./features/order-ride/order-ride.component').then((m) => m.OrderRideComponent),
+      },
+
+      // Driver Routes
+      {
+        path: 'driver',
+        children: [
+          {
+            path: 'ride-history',
+            loadComponent: () =>
+              import(
+                './features/ride-history/pages/driver-history-page/driver-history-page.component'
+              ).then((m) => m.DriverHistoryPageComponent),
+          },
+        ],
       },
     ],
   },
