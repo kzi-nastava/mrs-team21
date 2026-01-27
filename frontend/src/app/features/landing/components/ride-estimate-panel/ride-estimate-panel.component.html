@@ -94,9 +94,9 @@
         type="button"
         class="btn-calculate"
         (click)="calculateEstimate()"
-        [disabled]="!pickupLocation() || !destinationLocation()"
+        [disabled]="!pickupLocation() || !destinationLocation() || isLoading()"
       >
-        Calculate estimate
+        {{ isLoading() ? 'Calculating...' : 'Calculate estimate' }}
       </button>
     </div>
 
@@ -117,11 +117,11 @@
       </div>
       <div class="estimate-grid">
         <div class="estimate-item">
-          <div class="estimate-value">~{{ estimate.time }} <span>min</span></div>
+          <div class="estimate-value">~{{ estimate()?.time }} <span>min</span></div>
           <div class="estimate-label">Est. Time</div>
         </div>
         <div class="estimate-item">
-          <div class="estimate-value">~{{ estimate.price }} <span>RSD</span></div>
+          <div class="estimate-value">~{{ estimate()?.price }} <span>RSD</span></div>
           <div class="estimate-label">Est. Price</div>
         </div>
         <div class="estimate-distance">
@@ -137,7 +137,7 @@
             <line x1="6" y1="6" x2="6" y2="18" />
             <line x1="6" y1="18" x2="18" y2="18" />
           </svg>
-          <span>Distance: {{ estimate.distance }} km</span>
+          <span>Distance: {{ estimate()?.distance }} km</span>
         </div>
       </div>
     </div>
