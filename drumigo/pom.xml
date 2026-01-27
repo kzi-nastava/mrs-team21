@@ -11,7 +11,7 @@
 	<groupId>com.ftn</groupId>
 	<artifactId>drumigo</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>war</packaging>
+	<packaging>jar</packaging>
 	<name>drumigo</name>
 	<description>Drumigo brutally mogs Uber</description>
 	<url/>
@@ -46,7 +46,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc</artifactId>
+			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -77,11 +77,6 @@
         </dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-tomcat</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jdbc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
@@ -100,8 +95,13 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-	</dependencies>
+		<dependency>
+    		<groupId>com.mapbox.mapboxsdk</groupId>
+    		<artifactId>mapbox-sdk-services</artifactId>
+    		<version>5.8.0</version>
+		</dependency>
 
+	</dependencies>
 	<build>
 		<plugins>
 			<plugin>
