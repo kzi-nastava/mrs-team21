@@ -51,8 +51,21 @@ public class MapService {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        DirectionsRoute route = response.body().routes().get(0);
 
+        if (!response.isSuccessful()) {
+            throw new RuntimeException("Failed to get directions from Mapbox: HTTP " + response.code());
+        }
+
+        DirectionsResponse body = response.body();
+        if (body == null) {
+            throw new RuntimeException("Failed to get directions from Mapbox: empty response body");
+        }
+
+        if (body.routes() == null || body.routes().isEmpty()) {
+            throw new RuntimeException("Failed to get directions from Mapbox: no routes returned");
+        }
+
+        DirectionsRoute route = body.routes().get(0);
         return new EstimateResponse(
                 route.geometry(),
                 Math.round((route.distance() / 1000.0) * 10) / 10.0,
