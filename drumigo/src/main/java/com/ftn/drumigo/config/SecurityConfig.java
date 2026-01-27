@@ -28,8 +28,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**", "/api/rides/estimate", "/api/passengers", "/api/passengers/activate/**").permitAll()
                 .anyRequest().authenticated()
             )
-                .httpBasic(Customizer.withDefaults())
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+            .httpBasic(Customizer.withDefaults())
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
 
         return http.build();
