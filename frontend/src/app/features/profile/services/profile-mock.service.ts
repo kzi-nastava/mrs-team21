@@ -21,6 +21,7 @@ export class ProfileMockService {
     const testRole: 'DRIVER' | 'PASSENGER' = 'DRIVER';
 
     const baseProfile: ProfileData = {
+      id: 1,
       firstName: 'Marko',
       lastName: 'Petrović',
       email: 'marko.petrovic@example.com',

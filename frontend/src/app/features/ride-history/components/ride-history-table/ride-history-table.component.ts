@@ -144,4 +144,39 @@ export class RideHistoryTableComponent {
     const sortableFields: SortField[] = ['dateTime', 'driver', 'passengers', 'route', 'status', 'earnings'];
     return sortableFields.includes(field);
   }
+
+  getStatusLabel(ride: Ride): string {
+    if (ride.status) {
+      switch (ride.status) {
+        case 'ACCEPTED':
+          return 'Scheduled';
+        case 'ACTIVE':
+          return 'In progress';
+        case 'FINISHED':
+          return 'Completed';
+        case 'CANCELLED':
+          return 'Cancelled';
+        case 'PENDING':
+          return 'Pending';
+        case 'REJECTED':
+          return 'Rejected';
+        default:
+          return ride.status;
+      }
+    }
+    return ride.isCancelled ? 'Cancelled' : ride.panicActivated ? 'Panic' : 'Completed';
+  }
+
+  getStatusClass(ride: Ride): string {
+    if (ride.status) {
+      if (ride.status === 'CANCELLED' || ride.status === 'REJECTED') return 'cancelled';
+      if (ride.status === 'ACTIVE') return 'active';
+      if (ride.status === 'ACCEPTED') return 'scheduled';
+      if (ride.status === 'PENDING') return 'pending';
+      return 'completed';
+    }
+    if (ride.isCancelled) return 'cancelled';
+    if (ride.panicActivated) return 'panic';
+    return 'completed';
+  }
 }

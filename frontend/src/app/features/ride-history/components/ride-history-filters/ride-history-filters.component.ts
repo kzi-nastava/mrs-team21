@@ -18,6 +18,7 @@ export class RideHistoryFiltersComponent {
   startDate = input<string>('');
   endDate = input<string>('');
   resultsCount = input<number>(0);
+  showDateFilters = input<boolean>(true);
 
   filterChanged = output<{ startDate: string; endDate: string }>();
   filterCleared = output<void>();

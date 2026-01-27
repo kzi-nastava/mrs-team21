@@ -1,5 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { map, Observable } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 import { Ride } from '../models';
+import { PageResponse, RideResponseDto } from '../models/ride-api.model';
 
 /**
  * Multi-role ride history service.
@@ -8,6 +12,7 @@ import { Ride } from '../models';
  */
 @Injectable({ providedIn: 'root' })
 export class RideHistoryService {
+  private readonly http = inject(HttpClient);
   /**
    * Get ride history for a passenger.
    * Returns rides where the user was a passenger.
@@ -22,6 +27,20 @@ export class RideHistoryService {
    */
   getDriverRideHistory(): Ride[] {
     return this.getMockRideData();
+  }
+
+  getUpcomingDriverRides(driverId: number, page = 0, size = 10): Observable<Ride[]> {
+    const params = new HttpParams()
+      .set('page', page)
+      .set('size', size)
+      .set('sort', 'scheduledFor,asc');
+
+    return this.http
+      .get<PageResponse<RideResponseDto>>(
+        `${environment.apiBaseUrl}/drivers/${driverId}/rides/upcoming`,
+        { params },
+      )
+      .pipe(map((response) => response.content.map((ride) => this.mapRideResponse(ride))));
   }
 
   /**
@@ -287,5 +306,30 @@ export class RideHistoryService {
         passengerRating: 4.8,
       },
     ];
+  }
+
+  private mapRideResponse(ride: RideResponseDto): Ride {
+    const waypointAddresses = ride.waypoints?.sort((a, b) => a.order - b.order) || [];
+    const origin = waypointAddresses[0]?.address ?? 'Unknown pickup';
+    const destination = waypointAddresses[waypointAddresses.length - 1]?.address ?? 'Unknown destination';
+    const startTime = ride.scheduledFor ?? ride.startTime ?? ride.requestedAt;
+
+    return {
+      id: String(ride.id),
+      startTime: startTime ? new Date(startTime) : new Date(),
+      endTime: ride.endTime ? new Date(ride.endTime) : null,
+      origin,
+      destination,
+      cost: ride.totalCost ?? 0,
+      isCancelled: ride.status === 'CANCELLED',
+      cancelledBy: null,
+      cancellationReason: undefined,
+      panicActivated: false,
+      passengers: [],
+      vehicleType: undefined,
+      status: ride.status,
+      scheduledFor: ride.scheduledFor ? new Date(ride.scheduledFor) : null,
+      requestedAt: ride.requestedAt ? new Date(ride.requestedAt) : null,
+    };
   }
 }

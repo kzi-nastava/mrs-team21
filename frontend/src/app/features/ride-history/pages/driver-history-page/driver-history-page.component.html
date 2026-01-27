@@ -2,8 +2,27 @@
   <!-- Main Content -->
   <main class="main-content">
     <div class="page-header">
-      <h1 class="page-title">{{ config.pageTitle }}</h1>
-      <p class="page-subtitle">{{ config.pageSubtitle }}</p>
+      <h1 class="page-title">{{ config().pageTitle }}</h1>
+      <p class="page-subtitle">{{ config().pageSubtitle }}</p>
+    </div>
+
+    <div class="view-toggle">
+      <button
+        type="button"
+        class="toggle-btn"
+        [class.active]="viewMode() === 'history'"
+        (click)="setViewMode('history')"
+      >
+        History
+      </button>
+      <button
+        type="button"
+        class="toggle-btn"
+        [class.active]="viewMode() === 'upcoming'"
+        (click)="setViewMode('upcoming')"
+      >
+        Upcoming scheduled
+      </button>
     </div>
 
     <!-- Filters -->
@@ -11,16 +30,22 @@
       [startDate]="startDate()"
       [endDate]="endDate()"
       [resultsCount]="filteredRides().length"
+      [showDateFilters]="viewMode() === 'history'"
       (filterChanged)="onFilterChanged($event)"
       (filterCleared)="onFilterCleared()"
     />
 
+    @if (isUpcomingLoading()) {
+      <div class="loading-banner">Loading upcoming rides...</div>
+    }
+
     <!-- Rides Table -->
     <app-ride-history-table
       [rides]="filteredRides()"
-      [columns]="config.tableColumns"
-      [showEarnings]="config.showEarningsInTable || false"
-      [showPassengers]="true"
+      [columns]="config().tableColumns"
+      [showEarnings]="config().showEarningsInTable || false"
+      [showPassengers]="viewMode() === 'history'"
+      [emptyMessage]="viewMode() === 'upcoming' ? 'No upcoming scheduled rides.' : 'No rides found.'"
       (rideSelected)="onRideSelected($event)"
       (sortChanged)="onSortChanged($event)"
     />
@@ -30,6 +55,6 @@
 <!-- Ride Details Side Panel -->
 <app-ride-details
   [ride]="selectedRide()"
-  [config]="config.detailsConfig"
+  [config]="config().detailsConfig"
   (close)="onRideDetailsClosed()"
 />

@@ -9,7 +9,7 @@ import {
   AfterViewInit,
   computed,
 } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { finalize } from 'rxjs';
@@ -21,6 +21,8 @@ import { ActiveRide, LocationUpdate } from './models/active-ride.model';
 import { PanicComponent, PanicRideInfo } from './components/shared/panic/panic.component';
 import { StopRideComponent, StopRideInfo } from './components/driver/stop-ride/stop-ride.component';
 import { InconsistencyReportComponent } from './components/passenger/inconsistency-report/inconsistency-report.component';
+import { RideApiService } from './services/ride-api.service';
+import { RideResponseDto } from '../ride-history/models/ride-api.model';
 
 @Component({
   selector: 'app-ride-tracking',
@@ -42,9 +44,11 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   inconsistencyReportComponent?: InconsistencyReportComponent;
 
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private destroyRef = inject(DestroyRef);
   private rideTrackingService = inject(RideTrackingMockService);
   private directionsService = inject(MapboxDirectionsService);
+  private rideApiService = inject(RideApiService);
 
   private lastRouteRequestAt = 0;
   private routeRequestInFlight = false;
@@ -59,6 +63,24 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   carBearing = signal<number | undefined>(undefined);
   showPanicModal = signal<boolean>(false);
   showStopModal = signal<boolean>(false);
+  rideCompleted = signal<boolean>(false);
+  endRideLoading = signal<boolean>(false);
+  endRideError = signal<string | null>(null);
+  upcomingRides = signal<RideResponseDto[]>([]);
+
+  nextScheduledRide = computed(() => this.upcomingRides()[0] ?? null);
+
+  nextRideSummary = computed(() => {
+    const ride = this.nextScheduledRide();
+    if (!ride) return null;
+    const waypoints = [...(ride.waypoints ?? [])].sort((a, b) => a.order - b.order);
+    return {
+      scheduledFor: ride.scheduledFor ? new Date(ride.scheduledFor) : null,
+      origin: waypoints[0]?.address ?? 'Unknown pickup',
+      destination: waypoints[waypoints.length - 1]?.address ?? 'Unknown destination',
+      rideId: ride.id,
+    };
+  });
 
   panicRideInfo = computed<PanicRideInfo | null>(() => {
     const ride = this.activeRide();
@@ -360,6 +382,16 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  formatScheduledTime(date: Date | null): string {
+    if (!date) return 'Scheduled time TBD';
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  }
+
   openInconsistencyForm(): void {
     this.inconsistencyReportComponent?.openModal();
   }
@@ -408,14 +440,62 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onStopRide(): void {
-    console.log('Ride stopped at current location');
-    // In real app: Send stop ride request to backend
-    // This would: end the ride, apply adjusted fare, update ride history
-    this.closeStopModal();
+    const rideId = Number(this.rideId());
+    if (!rideId) {
+      console.error('Ride id is missing or invalid');
+      return;
+    }
+    this.endRideLoading.set(true);
+    this.endRideError.set(null);
+    this.rideApiService
+      .endRide(rideId)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.endRideLoading.set(false)),
+      )
+      .subscribe({
+        next: () => {
+          this.rideCompleted.set(true);
+          this.closeStopModal();
+          const driverId = this.activeRide()?.driver.id;
+          if (driverId) {
+            this.loadUpcomingRides(driverId);
+          }
+        },
+        error: (error) => {
+          console.error('Failed to end ride', error);
+          this.endRideError.set('Failed to end ride. Please try again.');
+        },
+      });
   }
 
   onContinueRide(): void {
     console.log('Continuing ride');
     this.closeStopModal();
+  }
+
+  navigateToUpcomingRides(): void {
+    this.router.navigate(['/driver/ride-history'], { queryParams: { view: 'upcoming' } });
+  }
+
+  navigateToNextRide(): void {
+    const nextRide = this.nextScheduledRide();
+    if (!nextRide) {
+      return;
+    }
+    this.router.navigate(['/ride-tracking', nextRide.id]);
+  }
+
+  private loadUpcomingRides(driverId: number): void {
+    this.rideApiService
+      .getUpcomingDriverRides(driverId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (rides) => this.upcomingRides.set(rides),
+        error: (error) => {
+          console.error('Failed to load upcoming rides', error);
+          this.upcomingRides.set([]);
+        },
+      });
   }
 }

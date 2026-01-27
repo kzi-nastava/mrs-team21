@@ -21,6 +21,53 @@
     <p class="page-subtitle">Manage your personal information and preferences</p>
   </div>
 
+  @if (!isDriver()) {
+    <div class="profile-card notifications-card">
+      <div class="card-header">
+        <h3 class="card-title">Notifications</h3>
+        <span class="card-subtitle">Recent ride updates</span>
+      </div>
+
+      @if (notificationsLoading()) {
+        <div class="notification-state">Loading notifications...</div>
+      }
+
+      @if (!notificationsLoading() && notificationsError()) {
+        <div class="notification-state error">{{ notificationsError() }}</div>
+      }
+
+      @if (!notificationsLoading() && !notificationsError()) {
+        @if (notifications().length === 0) {
+          <div class="notification-state">No notifications yet.</div>
+        }
+        @if (notifications().length > 0) {
+          <div class="notification-list">
+            @for (item of notifications(); track item.id) {
+              <div class="notification-item" [class.unread]="!item.readAt">
+                <div class="notification-content">
+                  <div class="notification-message">{{ item.message }}</div>
+                  <div class="notification-meta">
+                    <span>{{ formatNotificationDate(item.createdAt) }}</span>
+                    <span class="badge">{{ item.type }}</span>
+                  </div>
+                </div>
+                @if (item.type === 'RIDE_FINISHED') {
+                  <button
+                    type="button"
+                    class="notification-action"
+                    (click)="openRideHistory(item.rideId)"
+                  >
+                    Rate ride
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+  }
+
   <!-- Combined Personal Information Card with Photo -->
   <div class="profile-card personal-card">
     <button

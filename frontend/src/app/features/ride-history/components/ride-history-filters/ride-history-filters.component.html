@@ -1,23 +1,25 @@
 <div class="filters-bar">
-  <div class="filter-group">
-    <span class="filter-label">From:</span>
-    <input
-      type="date"
-      class="filter-input"
-      [value]="localStartDate"
-      (change)="localStartDate = $any($event.target).value; onDateChange()"
-    />
-  </div>
-  <div class="filter-group">
-    <span class="filter-label">To:</span>
-    <input
-      type="date"
-      class="filter-input"
-      [value]="localEndDate"
-      (change)="localEndDate = $any($event.target).value; onDateChange()"
-    />
-  </div>
-  <button type="button" class="btn-filter" (click)="onClearFilter()">Clear Filter</button>
+  <ng-container *ngIf="showDateFilters()">
+    <div class="filter-group">
+      <span class="filter-label">From:</span>
+      <input
+        type="date"
+        class="filter-input"
+        [value]="localStartDate"
+        (change)="localStartDate = $any($event.target).value; onDateChange()"
+      />
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">To:</span>
+      <input
+        type="date"
+        class="filter-input"
+        [value]="localEndDate"
+        (change)="localEndDate = $any($event.target).value; onDateChange()"
+      />
+    </div>
+    <button type="button" class="btn-filter" (click)="onClearFilter()">Clear Filter</button>
+  </ng-container>
   <div class="filter-spacer"></div>
   <span class="results-count">Showing {{ resultsCount() }} rides</span>
 </div>
