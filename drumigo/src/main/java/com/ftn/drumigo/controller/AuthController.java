@@ -1,6 +1,8 @@
 package com.ftn.drumigo.controller;
 
 import com.ftn.drumigo.dto.*;
+import com.ftn.drumigo.dto.auth.request.LoginRequest;
+import com.ftn.drumigo.dto.auth.response.LoginResponse;
 import com.ftn.drumigo.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

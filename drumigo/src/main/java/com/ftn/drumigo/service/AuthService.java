@@ -6,8 +6,8 @@ import com.ftn.drumigo.domain.User;
 import com.ftn.drumigo.domain.UserToken;
 import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.domain.enums.TokenType;
-import com.ftn.drumigo.dto.LoginRequest;
-import com.ftn.drumigo.dto.LoginResponse;
+import com.ftn.drumigo.dto.auth.request.LoginRequest;
+import com.ftn.drumigo.dto.auth.response.LoginResponse;
 import com.ftn.drumigo.dto.PasswordUpdateRequest;
 import com.ftn.drumigo.dto.ResetPasswordConfirmRequest;
 import com.ftn.drumigo.dto.ResetPasswordRequestRequest;
@@ -22,8 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ftn.drumigo.util.TokenUtil;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import com.ftn.drumigo.util.PasswordUtil;
+import com.ftn.drumigo.util.JwtUtil;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -36,7 +36,8 @@ public class AuthService {
     private final UserTokenRepository userTokenRepository;
     private final DriverRepository driverRepository;
     private final RideRepository rideRepository;
-    
+    private final JwtUtil jwtUtil;
+
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
             .orElseThrow(() -> new BadRequestException("Invalid email or password"));
@@ -52,21 +53,21 @@ public class AuthService {
         }
         
         // Verify password (CRUD-first: simple hash comparison)
-        String passwordHash = hashPassword(request.password());
+        String passwordHash = PasswordUtil.hashPassword(request.password());
         if (!passwordHash.equals(user.getPasswordHash())) {
             throw new BadRequestException("Invalid email or password");
         }
         
-        // If user is a driver, mark as active driver (spec 2.2.1)
+        // If user is a driver, mark as active driver
         if (user instanceof Driver driver) {
             driver.setActiveDriver(true);
             driver.setLastStateChangeAt(Instant.now());
             driverRepository.save(driver);
         }
         
-        // Generate token (placeholder for JWT later)
-        String token = "token_" + UUID.randomUUID().toString();
-        
+        // Generate JWT token
+        String token = jwtUtil.generateToken(user);
+
         return new LoginResponse(
             user.getId(),
             user.getEmail(),
@@ -82,7 +83,7 @@ public class AuthService {
         // If user is a driver, check if they have an active ride (spec 2.2.1)
         if (user instanceof Driver driver) {
             // Check if driver has an ACTIVE ride
-            Ride activeRide = rideRepository.findByDriverAndStatus((Driver) user, RideStatus.ACTIVE)
+            Ride activeRide = rideRepository.findByDriverAndStatus(driver, RideStatus.ACTIVE)
                 .stream()
                 .findFirst()
                 .orElse(null);
@@ -116,7 +117,6 @@ public class AuthService {
         userTokenRepository.save(userToken);
         
         // In production, send email with token
-        // For KT1, token is stored in DB and can be retrieved via admin endpoint if needed
     }
     
     public void confirmPasswordReset(ResetPasswordConfirmRequest request) {
@@ -133,7 +133,7 @@ public class AuthService {
         
         // Update password
         User user = userToken.getUser();
-        user.setPasswordHash(hashPassword(request.newPassword()));
+        user.setPasswordHash(PasswordUtil.hashPassword(request.newPassword()));
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);
     }
@@ -143,34 +143,15 @@ public class AuthService {
             .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         
         // Verify current password
-        String currentPasswordHash = hashPassword(request.currentPassword());
+        String currentPasswordHash = PasswordUtil.hashPassword(request.currentPassword());
         if (!currentPasswordHash.equals(user.getPasswordHash())) {
             throw new BadRequestException("Current password is incorrect");
         }
         
         // Update password
-        user.setPasswordHash(hashPassword(request.newPassword()));
+        user.setPasswordHash(PasswordUtil.hashPassword(request.newPassword()));
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);
     }
-    
-    private String hashPassword(String password) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(password.getBytes());
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) {
-                    hexString.append('0');
-                }
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Error hashing password", e);
-        }
-    }
-    
-}
 
+}
