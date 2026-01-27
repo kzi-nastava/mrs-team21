@@ -31,6 +31,38 @@
 		<java.version>17</java.version>
 		<lombok.version>1.18.32</lombok.version>
 	</properties>
+
+	<!-- Ensure both Maven Central and Google's Maven are configured so AndroidX artifacts can be resolved -->
+	<pluginRepositories>
+		<pluginRepository>
+			<id>central</id>
+			<name>Maven Central</name>
+			<url>https://repo1.maven.org/maven2/</url>
+		</pluginRepository>
+		<pluginRepository>
+			<id>google</id>
+			<name>Google</name>
+			<url>https://maven.google.com</url>
+		</pluginRepository>
+	</pluginRepositories>
+
+	<repositories>
+		<repository>
+			<id>central</id>
+			<name>Maven Central</name>
+			<url>https://repo1.maven.org/maven2/</url>
+			<releases><enabled>true</enabled></releases>
+			<snapshots><enabled>false</enabled></snapshots>
+		</repository>
+		<repository>
+			<id>google</id>
+			<name>Google</name>
+			<url>https://maven.google.com</url>
+			<releases><enabled>true</enabled></releases>
+			<snapshots><enabled>false</enabled></snapshots>
+		</repository>
+	</repositories>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -96,9 +128,18 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>androidx.annotation</groupId>
+			<artifactId>annotation</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+		<dependency>
     		<groupId>com.mapbox.mapboxsdk</groupId>
     		<artifactId>mapbox-sdk-services</artifactId>
     		<version>5.8.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
 
 	</dependencies>
