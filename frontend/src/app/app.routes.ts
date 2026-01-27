@@ -95,6 +95,19 @@ export const routes: Routes = [
           },
         ],
       },
+
+      // Admin Routes
+      {
+        path: 'admin',
+        children: [
+          {
+            path: 'ride-history',
+            loadComponent: () =>
+              import('./features/ride-history/pages/admin-history-page/admin-history-page.component')
+                .then((m) => m.AdminHistoryPageComponent),
+          },
+        ],
+      },
     ],
   },
   // Catch-all
