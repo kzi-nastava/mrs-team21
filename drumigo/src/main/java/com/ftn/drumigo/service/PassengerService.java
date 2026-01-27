@@ -34,7 +34,7 @@ public class PassengerService {
 
         // Check if passwords match
         if (!password.equals(confirm)) {
-            throw new ConflictException("Passwords don't match");
+            throw new BadRequestException("Passwords don't match");
         }
 
         // Validate password strength: at least 6 chars, at least one uppercase and one lowercase
