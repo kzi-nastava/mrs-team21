@@ -38,22 +38,12 @@ export class PassengerHistoryPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadRides();
-    this.setDefaultDateRange();
   }
 
   private loadRides(): void {
     const rides = this.rideHistoryService.getPassengerRideHistory();
     this.allRides.set(rides);
     this.filteredRides.set(rides);
-  }
-
-  private setDefaultDateRange(): void {
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30);
-
-    this.endDate.set(endDate.toISOString().split('T')[0]);
-    this.startDate.set(startDate.toISOString().split('T')[0]);
   }
 
   onFilterChanged(filter: { startDate: string; endDate: string }): void {
