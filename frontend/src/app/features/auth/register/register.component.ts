@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   ReactiveFormsModule,
   FormBuilder,
@@ -11,16 +11,25 @@ import {
 import { CommonModule } from '@angular/common';
 import { PersonalInfoFormComponent } from '../../../shared/components/personal-info-form/personal-info-form.component';
 import { ProfilePhotoUploadComponent } from '../../../shared/components/profile-photo-upload/profile-photo-upload.component';
+import { RegisterService, PassengerRegisterRequest } from '../services/register.service';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, CommonModule, PersonalInfoFormComponent, ProfilePhotoUploadComponent],
+  imports: [
+    RouterLink,
+    ReactiveFormsModule,
+    CommonModule,
+    PersonalInfoFormComponent,
+    ProfilePhotoUploadComponent,
+  ],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss',
 })
 export class RegisterComponent implements OnInit {
   private fb = inject(FormBuilder);
+  private registerService = inject(RegisterService);
+  private router = inject(Router);
 
   registerForm!: FormGroup;
   submitted = false;
@@ -48,7 +57,7 @@ export class RegisterComponent implements OnInit {
         confirmPassword: ['', [Validators.required]],
         agreeToTerms: [false, [Validators.requiredTrue]],
       },
-      { validators: this.passwordMatchValidator }
+      { validators: this.passwordMatchValidator },
     );
   }
 
@@ -88,22 +97,28 @@ export class RegisterComponent implements OnInit {
       return;
     }
 
-    // TODO: Implement registration logic in KT2
     const formValue = this.registerForm.value;
-    console.log('Registration submitted:', {
+    const payload: PassengerRegisterRequest = {
       firstName: formValue.firstName,
       lastName: formValue.lastName,
       email: formValue.email,
-      phone: formValue.countryCode + formValue.phone,
+      phoneNumber: formValue.countryCode + formValue.phone,
       address: formValue.address,
-      profilePhoto: this.selectedPhotoFile ? this.selectedPhotoFile.name : null,
+      password: formValue.password,
+      confirmPassword: formValue.confirmPassword,
+      profilePicture: this.selectedPhotoFile ? this.selectedPhotoFile.name : undefined, // Placeholder; replace with actual URL after upload
+    };
+
+    this.registerService.register(payload).subscribe({
+      next: (response) => {
+        console.log('Registration successful:', response);
+        // TODO: Show success message
+        this.router.navigate(['/login']); // Navigate to login after successful registration
+      },
+      error: (error) => {
+        console.error('Registration failed:', error);
+        // TODO: Show error message
+      },
     });
-    
-    // TODO: Upload photo file to backend storage
-    // if (this.selectedPhotoFile) {
-    //   this.uploadService.uploadProfilePhoto(this.selectedPhotoFile).subscribe(
-    //     url => { formData.profilePictureUrl = url; }
-    //   );
-    // }
   }
 }
