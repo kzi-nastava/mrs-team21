@@ -50,7 +50,7 @@ export class AdminHistoryPageComponent implements OnInit {
   private setDefaultDateRange(): void {
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 90); // Admins see 90 days by default
+    startDate.setDate(startDate.getDate() - 90); //TODO: make admins see last 30 rides by default, paginate older rides
 
     this.endDate.set(endDate.toISOString().split('T')[0]);
     this.startDate.set(startDate.toISOString().split('T')[0]);
