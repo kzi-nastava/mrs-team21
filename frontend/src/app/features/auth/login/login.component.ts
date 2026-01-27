@@ -56,7 +56,7 @@ export class LoginComponent implements OnInit {
       next: (response) => {
         console.log('Login successful:', response);
         // Store token
-        localStorage.setItem('token', response.token);
+        sessionStorage.setItem('token', response.token);
         // Navigate based on role
         if (response.role === 'PASSENGER') {
           this.router.navigate(['/order-ride']);

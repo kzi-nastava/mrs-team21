@@ -23,7 +23,7 @@ export class LayoutComponent implements OnInit {
   }
 
   private loadUserFromToken(): void {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token) {
       try {
         const payload = this.decodeJwtPayload(token);
