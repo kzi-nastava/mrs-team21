@@ -1,0 +1,39 @@
+@if (toasts().length > 0) {
+  <div class="toast-container">
+    @for (toast of toasts(); track trackByToastId($index, toast)) {
+      <div class="toast" [class]="'toast--' + toast.type" role="alert" aria-live="polite">
+        <div class="toast__icon">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path [attr.d]="getIcon(toast.type)" />
+          </svg>
+        </div>
+        <div class="toast__message">{{ toast.message }}</div>
+        <button
+          type="button"
+          class="toast__dismiss"
+          (click)="dismiss(toast.id)"
+          aria-label="Dismiss notification"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+    }
+  </div>
+}

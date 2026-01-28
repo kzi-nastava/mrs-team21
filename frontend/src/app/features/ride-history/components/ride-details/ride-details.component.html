@@ -189,20 +189,71 @@
       @if (config().showRatings && !rideData.isCancelled) {
         <div class="detail-section">
           <div class="detail-section-title">Ratings</div>
-          <div class="ratings-grid">
-            @if (rideData.driverRating) {
-              <div class="rating-item">
-                <div class="rating-label">Driver Rating</div>
-                <div class="rating-value">{{ rideData.driverRating }}/5.0</div>
+          
+          <!-- Existing ratings display -->
+          @if (rideData.driverRating || rideData.vehicleRating) {
+            <div class="ratings-grid">
+              @if (rideData.driverRating) {
+                <div class="rating-item">
+                  <div class="rating-label">Driver Rating</div>
+                  <div class="rating-display">
+                    <app-star-rating [rating]="rideData.driverRating" [readonly]="true" size="sm"></app-star-rating>
+                    <span class="rating-value">{{ rideData.driverRating }}/5</span>
+                  </div>
+                </div>
+              }
+              @if (rideData.vehicleRating) {
+                <div class="rating-item">
+                  <div class="rating-label">Vehicle Rating</div>
+                  <div class="rating-display">
+                    <app-star-rating [rating]="rideData.vehicleRating" [readonly]="true" size="sm"></app-star-rating>
+                    <span class="rating-value">{{ rideData.vehicleRating }}/5</span>
+                  </div>
+                </div>
+              }
+            </div>
+
+            @if (rideData.reviewComment) {
+              <div class="review-comment">
+                <div class="review-comment__label">Your comment</div>
+                <div class="review-comment__text">“{{ rideData.reviewComment }}”</div>
               </div>
             }
-            @if (rideData.passengerRating) {
-              <div class="rating-item">
-                <div class="rating-label">Passenger Rating</div>
-                <div class="rating-value">{{ rideData.passengerRating }}/5.0</div>
+          }
+          
+          <!-- Rating action (for passengers) -->
+          @if (config().showRatingAction) {
+            @if (canRateRide()) {
+              <div class="rating-action">
+                <div class="rating-action-header">
+                  <span class="deadline-badge">{{ daysRemaining() }} {{ daysRemaining() === 1 ? 'day' : 'days' }} left to rate</span>
+                </div>
+                <button type="button" class="btn-rate" (click)="onRateClick()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                  Rate this ride
+                </button>
+              </div>
+            } @else if (rideData.hasReview === true) {
+              <div class="rating-submitted">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+                <span>You've rated this ride</span>
+              </div>
+            } @else if (rideData.canRate === false && rideData.endTime) {
+              <div class="rating-expired">
+                <span>Rating deadline has passed</span>
+              </div>
+            } @else if (rideData.endTime) {
+              <!-- Status not yet loaded - show loading indicator -->
+              <div class="rating-loading">
+                <span>Loading rating status...</span>
               </div>
             }
-          </div>
+          }
         </div>
       }
     </div>

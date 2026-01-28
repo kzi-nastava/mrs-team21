@@ -1,0 +1,133 @@
+<div class="modal-backdrop" (click)="onBackdropClick($event)">
+  <div class="modal" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+    <div class="modal__header">
+      <h2 id="modal-title" class="modal__title">Rate Your Ride</h2>
+      <button
+        type="button"
+        class="modal__close"
+        (click)="onClose()"
+        [disabled]="isSubmitting()"
+        aria-label="Close"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal__body">
+      <!-- Driver Info -->
+      <div class="driver-info">
+        <div class="driver-info__avatar">
+          @if (ride().driverPhotoUrl) {
+            <img [src]="ride().driverPhotoUrl" [alt]="ride().driverName" />
+          } @else {
+            <div class="driver-info__avatar-placeholder">
+              {{ ride().driverName.charAt(0) }}
+            </div>
+          }
+        </div>
+        <div class="driver-info__details">
+          <div class="driver-info__name">{{ ride().driverName }}</div>
+          @if (ride().vehicleModel) {
+            <div class="driver-info__vehicle">
+              {{ ride().vehicleModel }}
+              @if (ride().vehicleLicensePlate) {
+                <span class="driver-info__plate">{{ ride().vehicleLicensePlate }}</span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Route Summary -->
+      <div class="route-summary">
+        <div class="route-summary__point">
+          <span class="route-summary__dot route-summary__dot--start"></span>
+          <span class="route-summary__text">{{ ride().origin }}</span>
+        </div>
+        <div class="route-summary__point">
+          <span class="route-summary__dot route-summary__dot--end"></span>
+          <span class="route-summary__text">{{ ride().destination }}</span>
+        </div>
+      </div>
+
+      <!-- Rating Form -->
+      <form [formGroup]="ratingForm" (ngSubmit)="onSubmit()" class="rating-form">
+        <!-- Driver Rating -->
+        <div class="rating-form__field" [class.rating-form__field--error]="driverRatingInvalid">
+          <label class="rating-form__label">How was your driver?</label>
+          <app-star-rating
+            formControlName="driverRating"
+            size="lg"
+            label="Driver rating"
+          ></app-star-rating>
+          @if (driverRatingInvalid) {
+            <span class="rating-form__error">Please rate the driver</span>
+          }
+        </div>
+
+        <!-- Vehicle Rating -->
+        <div class="rating-form__field" [class.rating-form__field--error]="vehicleRatingInvalid">
+          <label class="rating-form__label">How was the vehicle?</label>
+          <app-star-rating
+            formControlName="vehicleRating"
+            size="lg"
+            label="Vehicle rating"
+          ></app-star-rating>
+          @if (vehicleRatingInvalid) {
+            <span class="rating-form__error">Please rate the vehicle</span>
+          }
+        </div>
+
+        <!-- Comment -->
+        <div class="rating-form__field">
+          <label class="rating-form__label" for="comment">
+            Comments (optional)
+          </label>
+          <textarea
+            id="comment"
+            formControlName="comment"
+            class="rating-form__textarea"
+            rows="3"
+            placeholder="Share your experience..."
+            maxlength="500"
+          ></textarea>
+          <span class="rating-form__char-count">{{ commentCharsRemaining }} characters remaining</span>
+        </div>
+
+        <!-- Actions -->
+        <div class="modal__actions">
+          <button
+            type="button"
+            class="btn btn--secondary"
+            (click)="onClose()"
+            [disabled]="isSubmitting()"
+          >
+            Skip
+          </button>
+          <button
+            type="submit"
+            class="btn btn--primary"
+            [disabled]="isSubmitting()"
+          >
+            @if (isSubmitting()) {
+              <span class="btn__spinner"></span>
+              Submitting...
+            } @else {
+              Submit Rating
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

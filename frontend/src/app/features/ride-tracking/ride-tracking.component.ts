@@ -461,6 +461,8 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
           if (driverId) {
             this.loadUpcomingRides(driverId);
           }
+          // Note: Rating is handled by the passenger via ride history or notification.
+          // Driver does not rate - they just see next scheduled rides.
         },
         error: (error) => {
           console.error('Failed to end ride', error);
