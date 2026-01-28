@@ -601,17 +601,22 @@ public class RideService {
                 List.of(),
                 null
             );
-            EstimateResponse estimate = mapService.estimateRide(estimateRequest);
-            BigDecimal remainingDistance = BigDecimal.valueOf(estimate.distanceInKm());
-            BigDecimal remainingCost = remainingDistance.multiply(ride.getPricingPricePerKm());
+            try {
+                EstimateResponse estimate = mapService.estimateRide(estimateRequest);
+                BigDecimal remainingDistance = BigDecimal.valueOf(estimate.distanceInKm());
+                BigDecimal remainingCost = remainingDistance.multiply(ride.getPricingPricePerKm());
 
-            // Subtract remaining cost from original total cost
-            BigDecimal newCost = ride.getTotalCost().subtract(remainingCost);
-            ride.setTotalCost(newCost.max(BigDecimal.ZERO)); // Ensure non-negative
+                // Subtract remaining cost from original total cost
+                BigDecimal newCost = ride.getTotalCost().subtract(remainingCost);
+                ride.setTotalCost(newCost.max(BigDecimal.ZERO)); // Ensure non-negative
 
-            // Update total distance (subtract remaining distance)
-            BigDecimal newDistance = ride.getTotalDistanceKm().subtract(remainingDistance);
-            ride.setTotalDistanceKm(newDistance.max(BigDecimal.ZERO));
+                // Update total distance (subtract remaining distance)
+                BigDecimal newDistance = ride.getTotalDistanceKm().subtract(remainingDistance);
+                ride.setTotalDistanceKm(newDistance.max(BigDecimal.ZERO));
+            } catch (Exception ex) {
+                // If Mapbox (via MapService) is unavailable or fails, skip recalculation
+                // and keep existing totalCost and totalDistanceKm to allow ride to be stopped.
+            }
         }
 
         // Remove all waypoints after the start (keep start, remove destinations)
