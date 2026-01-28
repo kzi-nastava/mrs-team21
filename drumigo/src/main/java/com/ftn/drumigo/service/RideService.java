@@ -499,9 +499,12 @@ public class RideService {
     
     public void cancelByPassenger(Long rideId, String email) {
         Ride ride = getById(rideId);
-        Passenger passenger = (Passenger) passengerRepository.findByEmail(email)
+        Object passengerObject = passengerRepository.findByEmail(email)
             .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with email: " + email));
-        
+        if (!(passengerObject instanceof Passenger)) {
+            throw new BadRequestException("User with email " + email + " is not a passenger");
+        }
+        Passenger passenger = (Passenger) passengerObject;
         // Check if passenger is the ordering passenger
         if (ride.getOrderingPassenger() == null || !ride.getOrderingPassenger().getEmail().equals(email)) {
             throw new BadRequestException("Only the ordering passenger can cancel a ride");
