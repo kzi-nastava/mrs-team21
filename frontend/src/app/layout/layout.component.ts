@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { NavbarComponent, UserProfile } from './components/navbar/navbar.component';
+import { AuthService } from '../shared/services/auth.service';
 
 @Component({
   selector: 'app-layout',
@@ -11,6 +12,8 @@ import { NavbarComponent, UserProfile } from './components/navbar/navbar.compone
   styleUrls: ['./layout.component.scss'],
 })
 export class LayoutComponent implements OnInit {
+  private readonly authService = inject(AuthService);
+
   user: UserProfile = {
     name: 'User',
     initials: 'US',
@@ -23,26 +26,17 @@ export class LayoutComponent implements OnInit {
   }
 
   private loadUserFromToken(): void {
-    const token = sessionStorage.getItem('token');
-    if (token) {
-      try {
-        const payload = this.decodeJwtPayload(token);
-        this.user = {
-          name: payload.sub || 'User',
-          initials: this.getInitials(payload.sub || 'User'),
-          role: payload.role === 'PASSENGER' ? 'Passenger' : 'Driver',
-          type: payload.role === 'PASSENGER' ? 'passenger' : 'driver',
-        };
-      } catch (error) {
-        console.error('Error decoding token:', error);
-      }
-    }
-  }
+    const email = this.authService.getEmail();
+    const role = this.authService.getRole();
 
-  private decodeJwtPayload(token: string): any {
-    const payload = token.split('.')[1];
-    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
-    return JSON.parse(decoded);
+    if (email && role) {
+      this.user = {
+        name: email,
+        initials: this.getInitials(email),
+        role: role === 'PASSENGER' ? 'Passenger' : 'Driver',
+        type: role === 'PASSENGER' ? 'passenger' : 'driver',
+      };
+    }
   }
 
   private getInitials(name: string): string {

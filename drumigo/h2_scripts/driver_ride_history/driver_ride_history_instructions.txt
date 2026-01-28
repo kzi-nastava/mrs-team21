@@ -1,0 +1,104 @@
+DRIVER RIDE HISTORY TEST DATA - Usage Instructions
+==================================================
+
+This script creates test data for the driver ride history feature (spec 2.9.2).
+It includes various ride scenarios to test different history states.
+
+HOW TO USE
+----------
+1. Start the Spring Boot backend application
+2. Open H2 Console at: http://localhost:8080/h2-console
+3. Connect with the settings from application-dev.properties
+4. Paste and run the entire driver_ride_history.sql script
+5. Login to the frontend with the test driver account
+
+TEST CREDENTIALS
+----------------
+Email: history.driver@test.local
+Password: Test1234
+
+TEST SCENARIOS CREATED
+----------------------
+| Ride ID | Status    | Age         | Passengers | Notes                          |
+|---------|-----------|-------------|------------|--------------------------------|
+| 7001    | FINISHED  | 2 days ago  | 3          | Has review (5/5)               |
+| 7002    | FINISHED  | 1 day ago   | 1          | Has review (4/4)               |
+| 7003    | CANCELLED | 3 days ago  | 1          | Cancelled by DRIVER            |
+| 7004    | CANCELLED | 4 days ago  | 1          | Cancelled by PASSENGER         |
+| 7005    | FINISHED  | 5 days ago  | 1          | Has PANIC event + review (2/3) |
+| 7006    | FINISHED  | 10 days ago | 1          | Has review (5/4)               |
+| 7007    | FINISHED  | 20 days ago | 1          | For date filter testing        |
+| 7008    | ACTIVE    | Now         | 1          | Should NOT appear in history   |
+
+TESTING THE DRIVER RIDE HISTORY FEATURE
+---------------------------------------
+1. Navigate to driver ride history: http://localhost:4200/driver/ride-history
+2. Verify the ride history table shows rides 7001-7007 (not 7008)
+3. Default filter: last 30 days - should show all 7 rides
+
+TESTING PAGINATION
+------------------
+1. If page size is 10, all rides fit on one page
+2. To test pagination with smaller page size:
+   - Adjust the pageSize in driver-history-page.component.ts temporarily
+   - Or create more test rides in the SQL script
+
+TESTING DATE FILTERS
+--------------------
+1. Set date range to "last 7 days":
+   - Should show rides 7001, 7002, 7003, 7004, 7005 (5 rides)
+2. Set date range to "last 3 days":
+   - Should show rides 7001, 7002, 7003 (3 rides)
+3. Clear filters:
+   - Should show all rides (7 rides)
+
+TESTING RIDE DETAILS
+--------------------
+1. Click on Ride 7001 to see details:
+   - Should show 3 passengers: Marko Petrovic, Ana Jovanovic, Nikola Stojanovic
+   - Should show cost: 560.00 RSD
+   - Should show start/end locations
+   - Should show existing rating (5 stars driver, 5 stars vehicle)
+
+2. Click on Ride 7002 to see details:
+   - Should show existing rating (4 stars driver, 4 stars vehicle)
+
+3. Click on Ride 7003 to see cancelled ride:
+   - Should show "Cancelled by driver" info
+   - Should show cancellation reason
+
+4. Click on Ride 7005 to see panic ride:
+   - Should show PANIC alert indicator
+   - Should show existing rating (2 stars driver, 3 stars vehicle)
+
+TESTING UPCOMING RIDES VIEW
+---------------------------
+1. Click "Upcoming scheduled" tab
+2. Should show scheduled rides for the driver (if any exist)
+3. This view has different columns and no date filters
+
+API ENDPOINTS USED
+------------------
+GET /api/drivers/{driverId}/rides/history - Driver ride history with pagination
+    Query params: from, to, page, size, sort
+
+EXAMPLE API CALLS
+-----------------
+# Get first page of history (default 30 days)
+GET /api/drivers/7001/rides/history?page=0&size=10&sort=requestedAt,desc
+
+# Get history with date filter
+GET /api/drivers/7001/rides/history?from=2026-01-01T00:00:00Z&to=2026-01-28T23:59:59Z&page=0&size=10
+
+CLEANUP
+-------
+To remove test data, run the DELETE statements at the top of the SQL script,
+or simply rerun the entire script (it cleans up before inserting).
+
+NOTES
+-----
+- Password "Test1234" is SHA-256 hashed (matches system's PasswordUtil)
+- All rides use driver 7001 and vehicle 7001
+- Active ride (7008) should NOT appear in history view
+- Pagination is server-side, date filtering is server-side
+- Sorting is client-side on the current page
