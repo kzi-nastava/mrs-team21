@@ -1,4 +1,4 @@
-package com.ftn.drumigo.dto;
+package com.ftn.drumigo.dto.ride.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

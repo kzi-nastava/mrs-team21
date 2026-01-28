@@ -6,12 +6,13 @@ import com.ftn.drumigo.domain.RideWaypoint;
 import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.dto.*;
 import com.ftn.drumigo.dto.PassengerResponse;
+import com.ftn.drumigo.dto.ride.request.RideStopRequest;
 import com.ftn.drumigo.dto.ride.request.RideCancelByDriverRequest;
 import com.ftn.drumigo.mapper.*;
 import com.ftn.drumigo.dto.RideCreateRequest;
 import com.ftn.drumigo.dto.RideInconsistencyCreateRequest;
 import com.ftn.drumigo.dto.RideInconsistencyResponse;
-import com.ftn.drumigo.dto.RideResponse;
+import com.ftn.drumigo.dto.ride.response.RideResponse;
 import com.ftn.drumigo.dto.RideTrackingResponse;
 import com.ftn.drumigo.mapper.RideInconsistencyMapper;
 import com.ftn.drumigo.mapper.RideMapper;
@@ -132,9 +133,9 @@ public class RideController {
     @PutMapping("/{id}/stop")
     public ResponseEntity<RideResponse> stopRide(
             @PathVariable Long id,
-            @RequestParam Long driverId,
+            Principal principal,
             @Valid @RequestBody RideStopRequest request) {
-        Ride ride = rideService.stopRide(id, driverId, request);
+        Ride ride = rideService.stopRide(id, principal.getName(), request);
         List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
         return ResponseEntity.ok(rideMapper.toResponse(ride, waypoints));
     }

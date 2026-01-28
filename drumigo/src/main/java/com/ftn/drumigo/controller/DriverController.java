@@ -6,6 +6,7 @@ import com.ftn.drumigo.domain.Review;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RideWaypoint;
 import com.ftn.drumigo.dto.*;
+import com.ftn.drumigo.dto.ride.response.RideResponse;
 import com.ftn.drumigo.mapper.DriverDocumentMapper;
 import com.ftn.drumigo.mapper.DriverMapper;
 import com.ftn.drumigo.mapper.DriverRideHistoryMapper;

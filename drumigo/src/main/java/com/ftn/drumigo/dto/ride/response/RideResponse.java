@@ -1,4 +1,4 @@
-package com.ftn.drumigo.dto;
+package com.ftn.drumigo.dto.ride.response;
 
 import java.math.BigDecimal;
 import java.time.Instant;

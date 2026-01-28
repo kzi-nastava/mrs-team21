@@ -27,6 +27,17 @@ public class MapService {
     private String MAPBOX_API_KEY;
 
     public EstimateResponse estimateRide(EstimateRequest request) {
+        DirectionsRoute route = getDirectionsRoute(request);
+
+        return new EstimateResponse(
+                route.geometry(),
+                Math.round((route.distance() / 1000.0) * 10) / 10.0,
+                (int) (route.duration() / 60),
+                estimatePrice(route.distance() / 1000)
+        );
+    }
+
+    private DirectionsRoute getDirectionsRoute(EstimateRequest request) {
         Point start = Point.fromLngLat(request.startLocation().longitude(), request.startLocation().latitude());
         Point destination = Point.fromLngLat(request.destinationLocation().longitude(), request.destinationLocation().latitude());
         
@@ -61,17 +72,11 @@ public class MapService {
             throw new RuntimeException("Failed to get directions from Mapbox: empty response body");
         }
 
-        if (body.routes() == null || body.routes().isEmpty()) {
+        if (body.routes().isEmpty()) {
             throw new RuntimeException("Failed to get directions from Mapbox: no routes returned");
         }
 
-        DirectionsRoute route = body.routes().get(0);
-        return new EstimateResponse(
-                route.geometry(),
-                Math.round((route.distance() / 1000.0) * 10) / 10.0,
-                (int) (route.duration() / 60),
-                estimatePrice(route.distance() / 1000)
-        );
+        return body.routes().get(0);
     }
 
     public Double estimatePrice(Double distanceInKm) {

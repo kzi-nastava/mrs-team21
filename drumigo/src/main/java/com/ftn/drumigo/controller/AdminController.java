@@ -4,6 +4,7 @@ import com.ftn.drumigo.domain.DriverProfileChangeRequest;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RideWaypoint;
 import com.ftn.drumigo.dto.*;
+import com.ftn.drumigo.dto.ride.response.RideResponse;
 import com.ftn.drumigo.mapper.DriverProfileChangeRequestMapper;
 import com.ftn.drumigo.mapper.RideMapper;
 import com.ftn.drumigo.service.DriverProfileChangeRequestService;

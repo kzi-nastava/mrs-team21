@@ -6,12 +6,15 @@ import com.ftn.drumigo.domain.enums.NotificationType;
 import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.dto.RideCreateRequest;
 import com.ftn.drumigo.dto.RideInconsistencyCreateRequest;
-import com.ftn.drumigo.dto.RideStopRequest;
+import com.ftn.drumigo.dto.ride.request.RideStopRequest;
 import com.ftn.drumigo.dto.ride.request.RideCancelByDriverRequest;
 import com.ftn.drumigo.event.RideFinishedEvent;
 import com.ftn.drumigo.exception.BadRequestException;
 import com.ftn.drumigo.exception.ResourceNotFoundException;
 import com.ftn.drumigo.repository.*;
+import com.ftn.drumigo.dto.map.LocationDTO;
+import com.ftn.drumigo.dto.ride.request.EstimateRequest;
+import com.ftn.drumigo.dto.ride.response.EstimateResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -47,7 +50,8 @@ public class RideService {
     private final PanicEventRepository panicEventRepository;
     private final ReviewRepository reviewRepository;
     private final ApplicationEventPublisher eventPublisher;
-    
+    private final MapService mapService;
+
     public List<Ride> getActiveRides() {
         return rideRepository.findByStatus(RideStatus.ACTIVE);
     }
@@ -564,22 +568,22 @@ public class RideService {
         // TODO: create cancellation notifications
     }
     
-    public Ride stopRide(Long rideId, Long driverId, RideStopRequest request) {
+    public Ride stopRide(Long rideId, String email, RideStopRequest request) {
         Ride ride = getById(rideId);
-        
-        if (ride.getDriver() == null || !ride.getDriver().getId().equals(driverId)) {
+
+        if (ride.getDriver() == null || !ride.getDriver().getEmail().equals(email)) {
             throw new BadRequestException("Driver is not assigned to this ride");
         }
-        
+
         if (ride.getStatus() != RideStatus.ACTIVE) {
             throw new BadRequestException("Ride must be ACTIVE to be stopped. Current status: " + ride.getStatus());
         }
-        
+
         // Create or find stop location
         Location stopLocation = locationRepository.findByAddressAndLatAndLng(
                 request.stopAddress(), request.stopLat(), request.stopLng())
                 .orElse(null);
-        
+
         if (stopLocation == null) {
             stopLocation = new Location();
             stopLocation.setAddress(request.stopAddress());
@@ -587,27 +591,41 @@ public class RideService {
             stopLocation.setLng(request.stopLng());
             stopLocation = locationRepository.save(stopLocation);
         }
-        
-        // Basic validation: check if stop location is reasonable (not too far from route)
-        // For KT1, we'll do a simple check: stop should be within reasonable distance from any waypoint
+
         List<RideWaypoint> currentWaypoints = getRideWaypoints(ride);
-        boolean isReasonable = false;
-        if (!currentWaypoints.isEmpty()) {
-            for (RideWaypoint wp : currentWaypoints) {
-                BigDecimal distance = calculateDistanceBetweenLocations(wp.getLocation(), stopLocation);
-                // Allow stops within 50km of any waypoint (reasonable for ride-hailing)
-                if (distance.compareTo(new BigDecimal("50")) <= 0) {
-                    isReasonable = true;
-                    break;
-                }
+
+        // Find the original destination (highest order)
+        RideWaypoint originalDestination = currentWaypoints.stream()
+            .max((wp1, wp2) -> Integer.compare(wp1.getWaypointOrder(), wp2.getWaypointOrder()))
+            .orElse(null);
+
+        if (originalDestination != null) {
+            // Calculate distance from stop to original destination using MapService
+            EstimateRequest estimateRequest = new EstimateRequest(
+                new LocationDTO(stopLocation.getLat().doubleValue(), stopLocation.getLng().doubleValue(), stopLocation.getAddress()),
+                new LocationDTO(originalDestination.getLocation().getLat().doubleValue(), originalDestination.getLocation().getLng().doubleValue(), originalDestination.getLocation().getAddress()),
+                List.of(),
+                null
+            );
+            try {
+                EstimateResponse estimate = mapService.estimateRide(estimateRequest);
+                BigDecimal remainingDistance = BigDecimal.valueOf(estimate.distanceInKm());
+                BigDecimal remainingCost = remainingDistance.multiply(ride.getPricingPricePerKm());
+
+                // Subtract remaining cost from original total cost
+                BigDecimal newCost = ride.getTotalCost().subtract(remainingCost);
+                ride.setTotalCost(newCost.max(BigDecimal.ZERO)); // Ensure non-negative
+
+                // Update total distance (subtract remaining distance)
+                BigDecimal newDistance = ride.getTotalDistanceKm().subtract(remainingDistance);
+                ride.setTotalDistanceKm(newDistance.max(BigDecimal.ZERO));
+            } catch (Exception ex) {
+                // If Mapbox (via MapService) is unavailable or fails, skip recalculation
+                // and keep existing totalCost and totalDistanceKm to allow ride to be stopped.
             }
         }
-        if (!isReasonable && !currentWaypoints.isEmpty()) {
-            throw new BadRequestException("Stop location is too far from the ride route");
-        }
-        
-        // Remove all waypoints after the start (we'll keep start and add stop as destination)
-        // Remove waypoints with order > 0 (keep start at order 0, remove all destinations)
+
+        // Remove all waypoints after the start (keep start, remove destinations)
         for (RideWaypoint wp : currentWaypoints) {
             if (wp.getWaypointOrder() > 0) {
                 rideWaypointRepository.delete(wp);
@@ -617,19 +635,15 @@ public class RideService {
         // Update ride
         ride.setStoppedAt(Instant.now());
         ride.setStopLocation(stopLocation);
-        
-        // Recompute distance and price from start to stop location
-        if (!currentWaypoints.isEmpty()) {
-            Location startLocation = currentWaypoints.get(0).getLocation();
-            BigDecimal newDistance = calculateDistanceBetweenLocations(startLocation, stopLocation);
-            
-            // Update total distance (partial)
-            ride.setTotalDistanceKm(newDistance);
-            
-            // Recompute price
-            BigDecimal newCost = ride.getPricingStartPrice()
-                .add(newDistance.multiply(ride.getPricingPricePerKm()));
-            ride.setTotalCost(newCost);
+        ride.setEndTime(Instant.now());
+        ride.setPaidAt(Instant.now());
+        ride.setStatus(RideStatus.FINISHED);
+
+        // Mark vehicle as available again, similar to endRide
+        Vehicle vehicle = ride.getVehicle();
+        if (vehicle != null) {
+            vehicle.setAvailable(true);
+            vehicleRepository.save(vehicle);
         }
         
         // Add stop as new destination waypoint (order 1, since start is order 0)
@@ -638,21 +652,10 @@ public class RideService {
         stopWaypoint.setLocation(stopLocation);
         stopWaypoint.setWaypointOrder(1);
         rideWaypointRepository.save(stopWaypoint);
-        
-        // Ride remains ACTIVE after stopping (spec 2.6.5 doesn't specify status change)
+
         ride = rideRepository.save(ride);
-        
+        eventPublisher.publishEvent(new RideFinishedEvent(ride.getId()));
         return ride;
-    }
-    
-    private BigDecimal calculateDistanceBetweenLocations(Location loc1, Location loc2) {
-        double lat1 = loc1.getLat().doubleValue();
-        double lon1 = loc1.getLng().doubleValue();
-        double lat2 = loc2.getLat().doubleValue();
-        double lon2 = loc2.getLng().doubleValue();
-        
-        double distance = haversineDistance(lat1, lon1, lat2, lon2);
-        return BigDecimal.valueOf(distance).setScale(2, java.math.RoundingMode.HALF_UP);
     }
     
     private void createCancellationNotifications(Ride ride) {
