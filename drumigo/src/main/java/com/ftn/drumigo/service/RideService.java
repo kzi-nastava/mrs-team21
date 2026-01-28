@@ -632,9 +632,9 @@ public class RideService {
         stopWaypoint.setLocation(stopLocation);
         stopWaypoint.setWaypointOrder(1);
         rideWaypointRepository.save(stopWaypoint);
-        
+
         ride = rideRepository.save(ride);
-        
+        eventPublisher.publishEvent(new RideFinishedEvent(ride.getId()));
         return ride;
     }
     
