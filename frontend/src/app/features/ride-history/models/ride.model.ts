@@ -22,7 +22,10 @@ export interface Ride {
   panicActivated: boolean;
   passengers: Passenger[];
   driver?: Driver;
-  vehicleType: 'STANDARD' | 'LUXURY' | 'VAN';
+  vehicleType?: 'STANDARD' | 'LUXURY' | 'VAN';
+  status?: string;
+  scheduledFor?: Date | null;
+  requestedAt?: Date | null;
   driverRating?: number;
   passengerRating?: number;
   // TODO: Backend Integration - Link to RidePassenger.isFavorite

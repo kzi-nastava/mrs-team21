@@ -119,6 +119,50 @@
           </button>
           <app-inconsistency-report></app-inconsistency-report>
         </div>
+
+        @if (endRideError()) {
+          <div class="post-ride-error">
+            {{ endRideError() }}
+          </div>
+        }
+
+        @if (rideCompleted()) {
+          <div class="post-ride-panel">
+            <h3>Ride completed</h3>
+            @if (nextRideSummary()) {
+              <div class="next-ride-summary">
+                <div class="summary-row">
+                  <span class="label">Next pickup</span>
+                  <span class="value">{{ nextRideSummary()!.origin }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="label">Destination</span>
+                  <span class="value">{{ nextRideSummary()!.destination }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="label">Scheduled</span>
+                  <span class="value">{{ formatScheduledTime(nextRideSummary()!.scheduledFor) }}</span>
+                </div>
+              </div>
+              <div class="post-ride-actions">
+                <button class="btn-primary" type="button" (click)="navigateToNextRide()">
+                  Open next ride
+                </button>
+                <button class="btn-secondary" type="button" (click)="navigateToUpcomingRides()">
+                  View all upcoming
+                </button>
+              </div>
+            }
+            @if (!nextRideSummary()) {
+              <p class="post-ride-text">
+                No upcoming scheduled rides were found.
+              </p>
+              <button class="btn-primary" type="button" (click)="navigateToUpcomingRides()">
+                View upcoming rides
+              </button>
+            }
+          </div>
+        }
       </aside>
     }
   </main>
@@ -165,12 +209,14 @@
             </svg>
           </button>
         </div>
-        <app-stop-ride
-          [stopInfo]="stopRideInfo()"
-          (stopRide)="onStopRide()"
-          (continueRide)="onContinueRide()"
-        >
-        </app-stop-ride>
+        <div class="stop-modal-body">
+          <app-stop-ride
+            [stopInfo]="stopRideInfo()"
+            (stopRide)="onStopRide()"
+            (continueRide)="onContinueRide()"
+          >
+          </app-stop-ride>
+        </div>
       </div>
     </div>
   }

@@ -72,6 +72,7 @@ public class RideMapper {
             ride.getScheduledFor(),
             ride.getStartTime(),
             ride.getEndTime(),
+            ride.getPaidAt(),
             ride.getDriver() != null ? ride.getDriver().getId() : null,
             ride.getDriver() != null ? ride.getDriver().getName() : null,
             ride.getDriver() != null ? ride.getDriver().getSurname() : null,

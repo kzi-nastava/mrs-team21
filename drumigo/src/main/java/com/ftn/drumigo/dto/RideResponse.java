@@ -11,6 +11,7 @@ public record RideResponse(
     Instant scheduledFor,
     Instant startTime,
     Instant endTime,
+    Instant paidAt,
     Long driverId,
     String driverName,
     String driverSurname,

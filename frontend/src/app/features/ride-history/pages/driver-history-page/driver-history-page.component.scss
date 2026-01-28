@@ -33,6 +33,42 @@
   color: var(--text-light);
 }
 
+.view-toggle {
+  display: inline-flex;
+  gap: 8px;
+  background: var(--white);
+  padding: 6px;
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 20px;
+}
+
+.toggle-btn {
+  border: none;
+  background: transparent;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &.active {
+    background: var(--bg-cream);
+    color: var(--text-dark);
+  }
+}
+
+.loading-banner {
+  margin: 16px 0;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  background: var(--bg-warm);
+  color: var(--text-medium);
+  font-size: 13px;
+}
+
 @media (max-width: 768px) {
   .main-content {
     padding: 24px 16px;

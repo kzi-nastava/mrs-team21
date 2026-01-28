@@ -24,8 +24,18 @@ public class SecurityConfig {
         http
             .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
+            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/api/auth/**", "/api/rides/estimate", "/api/passengers", "/api/passengers/activate/**").permitAll()
+                .requestMatchers(
+                    "/api/auth/**",
+                    "/api/rides/estimate",
+                    "/api/rides/*/end",
+                    "/api/drivers/*/rides/upcoming",
+                    "/api/users/*/notifications",
+                    "/h2-console/**",
+                    "/api/passengers",
+                    "/api/passengers/activate/**"
+                ).permitAll()
                 .anyRequest().authenticated()
             )
             .httpBasic(Customizer.withDefaults())

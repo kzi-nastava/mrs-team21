@@ -1,10 +1,13 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal, DestroyRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ProfileMockService } from '../services/profile-mock.service';
 import { ProfileData, PersonalInfoForm, VehicleInfoForm, VehicleCategory } from '../models/profile.model';
 import { ProfilePhotoUploadComponent } from '../../../shared/components/profile-photo-upload/profile-photo-upload.component';
+import { NotificationApiService } from '../services/notification-api.service';
+import { UserNotification } from '../models/notification.model';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-profile-page',
@@ -13,12 +16,17 @@ import { ProfilePhotoUploadComponent } from '../../../shared/components/profile-
   templateUrl: './profile-page.component.html',
   styleUrls: ['./profile-page.component.scss'],
 })
-export class ProfilePageComponent {
+export class ProfilePageComponent implements OnInit {
   private readonly profileService = inject(ProfileMockService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
+  private readonly notificationService = inject(NotificationApiService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly profile: ProfileData = this.profileService.getProfile();
+  readonly notifications = signal<UserNotification[]>([]);
+  readonly notificationsLoading = signal<boolean>(false);
+  readonly notificationsError = signal<string | null>(null);
 
   // Photo upload
   private selectedFile: File | null = null;
@@ -69,6 +77,12 @@ export class ProfilePageComponent {
    * 3. Auth guard that determines access
    */
   readonly isDriver = computed(() => this.profile.role === 'DRIVER');
+
+  ngOnInit(): void {
+    if (!this.isDriver()) {
+      this.loadNotifications();
+    }
+  }
 
   /**
    * Check if there are any pending changes awaiting admin approval
@@ -291,5 +305,41 @@ export class ProfilePageComponent {
   closeNotification(): void {
     this.showSuccessMessage = false;
     this.showPendingMessage = false;
+  }
+
+  openRideHistory(rideId?: number | null): void {
+    if (rideId) {
+      this.router.navigate(['/ride-history'], { queryParams: { rideId } });
+      return;
+    }
+    this.router.navigate(['/ride-history']);
+  }
+
+  formatNotificationDate(date: string): string {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(date));
+  }
+
+  private loadNotifications(): void {
+    this.notificationsLoading.set(true);
+    this.notificationsError.set(null);
+    this.notificationService
+      .getUserNotifications(this.profile.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (notifications) => {
+          this.notifications.set(notifications);
+          this.notificationsLoading.set(false);
+        },
+        error: (error) => {
+          console.error('Failed to load notifications', error);
+          this.notificationsError.set('Unable to load notifications.');
+          this.notificationsLoading.set(false);
+        },
+      });
   }
 }

@@ -225,6 +225,21 @@
     background: #fff1e6; /* warm alert tone */
     color: #c2410c;
   }
+
+  &.scheduled {
+    background: #eef2ff;
+    color: #4338ca;
+  }
+
+  &.active {
+    background: #e0f2fe;
+    color: #0369a1;
+  }
+
+  &.pending {
+    background: #fef9c3;
+    color: #a16207;
+  }
 }
 
 /* Cancelled By */

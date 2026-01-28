@@ -6,10 +6,12 @@ import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.dto.RideCreateRequest;
 import com.ftn.drumigo.dto.RideInconsistencyCreateRequest;
 import com.ftn.drumigo.dto.RideStopRequest;
+import com.ftn.drumigo.event.RideFinishedEvent;
 import com.ftn.drumigo.exception.BadRequestException;
 import com.ftn.drumigo.exception.ResourceNotFoundException;
 import com.ftn.drumigo.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +44,7 @@ public class RideService {
     private final UserRepository userRepository;
     private final PanicEventRepository panicEventRepository;
     private final ReviewRepository reviewRepository;
+    private final ApplicationEventPublisher eventPublisher;
     
     public List<Ride> getActiveRides() {
         return rideRepository.findByStatus(RideStatus.ACTIVE);
@@ -87,6 +90,7 @@ public class RideService {
         
         ride.setStatus(RideStatus.FINISHED);
         ride.setEndTime(Instant.now());
+        ride.setPaidAt(Instant.now());
         
         if (ride.getVehicle() != null) {
             Vehicle vehicle = ride.getVehicle();
@@ -95,26 +99,9 @@ public class RideService {
         }
         
         ride = rideRepository.save(ride);
-        
-        // Create notifications for ordering passenger and linked passengers
-        createFinishNotifications(ride);
+        eventPublisher.publishEvent(new RideFinishedEvent(ride.getId()));
         
         return ride;
-    }
-    
-    private void createFinishNotifications(Ride ride) {
-        // Get all passengers for this ride
-        List<RidePassenger> ridePassengers = ridePassengerRepository.findByRide(ride);
-        
-        // Create notification for each linked passenger
-        for (RidePassenger rp : ridePassengers) {
-            Notification notification = new Notification();
-            notification.setUser(rp.getPassenger());
-            notification.setRide(ride);
-            notification.setType(NotificationType.RIDE_FINISHED);
-            notification.setMessage("Your ride has finished");
-            notificationRepository.save(notification);
-        }
     }
     
     public Page<Ride> getDriverRideHistory(Long driverId, Instant from, Instant to, Pageable pageable) {
@@ -129,6 +116,22 @@ public class RideService {
         }
         
         return rideRepository.findByDriverAndRequestedAtBetween(driver, from, to, pageable);
+    }
+
+    public Page<Ride> getUpcomingDriverRides(Long driverId, Instant from, Pageable pageable) {
+        Driver driver = driverRepository.findById(driverId)
+            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + driverId));
+
+        if (from == null) {
+            from = Instant.now();
+        }
+
+        return rideRepository.findByDriverAndStatusAndScheduledForAfter(
+            driver,
+            RideStatus.ACCEPTED,
+            from,
+            pageable
+        );
     }
     
     public Ride create(Long orderingPassengerId, RideCreateRequest request) {

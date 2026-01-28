@@ -2,164 +2,181 @@
   <!-- Empty State -->
   @if (!stopInfo) {
     <div class="empty-state">
-      <svg
-        class="empty-icon"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <line x1="12" y1="16" x2="12" y2="12" />
-        <line x1="12" y1="8" x2="12.01" y2="8" />
-      </svg>
+      <div class="loading-spinner"></div>
       <p class="empty-text">Loading ride information...</p>
     </div>
   }
 
-  <!-- Passenger Info Card -->
   @if (stopInfo) {
-    <div class="passenger-card">
-      <div class="passenger-header">
-        <div class="passenger-avatar">
-          {{ (stopInfo.passengerName || '').trim().split(/\s+/)[0].charAt(0)
-          }}{{ (stopInfo.passengerName || '').trim().split(/\s+/)[1]?.charAt(0) || '' }}
+    <div class="content-wrapper">
+      <!-- Left Column: Passenger & Route -->
+      <div class="info-column">
+        <div class="section-card passenger-card">
+          <div class="passenger-header">
+            <div class="passenger-avatar">
+              {{ (stopInfo.passengerName || '').trim().split(/\s+/)[0].charAt(0)
+              }}{{ (stopInfo.passengerName || '').trim().split(/\s+/)[1]?.charAt(0) || '' }}
+            </div>
+            <div class="passenger-details">
+              <div class="passenger-name">{{ stopInfo.passengerName }}</div>
+              <div class="passenger-rating">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path
+                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                  />
+                </svg>
+                <span>{{ stopInfo.passengerRating }} • {{ stopInfo.ridesDone }} rides</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="route-details">
+            <div class="route-item">
+              <div class="route-icon start">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <circle cx="12" cy="12" r="3" fill="currentColor" />
+                </svg>
+              </div>
+              <div class="route-text">
+                <div class="route-label">Pickup</div>
+                <div class="route-value">{{ stopInfo.pickupLocation }}</div>
+              </div>
+            </div>
+            <div class="route-connector"></div>
+            <div class="route-item">
+              <div class="route-icon end">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+              </div>
+              <div class="route-text">
+                <div class="route-label">Original destination</div>
+                <div class="route-value">{{ stopInfo.destinationLocation }}</div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="passenger-info">
-          <div class="passenger-name">{{ stopInfo.passengerName }}</div>
-          <div class="passenger-rating">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-              />
+
+        <div class="ride-stats">
+          <div class="stat-card">
+            <div class="stat-icon duration">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ stopInfo.duration }}</div>
+              <div class="stat-label">Duration</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon distance">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ stopInfo.distance }}</div>
+              <div class="stat-label">Distance</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon completion">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ stopInfo.completionPercent }}%</div>
+              <div class="stat-label">Completed</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Stop Confirmation -->
+      <div class="action-column">
+        <div class="section-card stop-card">
+          <div class="stop-header">
+            <div class="stop-icon-wrapper">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="6" y="4" width="4" height="16" />
+                <rect x="14" y="4" width="4" height="16" />
+              </svg>
+            </div>
+            <div class="stop-title-group">
+              <h3 class="stop-title">Stop ride here</h3>
+              <p class="stop-subtitle">Current location drop-off</p>
+            </div>
+          </div>
+
+          <div class="location-box">
+            <div class="location-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+            </div>
+            <div class="location-content">
+              <div class="location-label">New drop-off location</div>
+              <div class="location-value">{{ stopInfo.currentLocation }}</div>
+            </div>
+          </div>
+
+          <div class="fare-adjustment">
+            <div class="fare-header">
+              <span class="fare-label">Adjusted fare</span>
+              <span class="fare-tag">Updated</span>
+            </div>
+            <div class="fare-values">
+              <div class="fare-original">
+                Was {{ stopInfo.originalFare }} {{ stopInfo.currency }}
+              </div>
+              <div class="fare-new">
+                {{ stopInfo.adjustedFare }} <span class="currency">{{ stopInfo.currency }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="warning-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <span>{{ stopInfo.passengerRating }} • {{ stopInfo.ridesDone }} rides</span>
+            <span>Please ensure you're parked safely before confirming.</span>
           </div>
         </div>
-      </div>
 
-      <!-- Route Details -->
-      <div class="route-details">
-        <div class="route-item">
-          <div class="route-dot start"></div>
-          <div class="route-text">
-            <div class="route-label">Pickup</div>
-            <div class="route-value">{{ stopInfo.pickupLocation }}</div>
-          </div>
-        </div>
-        <div class="route-item">
-          <div class="route-dot end"></div>
-          <div class="route-text">
-            <div class="route-label">Original destination</div>
-            <div class="route-value">{{ stopInfo.destinationLocation }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- Ride Stats -->
-  @if (stopInfo) {
-    <div class="ride-stats">
-      <div class="stat-card">
-        <div class="stat-value">{{ stopInfo.duration }}</div>
-        <div class="stat-label">Duration</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ stopInfo.distance }}</div>
-        <div class="stat-label">Distance</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ stopInfo.completionPercent }}%</div>
-        <div class="stat-label">Completed</div>
-      </div>
-    </div>
-  }
-
-  <!-- Stop Ride Section -->
-  @if (stopInfo) {
-    <div class="stop-section">
-      <div class="stop-header">
-        <div class="stop-icon">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button
+            class="btn-secondary"
+            (click)="onContinueRide()"
+            [disabled]="isStopping()"
+            type="button"
           >
-            <rect x="6" y="4" width="4" height="16" />
-            <rect x="14" y="4" width="4" height="16" />
-          </svg>
-        </div>
-        <h3 class="stop-title">Stop ride here</h3>
-      </div>
-
-      <p class="stop-description">
-        End the ride at the current location. Please ensure you're parked safely before confirming.
-      </p>
-
-      <!-- New Location -->
-      <div class="new-location">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-          <circle cx="12" cy="10" r="3" />
-        </svg>
-        <div class="location-text">
-          <div class="location-label">New drop-off location</div>
-          <div class="location-value">{{ stopInfo.currentLocation }}</div>
-        </div>
-      </div>
-
-      <!-- Price Adjustment -->
-      <div class="price-adjustment">
-        <span class="price-label">Adjusted fare</span>
-        <div class="price-values">
-          <div class="price-original">{{ stopInfo.originalFare }} {{ stopInfo.currency }}</div>
-          <div class="price-new">{{ stopInfo.adjustedFare }} {{ stopInfo.currency }}</div>
+            Continue ride
+          </button>
+          <button class="btn-stop" (click)="onStopRide()" [disabled]="isStopping()" type="button">
+            @if (!isStopping()) {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <rect x="6" y="4" width="4" height="16" />
+                <rect x="14" y="4" width="4" height="16" />
+              </svg>
+              <span>Confirm Stop</span>
+            } @else {
+              <div class="btn-spinner"></div>
+              <span>Stopping...</span>
+            }
+          </button>
         </div>
       </div>
     </div>
   }
-
-  <!-- Action Buttons -->
-  <div class="action-buttons">
-    <button
-      class="btn-secondary"
-      (click)="onContinueRide()"
-      [disabled]="isStopping()"
-      type="button"
-    >
-      Continue ride
-    </button>
-    <button class="btn-stop" (click)="onStopRide()" [disabled]="isStopping()" type="button">
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <rect x="6" y="4" width="4" height="16" />
-        <rect x="14" y="4" width="4" height="16" />
-      </svg>
-      @if (!isStopping()) {
-        <span>Stop ride here</span>
-      }
-      @if (isStopping()) {
-        <span>Stopping...</span>
-      }
-    </button>
-  </div>
 </div>
