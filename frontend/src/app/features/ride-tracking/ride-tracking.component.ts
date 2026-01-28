@@ -418,7 +418,12 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   onPanicActivated(): void {
     console.log('PANIC ACTIVATED - sending event to backend');
     const rideId = Number(this.rideId());
-    if (!rideId) return;
+    if (!rideId) {
+      console.error('Ride id is missing or invalid, cannot activate panic');
+      this.closePanicModal();
+      this.panicComponent?.resetPanic();
+      return;
+    }
 
     this.rideApiService.createPanic(rideId).subscribe({
       next: () => {
