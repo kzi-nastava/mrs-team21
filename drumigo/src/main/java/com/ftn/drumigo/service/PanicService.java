@@ -44,7 +44,7 @@ public class PanicService {
         }
         
         User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + email));
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
         
         // Create panic event
         PanicEvent panicEvent = new PanicEvent();
