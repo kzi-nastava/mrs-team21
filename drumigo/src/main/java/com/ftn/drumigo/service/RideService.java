@@ -625,6 +625,13 @@ public class RideService {
         ride.setStoppedAt(Instant.now());
         ride.setStopLocation(stopLocation);
         ride.setStatus(RideStatus.FINISHED);
+
+        // Mark vehicle as available again, similar to endRide
+        Vehicle vehicle = ride.getVehicle();
+        if (vehicle != null) {
+            vehicle.setAvailable(true);
+            vehicleRepository.save(vehicle);
+        }
         
         // Add stop as new destination waypoint (order 1, since start is order 0)
         RideWaypoint stopWaypoint = new RideWaypoint();
