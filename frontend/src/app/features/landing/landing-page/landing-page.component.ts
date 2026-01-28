@@ -1,6 +1,5 @@
-import { Component, signal, OnInit, OnDestroy, DestroyRef, inject } from '@angular/core';
+import { Component, signal, OnInit, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subscription } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { RideEstimatePanelComponent } from '../components/ride-estimate-panel/ride-estimate-panel.component';
 import { MapComponent, MapConfig } from '../../map/map.component';
@@ -24,14 +23,13 @@ export class LandingPageComponent implements OnInit {
 
   private destroyRef = inject(DestroyRef);
   private vehicleService = inject(VehicleMockService);
-  private subscription!: Subscription;
 
   ngOnInit(): void {
     this.loadVehicles();
   }
 
   private loadVehicles(): void {
-    this.subscription = this.vehicleService
+    this.vehicleService
       .getActiveVehicles()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

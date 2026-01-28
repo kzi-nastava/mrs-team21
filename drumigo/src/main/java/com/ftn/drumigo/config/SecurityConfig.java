@@ -29,7 +29,6 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/auth/**",
                     "/api/rides/estimate",
-                    "/api/rides/*/end",
                     "/api/drivers/*/rides/upcoming",
                     "/api/users/*/notifications",
                     "/h2-console/**",

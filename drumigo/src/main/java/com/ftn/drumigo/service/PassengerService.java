@@ -38,9 +38,11 @@ public class PassengerService {
             throw new BadRequestException("Passwords don't match");
         }
 
-        // Validate password strength: at least 6 chars, at least one uppercase and one lowercase
+        // Validate password strength: 6-64 chars, at least one uppercase, one lowercase, and one digit or special char
         if (!isValidPassword(password)) {
-            throw new BadRequestException("Password must be at least 6 characters and contain at least one uppercase and one lowercase letter");
+            throw new BadRequestException(
+                "Password must be 6-64 characters and contain at least one uppercase letter, one lowercase letter, and one digit or special character"
+            );
         }
 
         // Check if email already exists

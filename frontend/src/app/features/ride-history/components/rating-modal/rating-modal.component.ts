@@ -97,10 +97,17 @@ export class RatingModalComponent {
       return;
     }
 
+    const { driverRating, vehicleRating, comment } = this.ratingForm.getRawValue();
+    if (driverRating == null || vehicleRating == null) {
+      this.toastService.error('Please provide both driver and vehicle ratings.');
+      this.ratingForm.markAllAsTouched();
+      return;
+    }
+
     const request: ReviewRequest = {
-      ratingDriver: this.ratingForm.value.driverRating!,
-      ratingVehicle: this.ratingForm.value.vehicleRating!,
-      comment: this.ratingForm.value.comment || undefined,
+      ratingDriver: driverRating,
+      ratingVehicle: vehicleRating,
+      comment: comment || undefined,
     };
 
     this.isSubmitting.set(true);

@@ -23,8 +23,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -100,8 +102,9 @@ public class RideController {
     }
     
     @PutMapping("/{id}/end")
-    public ResponseEntity<RideResponse> endRide(@PathVariable Long id) {
-        Ride ride = rideService.endRide(id);
+    @PreAuthorize("hasRole('DRIVER')")
+    public ResponseEntity<RideResponse> endRide(@PathVariable Long id, Principal principal) {
+        Ride ride = rideService.endRideByDriverEmail(id, principal.getName());
         List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
         return ResponseEntity.ok(rideMapper.toResponse(ride, waypoints));
     }

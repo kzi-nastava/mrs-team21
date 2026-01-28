@@ -23,6 +23,7 @@ import com.ftn.drumigo.dto.RideRatingStatusResponse;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 import java.util.List;
 
 @Service
@@ -161,8 +162,8 @@ public class ReviewService {
             }
             
             // Can rate if: ride is finished, within deadline, is ordering passenger, and no existing review
-            boolean isOrderingPassenger = ride.getOrderingPassenger() != null 
-                && ride.getOrderingPassenger().getId().equals(passengerId);
+            boolean isOrderingPassenger = ride.getOrderingPassenger() != null
+                && Objects.equals(ride.getOrderingPassenger().getId(), passengerId);
             boolean withinDeadline = now.isBefore(ratingDeadline) || now.equals(ratingDeadline);
             boolean isFinished = ride.getStatus() == RideStatus.FINISHED;
             
