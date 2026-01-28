@@ -1,4 +1,4 @@
-package com.ftn.drumigo.domain;
+package com.ftn.drumigo.domain.users;
 
 import com.ftn.drumigo.domain.enums.UserRole;
 import jakarta.persistence.*;
@@ -39,7 +39,7 @@ public abstract class User {
     
     private String phone;
     
-    @Column(name = "profile_picture_url")
+    @Column(name = "profile_picture_url", columnDefinition = "TEXT")
     private String profilePictureUrl;
     
     @Column(nullable = false)
@@ -49,13 +49,9 @@ public abstract class User {
     @Column(nullable = false)
     private UserRole role;
     
-    @Column(nullable = false)
-    private Boolean active = false;
-    
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
     
     @Column(name = "updated_at")
     private Instant updatedAt = Instant.now();
 }
-
