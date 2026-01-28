@@ -524,11 +524,17 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
       .subscribe({
         next: (response) => {
           console.log('Ride stopped successfully', response);
+          // Update active ride state with backend response and show post-ride UI
+          this.activeRide.set(response as unknown as ActiveRide);
+          this.rideCompleted.set(true);
           this.closeStopModal();
           const driverId = this.activeRide()?.driver.id;
           if (driverId) {
             this.loadUpcomingRides(driverId);
           }
+          // Refresh markers/view to reflect final location
+          this.updateMarkers();
+          this.updateMapView();
         },
         error: (error) => {
           console.error('Failed to stop ride', error);
