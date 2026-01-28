@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ftn.drumigo.util.TokenUtil;
+import com.ftn.drumigo.util.PasswordUtil;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -59,7 +60,8 @@ public class PassengerService {
         passenger.setBlocked(false);
         passenger.setCreatedAt(Instant.now());
         passenger.setUpdatedAt(Instant.now());
-        
+        passenger.setPasswordHash(PasswordUtil.hashPassword(password)); // Hash password
+
         passenger = passengerRepository.save(passenger);
         
         // Create token and send confirmation email
