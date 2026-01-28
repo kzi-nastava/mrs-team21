@@ -13,7 +13,6 @@ import { AuthService } from '../shared/services/auth.service';
   styleUrls: ['./layout.component.scss'],
 })
 export class LayoutComponent implements OnInit {
-
   private profileService = inject(ProfileApiService);
   private readonly authService = inject(AuthService);
 
@@ -29,43 +28,6 @@ export class LayoutComponent implements OnInit {
   }
 
   private loadUserFromToken(): void {
-
-    const token = sessionStorage.getItem('token');
-    if (token) {
-      try {
-        const payload = this.decodeJwtPayload(token);
-        const userId = payload.userId || payload.sub;
-        const role = payload.role;
-
-        // Fetch full profile including avatar
-        if (userId) {
-          this.profileService.getProfile(userId).subscribe({
-            next: (profile) => {
-              this.user = {
-                name: `${profile.firstName} ${profile.lastName}`,
-                initials: this.getInitials(`${profile.firstName} ${profile.lastName}`),
-                role: role === 'PASSENGER' ? 'Passenger' : role === 'DRIVER' ? 'Driver' : 'Admin',
-                type: role === 'PASSENGER' ? 'passenger' : role === 'DRIVER' ? 'driver' : 'admin',
-                avatarUrl: profile.avatarUrl,
-              };
-            },
-            error: (err) => {
-              console.error('Failed to load profile:', err);
-              // Fallback to basic info from token
-              this.user = {
-                name: payload.sub || 'User',
-                initials: this.getInitials(payload.sub || 'User'),
-                role: role === 'PASSENGER' ? 'Passenger' : role === 'DRIVER' ? 'Driver' : 'Admin',
-                type: role === 'PASSENGER' ? 'passenger' : role === 'DRIVER' ? 'driver' : 'admin',
-              };
-            },
-          });
-        }
-      } catch (error) {
-        console.error('Error decoding token:', error);
-      }
-    }
-  }
     const email = this.authService.getEmail();
     const role = this.authService.getRole();
     if (email && role) {

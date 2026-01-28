@@ -33,7 +33,6 @@ public class VehicleService {
      */
     public List<Vehicle> getActiveVehicles() {
         return vehicleRepository.findByDriverActiveDriverTrue();
-
     }
     
     public Vehicle getById(Long id) {
