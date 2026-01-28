@@ -28,9 +28,6 @@ public class PanicEvent {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
     
-    @Column(length = 500)
-    private String reason;
-    
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 }
