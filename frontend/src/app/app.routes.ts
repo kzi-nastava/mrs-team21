@@ -36,6 +36,13 @@ export const routes: Routes = [
         (m) => m.ResetPasswordComponent,
       ),
   },
+  {
+    path: 'activate/:token',
+    loadComponent: () =>
+      import('./features/auth/activate-account/activate-account.component').then(
+        (m) => m.ActivateAccountComponent,
+      ),
+  },
 
   // Non-auth routes under layout
   {
