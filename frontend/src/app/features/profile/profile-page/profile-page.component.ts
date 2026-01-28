@@ -2,8 +2,13 @@ import { Component, computed, inject, signal, DestroyRef, OnInit } from '@angula
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ProfileMockService } from '../services/profile-mock.service';
-import { ProfileData, PersonalInfoForm, VehicleInfoForm, VehicleCategory } from '../models/profile.model';
+import { ProfileApiService } from '../services/profile-api.service';
+import {
+  ProfileData,
+  PersonalInfoForm,
+  VehicleInfoForm,
+  VehicleCategory,
+} from '../models/profile.model';
 import { ProfilePhotoUploadComponent } from '../../../shared/components/profile-photo-upload/profile-photo-upload.component';
 import { NotificationApiService } from '../services/notification-api.service';
 import { UserNotification } from '../models/notification.model';
@@ -17,13 +22,15 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   styleUrls: ['./profile-page.component.scss'],
 })
 export class ProfilePageComponent implements OnInit {
-  private readonly profileService = inject(ProfileMockService);
+  private readonly profileService = inject(ProfileApiService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly notificationService = inject(NotificationApiService);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly profile: ProfileData = this.profileService.getProfile();
+  readonly profile = signal<ProfileData | null>(null);
+  readonly profileLoading = signal<boolean>(true);
+  readonly profileError = signal<string | null>(null);
   readonly notifications = signal<UserNotification[]>([]);
   readonly notificationsLoading = signal<boolean>(false);
   readonly notificationsError = signal<string | null>(null);
@@ -59,44 +66,56 @@ export class ProfilePageComponent implements OnInit {
   // Vehicle category options
   vehicleCategories: VehicleCategory[] = ['Standard', 'Luxury', 'Van'];
 
-  readonly fullName = computed(() => `${this.profile.firstName} ${this.profile.lastName}`.trim());
+  readonly fullName = computed(() => {
+    const p = this.profile();
+    return p ? `${p.firstName} ${p.lastName}`.trim() : '';
+  });
 
   /**
    * Determines if the current user is a driver.
-   * 
-   * TODO: Connect to actual auth/user service
-   * Example integration:
-   * ```
-   * private readonly authService = inject(AuthService);
-   * readonly isDriver = computed(() => this.authService.currentUser()?.role === 'DRIVER');
-   * ```
-   * 
-   * The role should come from:
-   * 1. JWT token claims after login
-   * 2. User service that fetches user data
-   * 3. Auth guard that determines access
    */
-  readonly isDriver = computed(() => this.profile.role === 'DRIVER');
+  readonly isDriver = computed(() => this.profile()?.role === 'DRIVER');
 
   ngOnInit(): void {
-    if (!this.isDriver()) {
-      this.loadNotifications();
-    }
+    // TODO: Get userId from auth service
+    const userId = 1; // Hardcoded for now
+
+    this.profileService
+      .getProfile(userId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          this.profile.set(data);
+          this.profileLoading.set(false);
+
+          // Load notifications only for non-drivers
+          if (data.role !== 'DRIVER') {
+            this.loadNotifications();
+          }
+        },
+        error: (error) => {
+          console.error('Failed to load profile:', error);
+          this.profileError.set('Failed to load profile data');
+          this.profileLoading.set(false);
+        },
+      });
   }
 
   /**
    * Check if there are any pending changes awaiting admin approval
    */
-  readonly hasPendingChanges = computed(() => 
-    this.profile.pendingChanges?.some(c => c.status === 'pending') || false
-  );
+  readonly hasPendingChanges = computed(() => {
+    const p = this.profile();
+    return p?.pendingChanges?.some((c) => c.status === 'pending') || false;
+  });
 
   /**
    * Calculate the percentage of daily driving limit used.
    * Maximum allowed is 8 hours in 24 hours.
    */
   getActiveHoursPercentage(): number {
-    const hoursWorked = this.profile.activeHoursLast24h?.hoursWorked || 0;
+    const p = this.profile();
+    const hoursWorked = p?.activeHoursLast24h?.hoursWorked || 0;
     const maxHours = 8;
     return Math.min((hoursWorked / maxHours) * 100, 100);
   }
@@ -105,7 +124,8 @@ export class ProfilePageComponent implements OnInit {
    * Get remaining hours the driver can work today.
    */
   getRemainingHours(): number {
-    const hoursWorked = this.profile.activeHoursLast24h?.hoursWorked || 0;
+    const p = this.profile();
+    const hoursWorked = p?.activeHoursLast24h?.hoursWorked || 0;
     return Math.max(8 - hoursWorked, 0);
   }
 
@@ -126,22 +146,30 @@ export class ProfilePageComponent implements OnInit {
   onPhotoSelected(file: File): void {
     this.selectedFile = file;
     console.log('Photo selected (auto-cropped to 1:1):', file.name, file.size, 'bytes');
-    
-    // TODO: Upload to backend immediately
-    // this.uploadService.uploadProfilePhoto(file).subscribe({
-    //   next: (url) => {
-    //     this.userService.updateProfile({ profilePictureUrl: url }).subscribe({
-    //       next: () => {
-    //         this.profile.avatarUrl = url;
-    //         this.showSuccessMessage('Profile photo updated successfully');
-    //       }
-    //     });
-    //   },
-    //   error: (err) => console.error('Upload failed:', err)
-    // });
-    
-    // For now, update preview only (backend integration pending)
-    this.profile.avatarUrl = URL.createObjectURL(file);
+
+    // For now, use FileReader to convert to base64 data URL for backend storage
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      const p = this.profile();
+      if (!p) return;
+
+      // Update profile with new picture
+      this.profileService
+        .updateProfile(p.id, { profilePictureUrl: dataUrl })
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (updatedProfile) => {
+            this.profile.set(updatedProfile);
+            this.showSuccess('Profile photo updated successfully');
+          },
+          error: (err) => {
+            console.error('Upload failed:', err);
+            this.showSuccess('Failed to update profile photo');
+          },
+        });
+    };
+    reader.readAsDataURL(file);
   }
 
   /**
@@ -164,13 +192,16 @@ export class ProfilePageComponent implements OnInit {
    * Open edit personal information modal
    */
   onEditProfile(): void {
+    const p = this.profile();
+    if (!p) return;
+
     // Pre-fill form with current data
     this.personalForm.patchValue({
-      firstName: this.profile.firstName,
-      lastName: this.profile.lastName,
-      email: this.profile.email,
-      phone: this.profile.phone,
-      address: this.profile.address,
+      firstName: p.firstName,
+      lastName: p.lastName,
+      email: p.email,
+      phone: p.phone,
+      address: p.address,
     });
     this.showEditPersonalModal = true;
   }
@@ -202,25 +233,40 @@ export class ProfilePageComponent implements OnInit {
    * Save passenger personal info directly
    */
   private savePassengerPersonalInfo(): void {
-    // Update profile data locally
     const values = this.personalForm.value as PersonalInfoForm;
-    this.profile.firstName = values.firstName;
-    this.profile.lastName = values.lastName;
-    this.profile.email = values.email;
-    this.profile.phone = values.phone;
-    this.profile.address = values.address;
+    const p = this.profile();
+    if (!p) return;
 
-    // TODO: Call backend API
-    // this.profileService.updateProfile(this.editPersonalForm).subscribe(...)
-
-    this.showSuccess('Your profile has been updated successfully!');
-    console.log('Passenger profile updated:', values);
+    // Call backend API to update profile
+    this.profileService
+      .updateProfile(p.id, {
+        name: values.firstName,
+        surname: values.lastName,
+        email: values.email,
+        phone: values.phone,
+        address: values.address,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (updatedProfile) => {
+          this.profile.set(updatedProfile);
+          this.showSuccess('Your profile has been updated successfully!');
+          console.log('Passenger profile updated:', values);
+        },
+        error: (err) => {
+          console.error('Failed to update profile:', err);
+          this.showSuccess('Failed to update profile');
+        },
+      });
   }
 
   /**
    * Submit driver change request for admin approval
    */
-  private submitDriverChangeRequest(type: 'personal' | 'vehicle', changes: PersonalInfoForm | VehicleInfoForm): void {
+  private submitDriverChangeRequest(
+    type: 'personal' | 'vehicle',
+    changes: PersonalInfoForm | VehicleInfoForm,
+  ): void {
     // Create pending change request
     const request = {
       id: `req-${Date.now()}`,
@@ -231,15 +277,21 @@ export class ProfilePageComponent implements OnInit {
     };
 
     // Add to pending changes
-    if (!this.profile.pendingChanges) {
-      this.profile.pendingChanges = [];
-    }
-    this.profile.pendingChanges.push(request);
+    this.profile.update((p) => {
+      if (!p) return null;
+      const pendingChanges = p.pendingChanges || [];
+      return {
+        ...p,
+        pendingChanges: [...pendingChanges, request],
+      };
+    });
 
     // TODO: Call backend API to submit change request
     // this.profileService.submitChangeRequest(request).subscribe(...)
 
-    this.showPending(`Your ${type} information change request has been submitted for admin approval.`);
+    this.showPending(
+      `Your ${type} information change request has been submitted for admin approval.`,
+    );
     console.log('Driver change request submitted:', request);
   }
 
@@ -247,17 +299,18 @@ export class ProfilePageComponent implements OnInit {
    * Open edit vehicle information modal
    */
   onEditVehicle(): void {
-    if (this.profile.vehicle) {
-      // Pre-fill form with current data
-      this.vehicleForm.patchValue({
-        model: this.profile.vehicle.model,
-        category: this.profile.vehicle.category,
-        licensePlate: this.profile.vehicle.licensePlate,
-        seats: this.profile.vehicle.seats,
-        babySeats: this.profile.vehicle.features.babySeats,
-        petFriendly: this.profile.vehicle.features.petFriendly,
-      });
-    }
+    const p = this.profile();
+    if (!p?.vehicle) return;
+
+    // Pre-fill form with current data
+    this.vehicleForm.patchValue({
+      model: p.vehicle.model,
+      category: p.vehicle.category,
+      licensePlate: p.vehicle.licensePlate,
+      seats: p.vehicle.seats,
+      babySeats: p.vehicle.features.babySeats,
+      petFriendly: p.vehicle.features.petFriendly,
+    });
     this.showEditVehicleModal = true;
   }
 
@@ -325,10 +378,13 @@ export class ProfilePageComponent implements OnInit {
   }
 
   private loadNotifications(): void {
+    const p = this.profile();
+    if (!p) return;
+
     this.notificationsLoading.set(true);
     this.notificationsError.set(null);
     this.notificationService
-      .getUserNotifications(this.profile.id)
+      .getUserNotifications(p.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (notifications) => {
