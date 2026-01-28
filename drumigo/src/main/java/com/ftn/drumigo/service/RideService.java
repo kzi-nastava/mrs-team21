@@ -624,6 +624,8 @@ public class RideService {
         // Update ride
         ride.setStoppedAt(Instant.now());
         ride.setStopLocation(stopLocation);
+        ride.setEndTime(Instant.now());
+        ride.setPaidAt(Instant.now());
         ride.setStatus(RideStatus.FINISHED);
 
         // Mark vehicle as available again, similar to endRide
