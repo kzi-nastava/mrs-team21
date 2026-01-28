@@ -1,20 +1,21 @@
 package com.ftn.drumigo.repository;
 
+import com.ftn.drumigo.domain.Driver;
 import com.ftn.drumigo.domain.Vehicle;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 
-    java.util.Optional<Vehicle> findByDriver(com.ftn.drumigo.domain.users.Driver driver);
+    Optional<Vehicle> findByDriver(Driver driver);
 
     List<Vehicle> findByAvailableTrue();
     boolean existsByLicensePlate(String licensePlate);
-    java.util.Optional<Vehicle> findByDriver(com.ftn.drumigo.domain.Driver driver);
     
     /**
      * Find all vehicles belonging to active drivers (drivers currently working).
