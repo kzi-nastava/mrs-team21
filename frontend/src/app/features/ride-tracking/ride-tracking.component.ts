@@ -68,6 +68,8 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   rideCompleted = signal<boolean>(false);
   endRideLoading = signal<boolean>(false);
   endRideError = signal<string | null>(null);
+  stopLoading = signal<boolean>(false);
+  stopError = signal<string | null>(null);
   upcomingRides = signal<RideResponseDto[]>([]);
 
   nextScheduledRide = computed(() => this.upcomingRides()[0] ?? null);
@@ -486,6 +488,51 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
         error: (error) => {
           console.error('Failed to end ride', error);
           this.endRideError.set('Failed to end ride. Please try again.');
+        },
+      });
+  }
+
+  onConfirmStop(stopAddress: string): void {
+    const rideId = Number(this.rideId());
+    if (!rideId) {
+      console.error('Ride id is missing or invalid, cannot stop ride');
+      return;
+    }
+
+    const loc = this.currentLocation();
+    if (!loc) {
+      console.error('Current location missing, cannot send stop coordinates');
+      this.stopError.set('Current location unknown');
+      return;
+    }
+
+    this.stopLoading.set(true);
+    this.stopError.set(null);
+
+    const request = {
+      stopAddress,
+      stopLat: loc.lat,
+      stopLng: loc.lng,
+    };
+
+    this.rideApiService
+      .stopRide(rideId, request)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.stopLoading.set(false)),
+      )
+      .subscribe({
+        next: (response) => {
+          console.log('Ride stopped successfully', response);
+          this.closeStopModal();
+          const driverId = this.activeRide()?.driver.id;
+          if (driverId) {
+            this.loadUpcomingRides(driverId);
+          }
+        },
+        error: (error) => {
+          console.error('Failed to stop ride', error);
+          this.stopError.set('Failed to stop ride. Please try again.');
         },
       });
   }
