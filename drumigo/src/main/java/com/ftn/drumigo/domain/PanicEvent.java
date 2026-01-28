@@ -30,5 +30,8 @@ public class PanicEvent {
     
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
+
+    @Column(name = "reason")
+    private String reason;
 }
 
