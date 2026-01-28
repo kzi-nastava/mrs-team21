@@ -10,6 +10,7 @@ export interface UserProfile {
   initials: string;
   role: string;
   type: UserType;
+  avatarUrl?: string | null;
 }
 
 @Component({
