@@ -1,11 +1,13 @@
 package com.ftn.drumigo.service;
 
 import com.ftn.drumigo.domain.*;
+import com.ftn.drumigo.domain.enums.CancelReasonType;
 import com.ftn.drumigo.domain.enums.NotificationType;
 import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.dto.RideCreateRequest;
 import com.ftn.drumigo.dto.RideInconsistencyCreateRequest;
 import com.ftn.drumigo.dto.RideStopRequest;
+import com.ftn.drumigo.dto.ride.request.RideCancelByDriverRequest;
 import com.ftn.drumigo.event.RideFinishedEvent;
 import com.ftn.drumigo.exception.BadRequestException;
 import com.ftn.drumigo.exception.ResourceNotFoundException;
@@ -474,12 +476,13 @@ public class RideService {
         }
     }
     
-    public Ride cancelByDriver(Long rideId, Long driverId, String reason) {
+    public void cancelByDriver(Long rideId, String email, RideCancelByDriverRequest request) {
         Ride ride = getById(rideId);
-        Driver driver = driverRepository.findById(driverId)
-            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + driverId));
-        
-        if (ride.getDriver() == null || !ride.getDriver().getId().equals(driverId)) {
+        Driver driver = (Driver) driverRepository.findByEmail(email)
+            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with email: " + email));
+
+        // Cannot cancel if driver is not assigned to this ride
+        if (ride.getDriver() == null || !ride.getDriver().getEmail().equals(email)) {
             throw new BadRequestException("Driver is not assigned to this ride");
         }
         
@@ -487,75 +490,55 @@ public class RideService {
             throw new BadRequestException("Ride cannot be cancelled. Current status: " + ride.getStatus());
         }
         
-        ride.setStatus(RideStatus.CANCELLED);
-        ride.setCancelReason(reason);
-        ride.setCanceledByUser(driver);
-        
-        if (ride.getVehicle() != null) {
-            Vehicle vehicle = ride.getVehicle();
-            vehicle.setAvailable(true);
-            vehicleRepository.save(vehicle);
-        }
-        
-        ride = rideRepository.save(ride);
-        
-        // Create cancellation notifications
-        createCancellationNotifications(ride);
-        
-        return ride;
+        cancelRide(ride, request.cancelReasonType(), request.reason(), driver);
     }
     
-    public Ride withdrawByPassenger(Long rideId, Long passengerId) {
+    public void cancelByPassenger(Long rideId, String email) {
         Ride ride = getById(rideId);
-        Passenger passenger = passengerRepository.findById(passengerId)
-            .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with id: " + passengerId));
+        Passenger passenger = (Passenger) passengerRepository.findByEmail(email)
+            .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with email: " + email));
         
         // Check if passenger is the ordering passenger
-        if (ride.getOrderingPassenger() == null || !ride.getOrderingPassenger().getId().equals(passengerId)) {
-            throw new BadRequestException("Only the ordering passenger can withdraw a ride");
+        if (ride.getOrderingPassenger() == null || !ride.getOrderingPassenger().getEmail().equals(email)) {
+            throw new BadRequestException("Only the ordering passenger can cancel a ride");
         }
-        
-        // Cannot withdraw if ride is already ACTIVE or FINISHED
+
+        // Cannot cancel if ride is already ACTIVE or FINISHED
         if (ride.getStatus() == RideStatus.ACTIVE || ride.getStatus() == RideStatus.FINISHED) {
-            throw new BadRequestException("Cannot withdraw a ride that is already " + ride.getStatus());
+            throw new BadRequestException("Cannot cancel a ride that is already " + ride.getStatus());
         }
-        
+
         if (ride.getStatus() != RideStatus.PENDING && ride.getStatus() != RideStatus.ACCEPTED) {
-            throw new BadRequestException("Ride cannot be withdrawn. Current status: " + ride.getStatus());
+            throw new BadRequestException("Ride cannot be canceled. Current status: " + ride.getStatus());
         }
-        
-        // Enforce "≥10 minutes before scheduled start" (spec 2.5)
-        Instant now = Instant.now();
+
+        // Cannot cancel if ride is in less than 10 minutes
         if (ride.getScheduledFor() != null) {
-            // For scheduled rides, check 10 minutes before scheduled time
+            Instant now = Instant.now();
             Instant tenMinutesBefore = ride.getScheduledFor().minusSeconds(10 * 60);
             if (now.isAfter(tenMinutesBefore)) {
-                throw new BadRequestException("Cannot withdraw ride less than 10 minutes before scheduled start");
+                throw new BadRequestException("Cannot cancel ride less than 10 minutes before scheduled start");
             }
-        } else {
-            // For immediate rides, check if ride was requested more than 10 minutes ago
-            // If it was requested less than 10 minutes ago, allow withdrawal
-            // If it was requested more than 10 minutes ago and is still PENDING/ACCEPTED, 
-            // we allow withdrawal (no strict 10-minute rule for immediate rides)
-            // But if it's ACTIVE, we already rejected above
         }
-        
+
+        cancelRide(ride, CancelReasonType.OTHER, "Canceled by passenger", passenger);
+    }
+
+    private void cancelRide(Ride ride, CancelReasonType reasonType, String reason, User canceledBy) {
         ride.setStatus(RideStatus.CANCELLED);
-        ride.setCancelReason("Withdrawn by passenger");
-        ride.setCanceledByUser(passenger);
-        
+        ride.setCancelReasonType(reasonType);
+        ride.setCancelReason(reason);
+        ride.setCanceledByUser(canceledBy);
+
         if (ride.getVehicle() != null) {
             Vehicle vehicle = ride.getVehicle();
             vehicle.setAvailable(true);
             vehicleRepository.save(vehicle);
         }
-        
-        ride = rideRepository.save(ride);
-        
-        // Create cancellation notifications
-        createCancellationNotifications(ride);
-        
-        return ride;
+
+        rideRepository.save(ride);
+
+        // TODO: create cancellation notifications
     }
     
     public Ride stopRide(Long rideId, Long driverId, RideStopRequest request) {
