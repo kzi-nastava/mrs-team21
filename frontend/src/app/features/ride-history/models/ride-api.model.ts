@@ -34,3 +34,41 @@ export interface PageResponse<T> {
   size: number;
   number: number;
 }
+
+/**
+ * Location info for driver ride history response.
+ */
+export interface LocationInfoDto {
+  address: string;
+  lat: number;
+  lng: number;
+}
+
+/**
+ * Passenger info for driver ride history response.
+ */
+export interface PassengerInfoDto {
+  id: number;
+  name: string;
+  surname: string;
+}
+
+/**
+ * DTO for driver ride history items from backend.
+ * Maps to DriverRideHistoryItemResponse.java
+ */
+export interface DriverRideHistoryItemDto {
+  id: number;
+  status: string;
+  startTime: string | null;
+  endTime: string | null;
+  startLocation: LocationInfoDto | null;
+  endLocation: LocationInfoDto | null;
+  cancelled: boolean;
+  canceledByUserId: number | null;
+  canceledByName: string | null;
+  canceledBySurname: string | null;
+  totalCost: number | null;
+  passengers: PassengerInfoDto[];
+  panicOccurred: boolean;
+}

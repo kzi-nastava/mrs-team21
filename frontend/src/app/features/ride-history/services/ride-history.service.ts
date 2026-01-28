@@ -3,7 +3,22 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { Ride } from '../models';
-import { PageResponse, RideResponseDto } from '../models/ride-api.model';
+import {
+  DriverRideHistoryItemDto,
+  PageResponse,
+  RideResponseDto,
+} from '../models/ride-api.model';
+
+/**
+ * Paginated response for driver ride history.
+ */
+export interface DriverRideHistoryResponse {
+  rides: Ride[];
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
 
 /**
  * Multi-role ride history service.
@@ -13,6 +28,7 @@ import { PageResponse, RideResponseDto } from '../models/ride-api.model';
 @Injectable({ providedIn: 'root' })
 export class RideHistoryService {
   private readonly http = inject(HttpClient);
+
   /**
    * Get ride history for a passenger.
    * Returns rides where the user was a passenger.
@@ -22,11 +38,46 @@ export class RideHistoryService {
   }
 
   /**
-   * Get ride history for a driver.
-   * Returns rides where the user was the driver.
+   * Get ride history for a driver with server-side pagination and filtering.
+   * Calls GET /api/drivers/{driverId}/rides/history
    */
-  getDriverRideHistory(): Ride[] {
-    return this.getMockRideData();
+  getDriverRideHistory(
+    driverId: number,
+    from?: Date | null,
+    to?: Date | null,
+    page = 0,
+    size = 10,
+    sort = 'requestedAt,desc',
+  ): Observable<DriverRideHistoryResponse> {
+    let params = new HttpParams()
+      .set('page', page)
+      .set('size', size)
+      .set('sort', sort);
+
+    if (from) {
+      params = params.set('from', from.toISOString());
+    }
+    if (to) {
+      // Set end of day for the 'to' date
+      const endOfDay = new Date(to);
+      endOfDay.setHours(23, 59, 59, 999);
+      params = params.set('to', endOfDay.toISOString());
+    }
+
+    return this.http
+      .get<PageResponse<DriverRideHistoryItemDto>>(
+        `${environment.apiBaseUrl}/drivers/${driverId}/rides/history`,
+        { params },
+      )
+      .pipe(
+        map((response) => ({
+          rides: response.content.map((item) => this.mapDriverHistoryItem(item)),
+          totalElements: response.totalElements,
+          totalPages: response.totalPages,
+          currentPage: response.number,
+          pageSize: response.size,
+        })),
+      );
   }
 
   getUpcomingDriverRides(driverId: number, page = 0, size = 10): Observable<Ride[]> {
@@ -342,6 +393,41 @@ export class RideHistoryService {
       status: ride.status,
       scheduledFor: ride.scheduledFor ? new Date(ride.scheduledFor) : null,
       requestedAt: ride.requestedAt ? new Date(ride.requestedAt) : null,
+    };
+  }
+
+  /**
+   * Map DriverRideHistoryItemDto from backend to frontend Ride model.
+   */
+  private mapDriverHistoryItem(item: DriverRideHistoryItemDto): Ride {
+    // Determine who cancelled the ride
+    let cancelledBy: 'DRIVER' | 'PASSENGER' | null = null;
+    if (item.cancelled && item.canceledByName) {
+      // If cancelled by someone, we check if it's driver or passenger
+      // For now, we just set based on the fact that it's cancelled
+      cancelledBy = 'DRIVER'; // Backend could provide role info for more accuracy
+    }
+
+    return {
+      id: String(item.id),
+      startTime: item.startTime ? new Date(item.startTime) : new Date(),
+      endTime: item.endTime ? new Date(item.endTime) : null,
+      origin: item.startLocation?.address ?? 'Unknown pickup',
+      destination: item.endLocation?.address ?? 'Unknown destination',
+      cost: item.totalCost ?? 0,
+      isCancelled: item.cancelled,
+      cancelledBy,
+      cancellationReason: item.canceledByName
+        ? `Cancelled by ${item.canceledByName} ${item.canceledBySurname ?? ''}`
+        : undefined,
+      panicActivated: item.panicOccurred,
+      passengers: item.passengers.map((p) => ({
+        firstName: p.name,
+        lastName: p.surname,
+        email: '', // Not provided in this DTO
+        phone: '', // Not provided in this DTO
+      })),
+      status: item.status,
     };
   }
 }
