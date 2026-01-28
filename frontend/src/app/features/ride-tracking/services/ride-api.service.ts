@@ -19,10 +19,13 @@ export class RideApiService {
       .set('sort', 'scheduledFor,asc');
 
     return this.http
-      .get<PageResponse<RideResponseDto>>(
-        `${environment.apiBaseUrl}/drivers/${driverId}/rides/upcoming`,
-        { params },
-      )
+      .get<
+        PageResponse<RideResponseDto>
+      >(`${environment.apiBaseUrl}/drivers/${driverId}/rides/upcoming`, { params })
       .pipe(map((response) => response.content));
+  }
+
+  createPanic(rideId: number): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/rides/${rideId}/panic`, {});
   }
 }
