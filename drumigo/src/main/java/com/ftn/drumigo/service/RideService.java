@@ -478,8 +478,12 @@ public class RideService {
     
     public void cancelByDriver(Long rideId, String email, RideCancelByDriverRequest request) {
         Ride ride = getById(rideId);
-        Driver driver = (Driver) driverRepository.findByEmail(email)
+        Object driverObj = driverRepository.findByEmail(email)
             .orElseThrow(() -> new ResourceNotFoundException("Driver not found with email: " + email));
+        if (!(driverObj instanceof Driver)) {
+            throw new ResourceNotFoundException("Driver not found with email: " + email);
+        }
+        Driver driver = (Driver) driverObj;
 
         // Cannot cancel if driver is not assigned to this ride
         if (ride.getDriver() == null || !ride.getDriver().getEmail().equals(email)) {
