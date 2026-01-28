@@ -1,6 +1,6 @@
 package com.ftn.drumigo.service;
 
-import com.ftn.drumigo.domain.Driver;
+import com.ftn.drumigo.domain.users.Driver;
 import com.ftn.drumigo.domain.Vehicle;
 import com.ftn.drumigo.domain.VehicleType;
 import com.ftn.drumigo.dto.VehicleCreateRequest;
@@ -33,6 +33,7 @@ public class VehicleService {
      */
     public List<Vehicle> getActiveVehicles() {
         return vehicleRepository.findByDriverActiveDriverTrue();
+
     }
     
     public Vehicle getById(Long id) {
@@ -51,21 +52,14 @@ public class VehicleService {
         VehicleType vehicleType = vehicleTypeRepository.findById(request.vehicleTypeId())
             .orElseThrow(() -> new ResourceNotFoundException("Vehicle type not found with id: " + request.vehicleTypeId()));
         
-        if (vehicleRepository.existsByLicensePlate(request.licensePlate())) {
-            throw new ConflictException("Vehicle with license plate " + request.licensePlate() + " already exists");
-        }
-        
         Vehicle vehicle = new Vehicle();
         vehicle.setDriver(driver);
         vehicle.setVehicleType(vehicleType);
-        vehicle.setModel(request.model());
-        vehicle.setLicensePlate(request.licensePlate());
         vehicle.setNumSeats(request.numSeats());
         vehicle.setBabyFriendly(request.babyFriendly());
         vehicle.setPetFriendly(request.petFriendly());
         vehicle.setCurrentLat(request.currentLat());
         vehicle.setCurrentLng(request.currentLng());
-        vehicle.setAvailable(request.available());
         
         return vehicleRepository.save(vehicle);
     }
@@ -79,16 +73,6 @@ public class VehicleService {
             vehicle.setVehicleType(vehicleType);
         }
         
-        if (request.model() != null) {
-            vehicle.setModel(request.model());
-        }
-        if (request.licensePlate() != null) {
-            if (vehicleRepository.existsByLicensePlate(request.licensePlate()) && 
-                !request.licensePlate().equals(vehicle.getLicensePlate())) {
-                throw new ConflictException("Vehicle with license plate " + request.licensePlate() + " already exists");
-            }
-            vehicle.setLicensePlate(request.licensePlate());
-        }
         if (request.numSeats() != null) {
             vehicle.setNumSeats(request.numSeats());
         }
@@ -103,9 +87,6 @@ public class VehicleService {
         }
         if (request.currentLng() != null) {
             vehicle.setCurrentLng(request.currentLng());
-        }
-        if (request.available() != null) {
-            vehicle.setAvailable(request.available());
         }
         
         return vehicleRepository.save(vehicle);

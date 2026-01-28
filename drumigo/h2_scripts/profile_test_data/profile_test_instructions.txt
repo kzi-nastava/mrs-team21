@@ -1,0 +1,184 @@
+Profile Page Test Data Setup Instructions
+==========================================
+
+This script creates test users for testing the profile page functionality.
+
+Test Users Created (ALL USE PASSWORD: Password123):
+----------------------------------------------------
+
+1. PASSENGER - Ana Petrović
+   - ID: 1
+   - Email: ana.petrovic@example.com
+   - Password: Password123
+   - Role: PASSENGER
+   - Use this to test passenger profile view (no vehicle info)
+
+2. DRIVER - Marko Jovanović  
+   - ID: 2
+   - Email: marko.jovanovic@example.com
+   - Password: Password123
+   - Role: DRIVER
+   - Active: true
+   - Vehicle: STANDARD (4 seats, baby-friendly, not pet-friendly)
+   - Use this to test driver profile with vehicle info
+
+3. ADMIN - Stefan Nikolić
+   - ID: 3
+   - Email: stefan.nikolic@drumigo.com
+   - Password: Password123
+   - Role: ADMIN
+   - Use this to test admin profile view (no vehicle info)
+
+4. DRIVER - Jelena Milošević
+   - ID: 4
+   - Email: jelena.milosevic@example.com
+   - Password: Password123
+   - Role: DRIVER
+   - Active: false
+   - Vehicle: LUXURY (4 seats, not baby-friendly, pet-friendly)
+   - Use this to test inactive driver
+
+5. DRIVER - Nikola Đorđević
+   - ID: 5
+   - Email: nikola.djordjevic@example.com
+   - Password: Password123
+   - Role: DRIVER
+   - Active: true
+   - Vehicle: VAN (7 seats, baby-friendly, pet-friendly)
+   - Use this to test driver with larger vehicle
+
+6. PASSENGER - Milica Stojanović
+   - ID: 6
+   - Email: milica.stojanovic@example.com
+   - Password: Password123
+   - Role: PASSENGER
+   - Use this to test another passenger
+
+How to Run:
+-----------
+
+1. Start the Spring Boot application (it will create the schema automatically)
+
+2. Access H2 Console:
+   - URL: http://localhost:8080/h2-console
+   - JDBC URL: jdbc:h2:mem:drumigo
+   - User Name: sa
+   - Password: (leave empty)
+
+3. Click "Connect"
+
+4. Copy and paste the contents of profile_test_data.sql into the SQL statement area
+
+5. Click "Run" to execute the script
+
+6. Verify data was inserted:
+   SELECT * FROM users;
+   SELECT * FROM drivers;
+   SELECT * FROM passengers;
+   SELECT * FROM admins;
+   SELECT * FROM vehicles;
+
+Testing the Profile API:
+------------------------
+
+Test with different user IDs:
+
+1. Passenger profile (no vehicle):
+   GET http://localhost:8080/api/profile?userId=1
+
+2. Active driver with STANDARD vehicle:
+   GET http://localhost:8080/api/profile?userId=2
+
+3. Admin profile (no vehicle):
+   GET http://localhost:8080/api/profile?userId=3
+
+4. Inactive driver with LUXURY vehicle:
+   GET http://localhost:8080/api/profile?userId=4
+
+5. Active driver with VAN:
+   GET http://localhost:8080/api/profile?userId=5
+
+Expected JSON Response for Driver (userId=2):
+{
+  "id": 2,
+  "name": "Marko",
+  "surname": "Jovanović",
+  "email": "marko.jovanovic@example.com",
+  "address": "Narodnih Heroja 25, Beograd",
+  "phone": "+381652345678",
+  "profilePictureUrl": null,
+  "blocked": false,
+  "role": "DRIVER",
+  "activeDriver": true,
+  "lastStateChangeAt": "2026-01-28T...",
+  "vehicle": {
+    "id": 1,
+    "vehicleTypeName": "STANDARD",
+    "numSeats": 4,
+    "babyFriendly": true,
+    "petFriendly": false
+  },
+  "createdAt": "2026-01-28T...",
+  "updatedAt": "2026-01-28T..."
+}
+
+Expected JSON Response for Passenger (userId=1):
+{
+  "id": 1,
+  "name": "Ana",
+  "surname": "Petrović",
+  "email": "ana.petrovic@example.com",
+  "address": "Bulevar Oslobođenja 10, Novi Sad",
+  "phone": "+381641234567",
+  "profilePictureUrl": null,
+  "blocked": false,
+  "role": "PASSENGER",
+  "vehicle": null,
+  "createdAt": "2026-01-28T...",
+  "updatedAt": "2026-01-28T..."
+}
+
+Testing in Frontend:
+--------------------
+
+1. Update profile-page.component.ts line ~80 to use different userId:
+   const userId = 2; // Change to 1, 2, 3, 4, 5, or 6
+
+2. Start frontend: npm start
+
+3. Navigate to: http://localhost:4200/profile
+
+4. Verify:
+   - Passenger (userId=1 or 6): Shows personal info, no vehicle section
+   - Driver (userId=2, 4, or 5): Shows personal info + vehicle section with details
+   - Admin (userId=3): Shows personal info, no vehicle section
+
+Login Instructions:
+-------------------
+
+1. Navigate to: http://localhost:4200/login
+
+2. Use any of the test accounts:
+   Email: ana.petrovic@example.com
+   Password: Password123
+
+   Email: marko.jovanovic@example.com
+   Password: Password123
+
+   Email: stefan.nikolic@drumigo.com
+   Password: Password123
+
+3. After successful login:
+   - Token is stored in sessionStorage
+   - Passengers redirect to /order-ride
+   - Drivers redirect to /active-ride
+   - You can navigate to /profile to see profile page
+
+Notes:
+------
+- All passwords are SHA-256 hashed using PasswordUtil.hashPassword()
+- Password for ALL test users: Password123 (meets validation: 1 uppercase, 1 number, 6+ chars)
+- Vehicle types are pre-populated (STANDARD, LUXURY, VAN)
+- Drivers are linked to vehicles via one-to-one relationship
+- Vehicle availability field removed (as per refactoring)
+- License plate and model fields removed from vehicles (as per refactoring)

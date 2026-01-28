@@ -10,12 +10,6 @@ public record VehicleCreateRequest(
     @NotNull(message = "Vehicle type ID is required")
     Long vehicleTypeId,
     
-    @NotBlank(message = "Model is required")
-    String model,
-    
-    @NotBlank(message = "License plate is required")
-    String licensePlate,
-    
     @NotNull(message = "Number of seats is required")
     @Min(value = 1, message = "Number of seats must be at least 1")
     Integer numSeats,
@@ -32,9 +26,6 @@ public record VehicleCreateRequest(
     
     @DecimalMin(value = "-180.0", message = "Longitude must be between -180 and 180")
     @DecimalMax(value = "180.0", message = "Longitude must be between -180 and 180")
-    BigDecimal currentLng,
-    
-    @NotNull(message = "Available flag is required")
-    Boolean available
+    BigDecimal currentLng
 ) {}
 

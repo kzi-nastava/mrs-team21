@@ -1,6 +1,6 @@
 package com.ftn.drumigo.mapper;
 
-import com.ftn.drumigo.domain.User;
+import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.dto.UserResponse;
 import org.springframework.stereotype.Component;
 
@@ -22,7 +22,6 @@ public class UserMapper {
             user.getProfilePictureUrl(),
             user.getBlocked(),
             user.getRole(),
-            user.getActive(),
             user.getCreatedAt(),
             user.getUpdatedAt()
         );

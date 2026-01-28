@@ -1,7 +1,7 @@
 package com.ftn.drumigo.service;
 
-import com.ftn.drumigo.domain.Driver;
-import com.ftn.drumigo.domain.Passenger;
+import com.ftn.drumigo.domain.users.Driver;
+import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.Review;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.enums.RideStatus;

@@ -35,7 +35,11 @@
 
   <!-- User Profile -->
   <div class="user-profile">
-    <div class="user-avatar">{{ user.initials }}</div>
+    @if (user.avatarUrl) {
+      <img [src]="user.avatarUrl" alt="{{ user.name }}" class="user-avatar-img" />
+    } @else {
+      <div class="user-avatar">{{ user.initials }}</div>
+    }
     <div class="user-info">
       <div class="user-name">{{ user.name }}</div>
       <div class="user-role">{{ user.role }}</div>

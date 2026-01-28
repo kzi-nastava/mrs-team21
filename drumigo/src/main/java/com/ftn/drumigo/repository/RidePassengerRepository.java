@@ -1,5 +1,6 @@
 package com.ftn.drumigo.repository;
 
+import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RidePassenger;
 import com.ftn.drumigo.domain.User;

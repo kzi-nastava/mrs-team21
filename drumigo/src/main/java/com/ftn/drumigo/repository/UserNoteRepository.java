@@ -1,6 +1,6 @@
 package com.ftn.drumigo.repository;
 
-import com.ftn.drumigo.domain.User;
+import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.domain.UserNote;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

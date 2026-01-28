@@ -1,7 +1,7 @@
 package com.ftn.drumigo.service;
 
 import com.ftn.drumigo.domain.Notification;
-import com.ftn.drumigo.domain.User;
+import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.exception.ResourceNotFoundException;
 import com.ftn.drumigo.repository.NotificationRepository;
 import com.ftn.drumigo.repository.UserRepository;

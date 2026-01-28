@@ -1,13 +1,11 @@
 package com.ftn.drumigo.controller;
 
-import com.ftn.drumigo.domain.Driver;
-import com.ftn.drumigo.domain.DriverDocument;
+import com.ftn.drumigo.domain.users.Driver;
 import com.ftn.drumigo.domain.Review;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RideWaypoint;
 import com.ftn.drumigo.dto.*;
 import com.ftn.drumigo.dto.ride.response.RideResponse;
-import com.ftn.drumigo.mapper.DriverDocumentMapper;
 import com.ftn.drumigo.mapper.DriverMapper;
 import com.ftn.drumigo.mapper.DriverRideHistoryMapper;
 import com.ftn.drumigo.mapper.ReviewMapper;
@@ -36,7 +34,6 @@ public class DriverController {
     
     private final DriverService driverService;
     private final DriverMapper driverMapper;
-    private final DriverDocumentMapper driverDocumentMapper;
     private final ReviewService reviewService;
     private final ReviewMapper reviewMapper;
     private final RideService rideService;
@@ -79,14 +76,6 @@ public class DriverController {
             @Valid @RequestBody DriverUpdateRequest request) {
         Driver driver = driverService.update(id, request);
         return ResponseEntity.ok(driverMapper.toResponse(driver));
-    }
-    
-    @PostMapping("/{id}/documents")
-    public ResponseEntity<DriverDocumentResponse> createDocument(
-            @PathVariable Long id,
-            @Valid @RequestBody DriverDocumentCreateRequest request) {
-        DriverDocument document = driverService.createDocument(id, request);
-        return ResponseEntity.status(201).body(driverDocumentMapper.toResponse(document));
     }
     
     @PostMapping("/{id}/activation")

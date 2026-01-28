@@ -1,10 +1,10 @@
 package com.ftn.drumigo.service;
 
-import com.ftn.drumigo.domain.Admin;
+import com.ftn.drumigo.domain.users.Admin;
 import com.ftn.drumigo.domain.Notification;
 import com.ftn.drumigo.domain.PanicEvent;
 import com.ftn.drumigo.domain.Ride;
-import com.ftn.drumigo.domain.User;
+import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.domain.enums.NotificationType;
 import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.exception.BadRequestException;

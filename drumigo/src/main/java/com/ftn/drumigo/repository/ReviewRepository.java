@@ -1,6 +1,7 @@
 package com.ftn.drumigo.repository;
 
-import com.ftn.drumigo.domain.Driver;
+import com.ftn.drumigo.domain.users.Driver;
+import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.Review;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,6 +19,6 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     @Query("SELECT r FROM Review r WHERE r.ride.driver = :driver")
     List<Review> findByDriver(@Param("driver") Driver driver);
     
-    Optional<Review> findByRideAndPassenger(Ride ride, com.ftn.drumigo.domain.Passenger passenger);
+    Optional<Review> findByRideAndPassenger(Ride ride, Passenger passenger);
 }
 

@@ -1,7 +1,7 @@
 package com.ftn.drumigo.service;
 
-import com.ftn.drumigo.domain.Admin;
-import com.ftn.drumigo.domain.User;
+import com.ftn.drumigo.domain.users.Admin;
+import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.domain.UserNote;
 import com.ftn.drumigo.dto.UserNoteCreateRequest;
 import com.ftn.drumigo.exception.ResourceNotFoundException;

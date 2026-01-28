@@ -4,6 +4,9 @@ import com.ftn.drumigo.domain.*;
 import com.ftn.drumigo.domain.enums.CancelReasonType;
 import com.ftn.drumigo.domain.enums.NotificationType;
 import com.ftn.drumigo.domain.enums.RideStatus;
+import com.ftn.drumigo.domain.users.Driver;
+import com.ftn.drumigo.domain.users.Passenger;
+import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.dto.RideCreateRequest;
 import com.ftn.drumigo.dto.ride.request.RideStopRequest;
 import com.ftn.drumigo.dto.ride.request.RideCancelByDriverRequest;
@@ -122,12 +125,6 @@ public class RideService {
         ride.setStatus(RideStatus.FINISHED);
         ride.setEndTime(Instant.now());
         ride.setPaidAt(Instant.now());
-        
-        if (ride.getVehicle() != null) {
-            Vehicle vehicle = ride.getVehicle();
-            vehicle.setAvailable(true);
-            vehicleRepository.save(vehicle);
-        }
         
         ride = rideRepository.save(ride);
         eventPublisher.publishEvent(new RideFinishedEvent(ride.getId()));
@@ -273,8 +270,6 @@ public class RideService {
                 .orElse(null);
             if (vehicle != null) {
                 ride.setVehicle(vehicle);
-                vehicle.setAvailable(false);
-                vehicleRepository.save(vehicle);
             }
             ride.setStatus(RideStatus.ACCEPTED);
             
@@ -404,16 +399,14 @@ public class RideService {
             // Check if driver has a vehicle of the requested type
             Vehicle vehicle = vehicleRepository.findByDriver(driver).orElse(null);
             if (vehicle != null && vehicle.getVehicleType().getId().equals(vehicleType.getId())) {
-                // Check vehicle availability and requirements
-                if (vehicle.getAvailable()) {
-                    if (ride.getBabyTransport() && !vehicle.getBabyFriendly()) {
-                        continue;
-                    }
-                    if (ride.getPetTransport() && !vehicle.getPetFriendly()) {
-                        continue;
-                    }
-                    return driver;
+                // Check vehicle requirements
+                if (ride.getBabyTransport() && !vehicle.getBabyFriendly()) {
+                    continue;
                 }
+                if (ride.getPetTransport() && !vehicle.getPetFriendly()) {
+                    continue;
+                }
+                return driver;
             }
         }
         
@@ -584,12 +577,7 @@ public class RideService {
 
         if (ride.getVehicle() != null) {
             Vehicle vehicle = ride.getVehicle();
-            vehicle.setAvailable(true);
-            vehicleRepository.save(vehicle);
         }
-
-        rideRepository.save(ride);
-
         // TODO: create cancellation notifications
     }
     
@@ -664,20 +652,8 @@ public class RideService {
         ride.setPaidAt(Instant.now());
         ride.setStatus(RideStatus.FINISHED);
 
-        // Mark vehicle as available again, similar to endRide
-        Vehicle vehicle = ride.getVehicle();
-        if (vehicle != null) {
-            vehicle.setAvailable(true);
-            vehicleRepository.save(vehicle);
-        }
+        // Vehicle availability removed - no longer tracking
         
-        // Add stop as new destination waypoint (order 1, since start is order 0)
-        RideWaypoint stopWaypoint = new RideWaypoint();
-        stopWaypoint.setRide(ride);
-        stopWaypoint.setLocation(stopLocation);
-        stopWaypoint.setWaypointOrder(1);
-        rideWaypointRepository.save(stopWaypoint);
-
         ride = rideRepository.save(ride);
         eventPublisher.publishEvent(new RideFinishedEvent(ride.getId()));
         return ride;

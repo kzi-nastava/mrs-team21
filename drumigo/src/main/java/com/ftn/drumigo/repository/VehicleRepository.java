@@ -9,6 +9,9 @@ import java.util.List;
 
 @Repository
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
+
+    java.util.Optional<Vehicle> findByDriver(com.ftn.drumigo.domain.users.Driver driver);
+
     List<Vehicle> findByAvailableTrue();
     boolean existsByLicensePlate(String licensePlate);
     java.util.Optional<Vehicle> findByDriver(com.ftn.drumigo.domain.Driver driver);
@@ -19,5 +22,6 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
      */
     @Query("SELECT v FROM Vehicle v WHERE v.driver.activeDriver = true")
     List<Vehicle> findByDriverActiveDriverTrue();
+
 }
 
