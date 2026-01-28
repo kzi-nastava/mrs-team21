@@ -124,7 +124,14 @@
             </div>
             <div class="location-content">
               <div class="location-label">New drop-off location</div>
-              <div class="location-value">{{ stopInfo.currentLocation }}</div>
+              <div class="location-value">
+                <input
+                  class="stop-address-input"
+                  type="text"
+                  [value]="stopAddress()"
+                  (input)="stopAddress.set($any($event.target).value)"
+                />
+              </div>
             </div>
           </div>
 
@@ -158,22 +165,28 @@
           <button
             class="btn-secondary"
             (click)="onContinueRide()"
-            [disabled]="isStopping()"
+            [disabled]="submitting || isStopping()"
             type="button"
           >
             Continue ride
           </button>
-          <button class="btn-stop" (click)="onStopRide()" [disabled]="isStopping()" type="button">
-            @if (!isStopping()) {
+          <button
+            class="btn-stop"
+            (click)="onStopRide()"
+            [disabled]="submitting || isStopping()"
+            type="button"
+          >
+            <ng-container *ngIf="!submitting && !isStopping()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <rect x="6" y="4" width="4" height="16" />
                 <rect x="14" y="4" width="4" height="16" />
               </svg>
               <span>Confirm Stop</span>
-            } @else {
+            </ng-container>
+            <ng-container *ngIf="submitting || isStopping()">
               <div class="btn-spinner"></div>
               <span>Stopping...</span>
-            }
+            </ng-container>
           </button>
         </div>
       </div>

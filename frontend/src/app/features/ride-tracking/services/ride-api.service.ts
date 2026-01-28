@@ -20,6 +20,13 @@ export interface RideInconsistencyCreateRequest {
   note: string;
 }
 
+/** Request body for stopping a ride (driver stops ride early) */
+export interface RideStopRequest {
+  stopAddress: string;
+  stopLat: number;
+  stopLng: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RideApiService {
   private readonly http = inject(HttpClient);
@@ -43,6 +50,13 @@ export class RideApiService {
 
   createPanic(rideId: number): Observable<void> {
     return this.http.post<void>(`${environment.apiBaseUrl}/rides/${rideId}/panic`, {});
+  }
+
+  stopRide(rideId: number, request: RideStopRequest): Observable<RideResponseDto> {
+    return this.http.put<RideResponseDto>(
+      `${environment.apiBaseUrl}/rides/${rideId}/stop`,
+      request,
+    );
   }
 
   /**
