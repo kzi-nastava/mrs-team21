@@ -24,18 +24,38 @@ export interface StopRideInfo {
   styleUrl: './stop-ride.component.scss',
 })
 export class StopRideComponent {
-  @Input() stopInfo: StopRideInfo | null = null;
-  @Output() stopRide = new EventEmitter<void>();
+  private _stopInfo: StopRideInfo | null = null;
+  @Input()
+  set stopInfo(v: StopRideInfo | null) {
+    this._stopInfo = v;
+    if (v) {
+      this.stopAddress.set(v.currentLocation ?? '');
+    }
+  }
+  get stopInfo(): StopRideInfo | null {
+    return this._stopInfo;
+  }
+
+  /** Emitted when driver confirms a stop. Payload: stop address string. */
+  @Output() confirmStop = new EventEmitter<string>();
   @Output() continueRide = new EventEmitter<void>();
+
+  /** Parent can bind to this to reflect submission state */
+  @Input() submitting = false;
 
   isStopping = signal(false);
 
+  stopAddress = signal('');
+
   onStopRide(): void {
+    // Use the editable address and emit to parent to perform the API call
+    const address = (this.stopAddress() || '').trim();
+    if (!address) {
+      // Basic guard; in real UI show validation error
+      return;
+    }
     this.isStopping.set(true);
-    // Simulate processing
-    setTimeout(() => {
-      this.stopRide.emit();
-    }, 500);
+    this.confirmStop.emit(address);
   }
 
   onContinueRide(): void {
