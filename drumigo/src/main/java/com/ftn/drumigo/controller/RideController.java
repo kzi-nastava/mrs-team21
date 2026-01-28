@@ -87,10 +87,12 @@ public class RideController {
     }
     
     @PostMapping("/{id}/inconsistencies")
+    @PreAuthorize("hasRole('PASSENGER')")
     public ResponseEntity<RideInconsistencyResponse> createInconsistency(
             @PathVariable Long id,
+            Principal principal,
             @Valid @RequestBody RideInconsistencyCreateRequest request) {
-        RideInconsistency inconsistency = rideService.createInconsistency(id, request);
+        RideInconsistency inconsistency = rideService.createInconsistency(id, principal.getName(), request.note());
         return ResponseEntity.status(201).body(rideInconsistencyMapper.toResponse(inconsistency));
     }
     

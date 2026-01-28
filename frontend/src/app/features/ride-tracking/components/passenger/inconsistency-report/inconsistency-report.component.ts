@@ -2,7 +2,7 @@ import { Component, inject, signal, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RideTrackingMockService } from '../../../services/ride-tracking-mock.service';
+import { RideApiService } from '../../../services/ride-api.service';
 import { ActiveRide } from '../../../models/active-ride.model';
 
 @Component({
@@ -14,47 +14,55 @@ import { ActiveRide } from '../../../models/active-ride.model';
 })
 export class InconsistencyReportComponent {
   private readonly MODAL_CLOSE_DELAY_MS = 2000;
+  private readonly MIN_NOTE_LENGTH = 10;
 
   private destroyRef = inject(DestroyRef);
-  private rideTrackingService = inject(RideTrackingMockService);
+  private rideApiService = inject(RideApiService);
 
   activeRide = signal<ActiveRide | null>(null);
   showModal = signal<boolean>(false);
   inconsistencyNote = signal<string>('');
   isSubmittingReport = signal<boolean>(false);
   reportSubmitted = signal<boolean>(false);
+  submitError = signal<string | null>(null);
 
   openModal(): void {
     this.showModal.set(true);
     this.reportSubmitted.set(false);
     this.inconsistencyNote.set('');
+    this.submitError.set(null);
   }
 
   closeModal(): void {
     this.showModal.set(false);
     this.inconsistencyNote.set('');
+    this.submitError.set(null);
   }
 
   submitReport(): void {
     const note = this.inconsistencyNote().trim();
-    if (!note || note.length < 10) {
-      return; // Basic validation
+    if (!note || note.length < this.MIN_NOTE_LENGTH) {
+      this.submitError.set(`Please provide at least ${this.MIN_NOTE_LENGTH} characters`);
+      return;
     }
 
     const ride = this.activeRide();
-    if (!ride) return;
+    if (!ride) {
+      this.submitError.set('No active ride found');
+      return;
+    }
+
+    const rideId = Number(ride.id);
+    if (isNaN(rideId)) {
+      this.submitError.set('Invalid ride ID');
+      return;
+    }
 
     this.isSubmittingReport.set(true);
+    this.submitError.set(null);
 
-    // Mock user data - in real app, get from auth service
-    const reportedBy = {
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@example.com',
-    };
-
-    this.rideTrackingService
-      .reportInconsistency(ride.id, note, reportedBy)
+    this.rideApiService
+      .reportInconsistency(rideId, note)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -66,8 +74,11 @@ export class InconsistencyReportComponent {
           this.destroyRef.onDestroy(() => clearTimeout(timeoutId));
         },
         error: (error) => {
-          console.error('Error submitting report:', error);
+          console.error('Error submitting inconsistency report:', error);
           this.isSubmittingReport.set(false);
+          this.submitError.set(
+            error.error?.message || 'Failed to submit report. Please try again.',
+          );
         },
       });
   }
