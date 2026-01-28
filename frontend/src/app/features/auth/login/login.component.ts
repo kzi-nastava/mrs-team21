@@ -66,7 +66,10 @@ export class LoginComponent implements OnInit {
       },
       error: (error) => {
         console.error('Login failed:', error);
-        // TODO: Show error message
+        console.error('Error details:', error.error);
+        alert(
+          `Login failed: ${error.error?.message || error.message || 'Invalid email or password'}`,
+        );
       },
     });
   }
