@@ -1,5 +1,7 @@
 package com.ftn.drumigo.dto;
 
+import com.ftn.drumigo.dto.ride.response.RideResponse;
+
 import java.util.List;
 
 public record RideDetailsResponse(
