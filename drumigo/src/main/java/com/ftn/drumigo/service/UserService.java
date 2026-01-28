@@ -1,6 +1,6 @@
 package com.ftn.drumigo.service;
 
-import com.ftn.drumigo.domain.User;
+import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.dto.UserUpdateRequest;
 import com.ftn.drumigo.exception.ConflictException;
 import com.ftn.drumigo.exception.ResourceNotFoundException;

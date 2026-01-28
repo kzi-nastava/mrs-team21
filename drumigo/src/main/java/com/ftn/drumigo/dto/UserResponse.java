@@ -13,7 +13,6 @@ public record UserResponse(
     String profilePictureUrl,
     Boolean blocked,
     UserRole role,
-    Boolean active,
     Instant createdAt,
     Instant updatedAt
 ) {}

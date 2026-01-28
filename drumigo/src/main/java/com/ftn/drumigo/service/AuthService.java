@@ -1,8 +1,9 @@
 package com.ftn.drumigo.service;
 
-import com.ftn.drumigo.domain.Driver;
 import com.ftn.drumigo.domain.Ride;
-import com.ftn.drumigo.domain.User;
+import com.ftn.drumigo.domain.users.Driver;
+import com.ftn.drumigo.domain.users.Passenger;
+import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.domain.UserToken;
 import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.domain.enums.TokenType;
@@ -41,11 +42,6 @@ public class AuthService {
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
             .orElseThrow(() -> new BadRequestException("Invalid email or password"));
-        
-        // Check if user is active
-        if (!user.getActive()) {
-            throw new BadRequestException("Account is not activated");
-        }
         
         // Check if user is blocked
         if (user.getBlocked()) {

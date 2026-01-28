@@ -1,6 +1,6 @@
 package com.ftn.drumigo.service;
 
-import com.ftn.drumigo.domain.Passenger;
+import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.UserToken;
 import com.ftn.drumigo.domain.enums.TokenType;
 import com.ftn.drumigo.domain.enums.UserRole;
@@ -58,7 +58,7 @@ public class PassengerService {
         passenger.setAddress(request.address());
         passenger.setPhone(request.phoneNumber());
         passenger.setRole(UserRole.PASSENGER);
-        passenger.setActive(false); // Not activated yet
+
         passenger.setBlocked(false);
         passenger.setCreatedAt(Instant.now());
         passenger.setUpdatedAt(Instant.now());
@@ -90,8 +90,7 @@ public class PassengerService {
         Passenger passenger = passengerRepository.findById(userToken.getUser().getId())
             .orElseThrow(() -> new BadRequestException("Passenger not found"));
 
-        // Activate user
-        passenger.setActive(true);
+        // Update timestamp
         passenger.setUpdatedAt(Instant.now());
         passengerRepository.save(passenger);
     }

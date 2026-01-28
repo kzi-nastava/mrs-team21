@@ -6,10 +6,6 @@ import java.math.BigDecimal;
 public record VehicleUpdateRequest(
     Long vehicleTypeId,
     
-    String model,
-    
-    String licensePlate,
-    
     @Min(value = 1, message = "Number of seats must be at least 1")
     Integer numSeats,
     
@@ -23,8 +19,6 @@ public record VehicleUpdateRequest(
     
     @DecimalMin(value = "-180.0", message = "Longitude must be between -180 and 180")
     @DecimalMax(value = "180.0", message = "Longitude must be between -180 and 180")
-    BigDecimal currentLng,
-    
-    Boolean available
+    BigDecimal currentLng
 ) {}
 

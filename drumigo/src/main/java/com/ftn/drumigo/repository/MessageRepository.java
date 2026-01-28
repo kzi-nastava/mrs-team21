@@ -1,7 +1,7 @@
 package com.ftn.drumigo.repository;
 
 import com.ftn.drumigo.domain.Message;
-import com.ftn.drumigo.domain.User;
+import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.domain.enums.MessageType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

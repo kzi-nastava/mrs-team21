@@ -1,5 +1,6 @@
 package com.ftn.drumigo.domain;
 
+import com.ftn.drumigo.domain.users.Driver;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -28,12 +29,6 @@ public class Vehicle {
     @JoinColumn(name = "vehicle_type_id", nullable = false)
     private VehicleType vehicleType;
     
-    @Column(nullable = false)
-    private String model;
-    
-    @Column(name = "license_plate", nullable = false, unique = true)
-    private String licensePlate;
-    
     @Column(name = "num_seats", nullable = false)
     private Integer numSeats;
     
@@ -48,8 +43,5 @@ public class Vehicle {
     
     @Column(name = "current_lng", precision = 11, scale = 8)
     private BigDecimal currentLng;
-    
-    @Column(nullable = false)
-    private Boolean available = true;
 }
 

@@ -37,8 +37,8 @@ public class RideMapper {
             ride.getDriver() != null ? ride.getDriver().getName() : null,
             ride.getDriver() != null ? ride.getDriver().getSurname() : null,
             ride.getVehicle() != null ? ride.getVehicle().getId() : null,
-            ride.getVehicle() != null ? ride.getVehicle().getModel() : null,
-            ride.getVehicle() != null ? ride.getVehicle().getLicensePlate() : null,
+            null, // model removed from Vehicle
+            null, // licensePlate removed from Vehicle
             ride.getVehicle() != null ? ride.getVehicle().getCurrentLat() : null,
             ride.getVehicle() != null ? ride.getVehicle().getCurrentLng() : null,
             waypointInfos,

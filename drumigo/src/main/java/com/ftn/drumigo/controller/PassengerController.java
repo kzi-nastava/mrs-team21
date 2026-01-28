@@ -1,6 +1,6 @@
 package com.ftn.drumigo.controller;
 
-import com.ftn.drumigo.domain.Passenger;
+import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.dto.auth.request.PassengerRegisterRequest;
 import com.ftn.drumigo.mapper.UserMapper;
 import com.ftn.drumigo.dto.UserResponse;

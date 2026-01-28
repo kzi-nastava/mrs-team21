@@ -1,6 +1,6 @@
 package com.ftn.drumigo.repository;
 
-import com.ftn.drumigo.domain.Driver;
+import com.ftn.drumigo.domain.users.Driver;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.enums.RideStatus;
 import org.springframework.data.domain.Page;

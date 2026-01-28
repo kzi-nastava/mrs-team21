@@ -1,6 +1,6 @@
 package com.ftn.drumigo.util;
 
-import com.ftn.drumigo.domain.User;
+import com.ftn.drumigo.domain.users.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;

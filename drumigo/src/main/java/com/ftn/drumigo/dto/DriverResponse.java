@@ -11,8 +11,6 @@ public record DriverResponse(
     String phone,
     String profilePictureUrl,
     Boolean blocked,
-    Boolean active,
-    String licenseNumber,
     Boolean activeDriver,
     Instant lastStateChangeAt,
     Instant createdAt,

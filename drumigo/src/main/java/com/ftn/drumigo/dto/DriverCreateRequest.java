@@ -19,18 +19,10 @@ public record DriverCreateRequest(
     String address,
     String phone,
     
-    String licenseNumber,
-    
     // Vehicle fields
     @NotNull(message = "Vehicle type ID is required")
     @Positive(message = "Vehicle type ID must be positive")
     Long vehicleTypeId,
-    
-    @NotBlank(message = "Vehicle model is required")
-    String vehicleModel,
-    
-    @NotBlank(message = "License plate is required")
-    String vehicleLicensePlate,
     
     @NotNull(message = "Number of seats is required")
     @Positive(message = "Number of seats must be positive")
