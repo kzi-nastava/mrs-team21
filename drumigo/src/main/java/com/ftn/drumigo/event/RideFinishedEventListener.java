@@ -5,6 +5,7 @@ import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RidePassenger;
 import com.ftn.drumigo.domain.RideWaypoint;
+import com.ftn.drumigo.domain.User;
 import com.ftn.drumigo.domain.enums.NotificationType;
 import com.ftn.drumigo.repository.NotificationRepository;
 import com.ftn.drumigo.repository.RidePassengerRepository;
@@ -46,7 +47,7 @@ public class RideFinishedEventListener {
         }
 
         List<RidePassenger> linkedPassengers = ridePassengerRepository.findByRide(ride);
-        Set<Passenger> recipients = new LinkedHashSet<>();
+        Set<User> recipients = new LinkedHashSet<>();
         if (ride.getOrderingPassenger() != null) {
             recipients.add(ride.getOrderingPassenger());
         }
@@ -60,18 +61,18 @@ public class RideFinishedEventListener {
             ? "Unknown destination"
             : waypoints.get(waypoints.size() - 1).getLocation().getAddress();
 
-        for (Passenger passenger : recipients) {
+        for (User user : recipients) {
             Notification notification = new Notification();
-            notification.setUser(passenger);
+            notification.setUser(user);
             notification.setRide(ride);
             notification.setType(NotificationType.RIDE_FINISHED);
             notification.setMessage("Ride finished. If you ordered this ride, you can rate the driver and vehicle.");
             notificationRepository.save(notification);
 
             boolean canRate = ride.getOrderingPassenger() != null
-                && ride.getOrderingPassenger().getId().equals(passenger.getId());
+                && ride.getOrderingPassenger().getId().equals(user.getId());
             emailService.sendRideFinishedEmail(
-                passenger.getEmail(),
+                user.getEmail(),
                 ride.getId(),
                 startAddress,
                 destinationAddress,

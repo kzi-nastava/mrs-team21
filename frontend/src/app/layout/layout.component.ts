@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { NavbarComponent, UserProfile } from './components/navbar/navbar.component';
 import { ProfileApiService } from '../features/profile/services/profile-api.service';
+import { AuthService } from '../shared/services/auth.service';
 
 @Component({
   selector: 'app-layout',
@@ -12,7 +13,9 @@ import { ProfileApiService } from '../features/profile/services/profile-api.serv
   styleUrls: ['./layout.component.scss'],
 })
 export class LayoutComponent implements OnInit {
+
   private profileService = inject(ProfileApiService);
+  private readonly authService = inject(AuthService);
 
   user: UserProfile = {
     name: 'User',
@@ -26,6 +29,7 @@ export class LayoutComponent implements OnInit {
   }
 
   private loadUserFromToken(): void {
+
     const token = sessionStorage.getItem('token');
     if (token) {
       try {
@@ -62,11 +66,16 @@ export class LayoutComponent implements OnInit {
       }
     }
   }
-
-  private decodeJwtPayload(token: string): any {
-    const payload = token.split('.')[1];
-    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
-    return JSON.parse(decoded);
+    const email = this.authService.getEmail();
+    const role = this.authService.getRole();
+    if (email && role) {
+      this.user = {
+        name: email,
+        initials: this.getInitials(email),
+        role: role === 'PASSENGER' ? 'Passenger' : 'Driver',
+        type: role === 'PASSENGER' ? 'passenger' : 'driver',
+      };
+    }
   }
 
   private getInitials(name: string): string {

@@ -29,14 +29,16 @@
     <app-ride-history-filters
       [startDate]="startDate()"
       [endDate]="endDate()"
-      [resultsCount]="filteredRides().length"
+      [resultsCount]="totalElements()"
       [showDateFilters]="viewMode() === 'history'"
       (filterChanged)="onFilterChanged($event)"
       (filterCleared)="onFilterCleared()"
     />
 
-    @if (isUpcomingLoading()) {
-      <div class="loading-banner">Loading upcoming rides...</div>
+    @if (isLoading() || isUpcomingLoading()) {
+      <div class="loading-banner">
+        {{ viewMode() === 'upcoming' ? 'Loading upcoming rides...' : 'Loading ride history...' }}
+      </div>
     }
 
     <!-- Rides Table -->
@@ -49,6 +51,36 @@
       (rideSelected)="onRideSelected($event)"
       (sortChanged)="onSortChanged($event)"
     />
+
+    <!-- Pagination Controls (only for history view) -->
+    @if (viewMode() === 'history' && totalPages() > 1) {
+      <div class="pagination">
+        <button
+          type="button"
+          class="pagination-btn"
+          [disabled]="currentPage() === 0 || isLoading()"
+          (click)="goToPreviousPage()"
+        >
+          <span class="pagination-icon">&#8592;</span>
+          Previous
+        </button>
+
+        <span class="pagination-info">
+          Page {{ currentPage() + 1 }} of {{ totalPages() }}
+          <span class="pagination-total">({{ totalElements() }} rides)</span>
+        </span>
+
+        <button
+          type="button"
+          class="pagination-btn"
+          [disabled]="currentPage() >= totalPages() - 1 || isLoading()"
+          (click)="goToNextPage()"
+        >
+          Next
+          <span class="pagination-icon">&#8594;</span>
+        </button>
+      </div>
+    }
   </main>
 </div>
 

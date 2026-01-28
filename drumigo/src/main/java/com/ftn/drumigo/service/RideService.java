@@ -8,7 +8,6 @@ import com.ftn.drumigo.domain.users.Driver;
 import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.dto.RideCreateRequest;
-import com.ftn.drumigo.dto.RideInconsistencyCreateRequest;
 import com.ftn.drumigo.dto.ride.request.RideStopRequest;
 import com.ftn.drumigo.dto.ride.request.RideCancelByDriverRequest;
 import com.ftn.drumigo.event.RideFinishedEvent;
@@ -68,15 +67,41 @@ public class RideService {
         return rideWaypointRepository.findByRideOrderByWaypointOrderAsc(ride);
     }
     
-    public RideInconsistency createInconsistency(Long rideId, RideInconsistencyCreateRequest request) {
+    /**
+     * Create a ride inconsistency report.
+     * Security: Only passengers who are part of the ride can report inconsistencies.
+     * 
+     * @param rideId the ride ID
+     * @param email the email of the authenticated passenger
+     * @param note the inconsistency description
+     * @return the created RideInconsistency
+     * @throws ResourceNotFoundException if ride or passenger not found
+     * @throws BadRequestException if passenger is not part of the ride
+     */
+    public RideInconsistency createInconsistency(Long rideId, String email, String note) {
         Ride ride = getById(rideId);
-        Passenger passenger = passengerRepository.findById(request.passengerId())
-            .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with id: " + request.passengerId()));
+        
+        // Find passenger by email
+        Passenger passenger = passengerRepository.findByEmail(email)
+            .filter(p -> p instanceof Passenger)
+            .map(p -> (Passenger) p)
+            .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with email: " + email));
+        
+        // Validate passenger is part of the ride (ordering passenger or linked passenger)
+        boolean isOrderingPassenger = ride.getOrderingPassenger() != null 
+            && ride.getOrderingPassenger().getId().equals(passenger.getId());
+        
+        boolean isLinkedPassenger = ridePassengerRepository.findByRide(ride).stream()
+            .anyMatch(rp -> rp.getPassenger().getId().equals(passenger.getId()));
+        
+        if (!isOrderingPassenger && !isLinkedPassenger) {
+            throw new BadRequestException("You are not authorized to report inconsistencies for this ride");
+        }
         
         RideInconsistency inconsistency = new RideInconsistency();
         inconsistency.setRide(ride);
         inconsistency.setPassenger(passenger);
-        inconsistency.setNote(request.note());
+        inconsistency.setNote(note);
         
         return rideInconsistencyRepository.save(inconsistency);
     }

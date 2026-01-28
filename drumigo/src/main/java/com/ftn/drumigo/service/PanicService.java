@@ -7,7 +7,6 @@ import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.domain.enums.NotificationType;
 import com.ftn.drumigo.domain.enums.RideStatus;
-import com.ftn.drumigo.dto.PanicCreateRequest;
 import com.ftn.drumigo.exception.BadRequestException;
 import com.ftn.drumigo.exception.ResourceNotFoundException;
 import com.ftn.drumigo.repository.AdminRepository;
@@ -35,7 +34,7 @@ public class PanicService {
     private final AdminRepository adminRepository;
     private final NotificationRepository notificationRepository;
     
-    public PanicEvent create(Long rideId, Long userId, PanicCreateRequest request) {
+    public void create(Long rideId, String email) {
         Ride ride = rideRepository.findById(rideId)
             .orElseThrow(() -> new ResourceNotFoundException("Ride not found with id: " + rideId));
         
@@ -44,30 +43,18 @@ public class PanicService {
             throw new BadRequestException("Panic can only be triggered for ACTIVE rides. Current status: " + ride.getStatus());
         }
         
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
         
         // Create panic event
         PanicEvent panicEvent = new PanicEvent();
         panicEvent.setRide(ride);
         panicEvent.setUser(user);
-        panicEvent.setReason(request.reason());
         panicEvent.setCreatedAt(Instant.now());
         
         panicEvent = panicEventRepository.save(panicEvent);
         
-        // Create notification for all admins (spec 2.6.3)
-        List<Admin> admins = adminRepository.findAll();
-        for (Admin admin : admins) {
-            Notification notification = new Notification();
-            notification.setUser(admin);
-            notification.setRide(ride);
-            notification.setType(NotificationType.PANIC_ALERT);
-            notification.setMessage("Panic alert: Ride #" + ride.getId() + " - " + request.reason());
-            notificationRepository.save(notification);
-        }
-        
-        return panicEvent;
+        //TODO: Send admin notifications
     }
     
     public Page<PanicEvent> getAll(Pageable pageable) {

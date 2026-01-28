@@ -9,6 +9,8 @@ import { driverHistoryConfig } from '../../config/driver-history.config';
 import { RideHistoryTableComponent, SortState } from '../../components/ride-history-table/ride-history-table.component';
 import { RideHistoryFiltersComponent } from '../../components/ride-history-filters/ride-history-filters.component';
 import { RideDetailsComponent } from '../../components/ride-details/ride-details.component';
+import { AuthService } from '../../../../shared/services/auth.service';
+import { ToastService } from '../../../../shared/services/toast.service';
 
 const driverUpcomingConfig = {
   tableColumns: [
@@ -50,45 +52,106 @@ const driverUpcomingConfig = {
 export class DriverHistoryPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly authService = inject(AuthService);
+  private readonly toastService = inject(ToastService);
+  private readonly rideHistoryService = inject(RideHistoryService);
 
-  allRides = signal<Ride[]>([]);
+  // Ride data
   filteredRides = signal<Ride[]>([]);
+  selectedRide = signal<Ride | null>(null);
+
+  // Filter state
   startDate = signal<string>('');
   endDate = signal<string>('');
-  selectedRide = signal<Ride | null>(null);
   currentSort = signal<SortState>({ field: null, order: 'asc' });
-  viewMode = signal<'history' | 'upcoming'>('history');
+
+  // Pagination state
+  currentPage = signal<number>(0);
+  totalPages = signal<number>(0);
+  totalElements = signal<number>(0);
+  pageSize = signal<number>(10);
+
+  // Loading state
+  isLoading = signal<boolean>(false);
   isUpcomingLoading = signal<boolean>(false);
+
+  // View mode
+  viewMode = signal<'history' | 'upcoming'>('history');
 
   config = computed(() =>
     this.viewMode() === 'upcoming' ? driverUpcomingConfig : driverHistoryConfig,
   );
 
-  constructor(private rideHistoryService: RideHistoryService) {}
-
   ngOnInit(): void {
     this.setDefaultDateRange();
-    this.loadRides();
     this.route.queryParamMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((params) => {
         const view = params.get('view');
         if (view === 'upcoming') {
-          this.setViewMode('upcoming');
+          this.setViewMode('upcoming', true);
         } else {
-          this.setViewMode('history');
+          this.setViewMode('history', true);
         }
       });
   }
 
   private loadRides(): void {
-    const rides = this.rideHistoryService.getDriverRideHistory();
-    this.allRides.set(rides);
-    this.filteredRides.set(rides);
+    const driverId = this.authService.getUserId();
+    if (!driverId) {
+      this.toastService.error('Please log in to view your ride history');
+      return;
+    }
+
+    this.isLoading.set(true);
+    const fromDate = this.startDate() ? new Date(this.startDate()) : null;
+    const toDate = this.endDate() ? new Date(this.endDate()) : null;
+
+    this.rideHistoryService
+      .getDriverRideHistory(
+        driverId,
+        fromDate,
+        toDate,
+        this.currentPage(),
+        this.pageSize(),
+      )
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isLoading.set(false)),
+      )
+      .subscribe({
+        next: (response) => {
+          let rides = response.rides;
+          // Apply client-side sorting if active
+          if (this.currentSort().field) {
+            rides = this.rideHistoryService.sortRides(
+              rides,
+              this.currentSort().field,
+              this.currentSort().order,
+            );
+          }
+          this.filteredRides.set(rides);
+          this.totalPages.set(response.totalPages);
+          this.totalElements.set(response.totalElements);
+          this.currentPage.set(response.currentPage);
+        },
+        error: (error) => {
+          console.error('Failed to load ride history', error);
+          this.toastService.error('Failed to load ride history. Please try again.');
+          this.filteredRides.set([]);
+          this.totalPages.set(0);
+          this.totalElements.set(0);
+        },
+      });
   }
 
   private loadUpcomingRides(): void {
-    const driverId = 1;
+    const driverId = this.authService.getUserId();
+    if (!driverId) {
+      this.toastService.error('Please log in to view your upcoming rides');
+      return;
+    }
+
     this.isUpcomingLoading.set(true);
     this.rideHistoryService
       .getUpcomingDriverRides(driverId)
@@ -98,12 +161,15 @@ export class DriverHistoryPageComponent implements OnInit {
       )
       .subscribe({
         next: (rides) => {
-          this.allRides.set(rides);
           this.filteredRides.set(rides);
+          // Reset pagination for upcoming rides (no pagination)
+          this.totalPages.set(1);
+          this.totalElements.set(rides.length);
+          this.currentPage.set(0);
         },
         error: (error) => {
           console.error('Failed to load upcoming rides', error);
-          this.allRides.set([]);
+          this.toastService.error('Failed to load upcoming rides. Please try again.');
           this.filteredRides.set([]);
         },
       });
@@ -122,20 +188,12 @@ export class DriverHistoryPageComponent implements OnInit {
     if (this.viewMode() === 'upcoming') {
       return;
     }
-    const start = filter.startDate ? new Date(filter.startDate) : null;
-    const end = filter.endDate ? new Date(filter.endDate) : null;
-    let filtered = this.rideHistoryService.filterRidesByDateRange(
-      this.allRides(),
-      start,
-      end,
-    );
-    
-    // Apply current sort if active
-    if (this.currentSort().field) {
-      filtered = this.rideHistoryService.sortRides(filtered, this.currentSort().field, this.currentSort().order);
-    }
-    
-    this.filteredRides.set(filtered);
+    this.startDate.set(filter.startDate);
+    this.endDate.set(filter.endDate);
+    // Reset to first page when filter changes
+    this.currentPage.set(0);
+    // Reload with new filter (server-side filtering)
+    this.loadRides();
   }
 
   onFilterCleared(): void {
@@ -144,20 +202,21 @@ export class DriverHistoryPageComponent implements OnInit {
     }
     this.startDate.set('');
     this.endDate.set('');
-    let rides = this.allRides();
-    
-    // Apply current sort if active
-    if (this.currentSort().field) {
-      rides = this.rideHistoryService.sortRides(rides, this.currentSort().field, this.currentSort().order);
-    }
-    
-    this.filteredRides.set(rides);
+    // Reset to first page
+    this.currentPage.set(0);
+    // Reload without filter
+    this.loadRides();
   }
 
   onSortChanged(sortState: SortState): void {
     this.currentSort.set(sortState);
     if (sortState.field) {
-      const sorted = this.rideHistoryService.sortRides(this.filteredRides(), sortState.field, sortState.order);
+      // Apply client-side sorting on current page
+      const sorted = this.rideHistoryService.sortRides(
+        this.filteredRides(),
+        sortState.field,
+        sortState.order,
+      );
       this.filteredRides.set(sorted);
     }
   }
@@ -174,16 +233,46 @@ export class DriverHistoryPageComponent implements OnInit {
     this.selectedRide.set(null);
   }
 
-  setViewMode(mode: 'history' | 'upcoming'): void {
-    if (this.viewMode() === mode) {
+  setViewMode(mode: 'history' | 'upcoming', forceLoad = false): void {
+    if (this.viewMode() === mode && !forceLoad) {
       return;
     }
     this.viewMode.set(mode);
     this.selectedRide.set(null);
+    this.currentPage.set(0);
     if (mode === 'upcoming') {
       this.loadUpcomingRides();
     } else {
       this.loadRides();
+    }
+  }
+
+  /**
+   * Handle page change from pagination controls.
+   */
+  onPageChange(page: number): void {
+    if (page < 0 || page >= this.totalPages()) {
+      return;
+    }
+    this.currentPage.set(page);
+    this.loadRides();
+  }
+
+  /**
+   * Go to the previous page.
+   */
+  goToPreviousPage(): void {
+    if (this.currentPage() > 0) {
+      this.onPageChange(this.currentPage() - 1);
+    }
+  }
+
+  /**
+   * Go to the next page.
+   */
+  goToNextPage(): void {
+    if (this.currentPage() < this.totalPages() - 1) {
+      this.onPageChange(this.currentPage() + 1);
     }
   }
 }

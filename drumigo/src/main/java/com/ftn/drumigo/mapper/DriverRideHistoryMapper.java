@@ -21,7 +21,7 @@ public class DriverRideHistoryMapper {
     
     public DriverRideHistoryItemResponse toResponse(Ride ride) {
         List<RideWaypoint> waypoints = rideWaypointRepository.findByRideOrderByWaypointOrderAsc(ride);
-        List<RidePassenger> ridePassengers = ridePassengerRepository.findByRide(ride);
+        List<RidePassenger> ridePassengers = ridePassengerRepository.findByRideWithPassenger(ride);
         boolean panicOccurred = !panicEventRepository.findByRide(ride).isEmpty();
         
         RideWaypoint startWaypoint = waypoints.stream()

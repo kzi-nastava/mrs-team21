@@ -1,11 +1,9 @@
 package com.ftn.drumigo.controller;
 
 import com.ftn.drumigo.domain.PanicEvent;
-import com.ftn.drumigo.dto.PanicCreateRequest;
 import com.ftn.drumigo.dto.PanicEventResponse;
 import com.ftn.drumigo.mapper.PanicEventMapper;
 import com.ftn.drumigo.service.PanicService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -13,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api")
@@ -23,12 +23,12 @@ public class PanicController {
     private final PanicEventMapper panicEventMapper;
     
     @PostMapping("/rides/{rideId}/panic")
-    public ResponseEntity<PanicEventResponse> createPanic(
+    public ResponseEntity<Void> createPanic(
             @PathVariable Long rideId,
-            @RequestParam Long userId,
-            @Valid @RequestBody PanicCreateRequest request) {
-        PanicEvent panicEvent = panicService.create(rideId, userId, request);
-        return ResponseEntity.status(201).body(panicEventMapper.toResponse(panicEvent));
+            Principal principal
+            ) {
+        panicService.create(rideId, principal.getName());
+        return ResponseEntity.status(201).build();
     }
     
     @GetMapping("/panic-events")
@@ -49,4 +49,3 @@ public class PanicController {
         return ResponseEntity.ok(responses);
     }
 }
-

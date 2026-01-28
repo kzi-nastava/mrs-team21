@@ -26,8 +26,14 @@ public class VehicleService {
     private final DriverRepository driverRepository;
     private final VehicleTypeRepository vehicleTypeRepository;
     
+    /**
+     * Get all vehicles from active drivers for display on the landing page map.
+     * Returns both available (free) and busy (on ride) vehicles.
+     * Only vehicles from drivers with activeDriver=true are included.
+     */
     public List<Vehicle> getActiveVehicles() {
-        return vehicleRepository.findAll();
+        return vehicleRepository.findByDriverActiveDriverTrue();
+
     }
     
     public Vehicle getById(Long id) {
