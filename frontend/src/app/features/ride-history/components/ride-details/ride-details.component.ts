@@ -1,6 +1,7 @@
-import { Component, input, output, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, output, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Ride } from '../../models';
+import { StarRatingComponent } from '../../../../shared/components/star-rating/star-rating.component';
 
 export interface RideDetailsConfig {
   showPassengers: boolean;
@@ -9,6 +10,8 @@ export interface RideDetailsConfig {
   showCancellationInfo: boolean;
   showEarnings: boolean;
   showRatings: boolean;
+  /** Show the rating action button (for passengers only) */
+  showRatingAction: boolean;
 }
 
 /**
@@ -19,7 +22,7 @@ export interface RideDetailsConfig {
 @Component({
   selector: 'app-ride-details',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, StarRatingComponent],
   templateUrl: './ride-details.component.html',
   styleUrl: './ride-details.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,9 +36,29 @@ export class RideDetailsComponent {
     showCancellationInfo: true,
     showEarnings: true,
     showRatings: true,
+    showRatingAction: false,
   });
 
   close = output<void>();
+  
+  /** Emits when user wants to rate the ride */
+  rateRide = output<Ride>();
+
+  /** Check if the ride can be rated (within 3 day deadline and not yet rated) */
+  canRateRide = computed(() => {
+    const ride = this.ride();
+    if (!ride) return false;
+    if (ride.isCancelled) return false;
+    if (ride.hasReview) return false;
+    if (!ride.canRate) return false;
+    return true;
+  });
+
+  /** Get days remaining to rate */
+  daysRemaining = computed(() => {
+    const ride = this.ride();
+    return ride?.daysRemainingToRate ?? 0;
+  });
 
   formatDate(date: Date | null): string {
     if (!date) return 'N/A';
@@ -81,5 +104,12 @@ export class RideDetailsComponent {
 
   onClose(): void {
     this.close.emit();
+  }
+
+  onRateClick(): void {
+    const ride = this.ride();
+    if (ride && this.canRateRide()) {
+      this.rateRide.emit(ride);
+    }
   }
 }

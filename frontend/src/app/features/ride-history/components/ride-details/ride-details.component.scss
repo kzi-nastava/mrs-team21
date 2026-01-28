@@ -365,9 +365,137 @@
 }
 
 .rating-value {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--primary);
+  color: var(--text-medium);
+  margin-left: 8px;
+}
+
+.rating-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Rating Action */
+.rating-action {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--bg-warm);
+  border-radius: 8px;
+  border: 1px dashed var(--primary);
+}
+
+.rating-action-header {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.deadline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: var(--warning, #f59e0b);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 12px;
+}
+
+.btn-rate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--primary);
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    background: var(--primary-dark, #2563eb);
+    transform: translateY(-1px);
+  }
+}
+
+.rating-submitted {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  margin-top: 16px;
+  background: #d1fae5;
+  border-radius: 8px;
+  color: #047857;
+  font-size: 14px;
+  font-weight: 500;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.rating-expired {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  margin-top: 16px;
+  background: var(--bg-warm);
+  border-radius: 8px;
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+.rating-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  margin-top: 16px;
+  background: var(--bg-warm);
+  border-radius: 8px;
+  color: var(--text-light);
+  font-size: 14px;
+  font-style: italic;
+}
+
+.review-comment {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--bg-warm);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.review-comment__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.review-comment__text {
+  font-size: 14px;
+  color: var(--text-dark);
+  line-height: 1.35;
 }
 
 @media (max-width: 768px) {

@@ -105,6 +105,22 @@ public class RideService {
         
         return ride;
     }
+
+    /**
+     * End a ride as the authenticated driver.
+     * Security: only the driver assigned to the ride can end it.
+     */
+    public Ride endRideByDriverEmail(Long rideId, String driverEmail) {
+        Driver driver = driverRepository.findByEmail(driverEmail)
+            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with email: " + driverEmail));
+
+        Ride ride = getById(rideId);
+        if (ride.getDriver() == null || !ride.getDriver().getId().equals(driver.getId())) {
+            throw new BadRequestException("Driver is not assigned to this ride");
+        }
+
+        return endRide(rideId);
+    }
     
     public Page<Ride> getDriverRideHistory(Long driverId, Instant from, Instant to, Pageable pageable) {
         Driver driver = driverRepository.findById(driverId)

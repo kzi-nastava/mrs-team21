@@ -19,7 +19,8 @@ MERGE INTO users (
     id, name, surname, email, password_hash, address, phone,
     profile_picture_url, blocked, role, active, created_at, updated_at, dtype
 ) KEY (id) VALUES (
-    9001, 'Test', 'Driver', 'driver9001@test.local', 'test',
+    -- TEST-ONLY password hash (Password: Test1234, SHA-256). Production should use a slow hash (bcrypt/Argon2/PBKDF2).
+    9001, 'Test', 'Driver', 'driver9001@test.local', '07480fb9e85b9396af06f006cf1c95024af2531c65fb505cfbd0add1e2f31573',
     'Driver Address', '000-000', NULL, FALSE, 'DRIVER', TRUE,
     CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'Driver'
 );
@@ -29,7 +30,8 @@ MERGE INTO users (
     id, name, surname, email, password_hash, address, phone,
     profile_picture_url, blocked, role, active, created_at, updated_at, dtype
 ) KEY (id) VALUES (
-    9002, 'Test', 'Passenger', 'passenger9002@test.local', 'test',
+    -- TEST-ONLY password hash (Password: Test1234, SHA-256). Production should use a slow hash (bcrypt/Argon2/PBKDF2).
+    9002, 'Test', 'Passenger', 'passenger9002@test.local', '07480fb9e85b9396af06f006cf1c95024af2531c65fb505cfbd0add1e2f31573',
     'Passenger Address', '111-111', NULL, FALSE, 'PASSENGER', TRUE,
     CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'Passenger'
 );

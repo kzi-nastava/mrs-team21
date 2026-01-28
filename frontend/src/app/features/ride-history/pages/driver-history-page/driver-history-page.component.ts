@@ -23,6 +23,7 @@ const driverUpcomingConfig = {
     showCancellationInfo: true,
     showEarnings: false,
     showRatings: false,
+    showRatingAction: false,
   },
   pageTitle: 'Upcoming Scheduled Rides',
   pageSubtitle: 'View your scheduled pickups and prepare for the next ride',

@@ -103,8 +103,9 @@ public class RideController {
     }
     
     @PutMapping("/{id}/end")
-    public ResponseEntity<RideResponse> endRide(@PathVariable Long id) {
-        Ride ride = rideService.endRide(id);
+    @PreAuthorize("hasRole('DRIVER')")
+    public ResponseEntity<RideResponse> endRide(@PathVariable Long id, Principal principal) {
+        Ride ride = rideService.endRideByDriverEmail(id, principal.getName());
         List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
         return ResponseEntity.ok(rideMapper.toResponse(ride, waypoints));
     }
