@@ -43,6 +43,8 @@ export class RideApiService {
 
   createPanic(rideId: number): Observable<void> {
     return this.http.post<void>(`${environment.apiBaseUrl}/rides/${rideId}/panic`, {});
+  }
+
   /**
    * Report a driver route inconsistency for an active ride.
    * The passenger ID is automatically extracted from the JWT token on the backend.
