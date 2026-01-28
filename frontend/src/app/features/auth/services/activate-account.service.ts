@@ -9,7 +9,7 @@ import { environment } from '../../../../environments/environment';
 export class ActivateAccountService {
   constructor(private http: HttpClient) {}
 
-  activate(token: string): Observable<any> {
-    return this.http.get(`${environment.apiBaseUrl}/passengers/activate/${token}`);
+  activate(token: string): Observable<void> {
+    return this.http.get<void>(`${environment.apiBaseUrl}/passengers/activate/${token}`);
   }
 }
