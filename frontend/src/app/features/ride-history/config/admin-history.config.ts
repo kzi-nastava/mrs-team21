@@ -21,6 +21,7 @@ export const adminHistoryConfig = {
     showCancellationInfo: true,
     showEarnings: true,
     showRatings: true,
+    showRatingAction: false, // Admins don't rate rides
   } as RideDetailsConfig,
 
   pageTitle: 'System Ride History',

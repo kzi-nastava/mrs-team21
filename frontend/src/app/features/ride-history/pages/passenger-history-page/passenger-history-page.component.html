@@ -34,4 +34,14 @@
   [ride]="selectedRide()"
   [config]="config.detailsConfig"
   (close)="onRideDetailsClosed()"
+  (rateRide)="onRateRide($event)"
 />
+
+<!-- Rating Modal -->
+@if (showRatingModal() && rideToRate()) {
+  <app-rating-modal
+    [ride]="rideToRate()!"
+    (close)="closeRatingModal()"
+    (submitted)="onRatingSubmitted($event)"
+  ></app-rating-modal>
+}

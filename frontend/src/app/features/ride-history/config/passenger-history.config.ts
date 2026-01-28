@@ -20,6 +20,7 @@ export const passengerHistoryConfig = {
     showCancellationInfo: true,
     showEarnings: true, // Allow passengers to see cost
     showRatings: true,
+    showRatingAction: true, // Allow passengers to rate rides
   } as RideDetailsConfig,
 
   pageTitle: 'My Rides',

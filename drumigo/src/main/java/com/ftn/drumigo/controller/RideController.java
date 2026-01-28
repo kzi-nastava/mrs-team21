@@ -7,6 +7,7 @@ import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.dto.*;
 import com.ftn.drumigo.dto.PassengerResponse;
 import com.ftn.drumigo.dto.ride.request.RideStopRequest;
+import com.ftn.drumigo.dto.ride.request.RideCancelByDriverRequest;
 import com.ftn.drumigo.mapper.*;
 import com.ftn.drumigo.dto.RideCreateRequest;
 import com.ftn.drumigo.dto.RideInconsistencyCreateRequest;
@@ -24,6 +25,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -102,29 +104,30 @@ public class RideController {
     }
     
     @PutMapping("/{id}/end")
-    public ResponseEntity<RideResponse> endRide(@PathVariable Long id) {
-        Ride ride = rideService.endRide(id);
+    @PreAuthorize("hasRole('DRIVER')")
+    public ResponseEntity<RideResponse> endRide(@PathVariable Long id, Principal principal) {
+        Ride ride = rideService.endRideByDriverEmail(id, principal.getName());
         List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
         return ResponseEntity.ok(rideMapper.toResponse(ride, waypoints));
     }
     
     @PutMapping("/{id}/cancel-by-driver")
-    public ResponseEntity<RideResponse> cancelByDriver(
+    @PreAuthorize("hasRole('DRIVER')")
+    public ResponseEntity<Void> cancelByDriver(
             @PathVariable Long id,
-            @RequestParam Long driverId,
+            Principal principal,
             @Valid @RequestBody RideCancelByDriverRequest request) {
-        Ride ride = rideService.cancelByDriver(id, driverId, request.reason());
-        List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
-        return ResponseEntity.ok(rideMapper.toResponse(ride, waypoints));
+        rideService.cancelByDriver(id, principal.getName(), request);
+        return ResponseEntity.ok().build();
     }
     
-    @PutMapping("/{id}/withdraw-by-passenger")
-    public ResponseEntity<RideResponse> withdrawByPassenger(
+    @PutMapping("/{id}/cancel-by-passenger")
+    @PreAuthorize("hasRole('PASSENGER')")
+    public ResponseEntity<Void> cancelByPassenger(
             @PathVariable Long id,
-            @RequestParam Long passengerId) {
-        Ride ride = rideService.withdrawByPassenger(id, passengerId);
-        List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
-        return ResponseEntity.ok(rideMapper.toResponse(ride, waypoints));
+            Principal principal) {
+        rideService.cancelByPassenger(id, principal.getName());
+        return ResponseEntity.ok().build();
     }
     
     @PutMapping("/{id}/stop")

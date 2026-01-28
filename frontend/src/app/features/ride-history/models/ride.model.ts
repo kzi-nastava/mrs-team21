@@ -26,8 +26,19 @@ export interface Ride {
   status?: string;
   scheduledFor?: Date | null;
   requestedAt?: Date | null;
+  
+  // Rating fields
   driverRating?: number;
-  passengerRating?: number;
+  vehicleRating?: number;
+  /** Passenger's comment left when rating (if any) */
+  reviewComment?: string | null;
+  
+  // Rating status fields (from backend rating-status endpoint)
+  hasReview?: boolean;
+  canRate?: boolean;
+  daysRemainingToRate?: number;
+  ratingDeadline?: Date;
+  
   // TODO: Backend Integration - Link to RidePassenger.isFavorite
   // This should be: isFavorite: boolean; (per user per ride)
   // Currently local state only - Backend needs RidePassenger entity update

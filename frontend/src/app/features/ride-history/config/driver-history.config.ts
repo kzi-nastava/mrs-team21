@@ -20,6 +20,7 @@ export const driverHistoryConfig = {
     showCancellationInfo: true,
     showEarnings: true, // Drivers see earnings
     showRatings: true,
+    showRatingAction: false, // Drivers don't rate - only passengers do
   } as RideDetailsConfig,
 
   pageTitle: 'Ride History',
