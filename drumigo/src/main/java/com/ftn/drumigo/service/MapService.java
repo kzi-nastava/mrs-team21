@@ -72,7 +72,7 @@ public class MapService {
             throw new RuntimeException("Failed to get directions from Mapbox: empty response body");
         }
 
-        if (body.routes() == null || body.routes().isEmpty()) {
+        if (body.routes().isEmpty()) {
             throw new RuntimeException("Failed to get directions from Mapbox: no routes returned");
         }
 
