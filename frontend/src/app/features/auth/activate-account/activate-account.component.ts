@@ -26,14 +26,12 @@ export class ActivateAccountComponent implements OnInit {
 
   ngOnInit(): void {
     this.token = this.route.snapshot.paramMap.get('token');
-    console.log('Token from URL:', this.token);
     if (!this.token) {
       this.error = 'Invalid activation link.';
     }
   }
 
   onSubmit(): void {
-    console.log('onSubmit called, token:', this.token);
     if (!this.token) {
       this.error = 'Invalid activation link.';
       return;
@@ -44,7 +42,6 @@ export class ActivateAccountComponent implements OnInit {
 
     this.activateService.activate(this.token).subscribe({
       next: () => {
-        console.log('Activation successful');
         this.success = true;
         this.isSubmitting = false;
         setTimeout(() => {
@@ -52,7 +49,6 @@ export class ActivateAccountComponent implements OnInit {
         }, 2000);
       },
       error: (err) => {
-        console.error('Activation error:', err);
         this.error = 'Account activation failed. Please try again or contact support.';
         this.isSubmitting = false;
       },
