@@ -35,13 +35,14 @@ export class RideApiService {
       .set('sort', 'scheduledFor,asc');
 
     return this.http
-      .get<PageResponse<RideResponseDto>>(
-        `${environment.apiBaseUrl}/drivers/${driverId}/rides/upcoming`,
-        { params },
-      )
+      .get<
+        PageResponse<RideResponseDto>
+      >(`${environment.apiBaseUrl}/drivers/${driverId}/rides/upcoming`, { params })
       .pipe(map((response) => response.content));
   }
 
+  createPanic(rideId: number): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/rides/${rideId}/panic`, {});
   /**
    * Report a driver route inconsistency for an active ride.
    * The passenger ID is automatically extracted from the JWT token on the backend.

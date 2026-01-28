@@ -42,6 +42,8 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(MapComponent) mapComponent!: MapComponent;
   @ViewChild(InconsistencyReportComponent)
   inconsistencyReportComponent?: InconsistencyReportComponent;
+  @ViewChild(PanicComponent)
+  panicComponent?: PanicComponent;
 
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -414,9 +416,26 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onPanicActivated(): void {
-    console.log('PANIC ACTIVATED - Emergency services notified');
-    // In real app: Send emergency notification to backend
-    // This would trigger: emergency contacts, support team, location sharing
+    console.log('PANIC ACTIVATED - sending event to backend');
+    const rideId = Number(this.rideId());
+    if (!rideId) {
+      console.error('Ride id is missing or invalid, cannot activate panic');
+      this.closePanicModal();
+      this.panicComponent?.resetPanic();
+      return;
+    }
+
+    this.rideApiService.createPanic(rideId).subscribe({
+      next: () => {
+        console.log('Panic event created for ride:', rideId);
+        this.closePanicModal();
+        this.panicComponent?.resetPanic();
+      },
+      error: (error) => {
+        console.error('Failed to create panic event:', error);
+        //TODO: add error message
+      },
+    });
   }
 
   onContactSupport(): void {
