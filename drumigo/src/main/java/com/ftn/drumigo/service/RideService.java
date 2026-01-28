@@ -601,17 +601,22 @@ public class RideService {
                 List.of(),
                 null
             );
-            EstimateResponse estimate = mapService.estimateRide(estimateRequest);
-            BigDecimal remainingDistance = BigDecimal.valueOf(estimate.distanceInKm());
-            BigDecimal remainingCost = remainingDistance.multiply(ride.getPricingPricePerKm());
+            try {
+                EstimateResponse estimate = mapService.estimateRide(estimateRequest);
+                BigDecimal remainingDistance = BigDecimal.valueOf(estimate.distanceInKm());
+                BigDecimal remainingCost = remainingDistance.multiply(ride.getPricingPricePerKm());
 
-            // Subtract remaining cost from original total cost
-            BigDecimal newCost = ride.getTotalCost().subtract(remainingCost);
-            ride.setTotalCost(newCost.max(BigDecimal.ZERO)); // Ensure non-negative
+                // Subtract remaining cost from original total cost
+                BigDecimal newCost = ride.getTotalCost().subtract(remainingCost);
+                ride.setTotalCost(newCost.max(BigDecimal.ZERO)); // Ensure non-negative
 
-            // Update total distance (subtract remaining distance)
-            BigDecimal newDistance = ride.getTotalDistanceKm().subtract(remainingDistance);
-            ride.setTotalDistanceKm(newDistance.max(BigDecimal.ZERO));
+                // Update total distance (subtract remaining distance)
+                BigDecimal newDistance = ride.getTotalDistanceKm().subtract(remainingDistance);
+                ride.setTotalDistanceKm(newDistance.max(BigDecimal.ZERO));
+            } catch (Exception ex) {
+                // If Mapbox (via MapService) is unavailable or fails, skip recalculation
+                // and keep existing totalCost and totalDistanceKm to allow ride to be stopped.
+            }
         }
 
         // Remove all waypoints after the start (keep start, remove destinations)
@@ -624,7 +629,16 @@ public class RideService {
         // Update ride
         ride.setStoppedAt(Instant.now());
         ride.setStopLocation(stopLocation);
+        ride.setEndTime(Instant.now());
+        ride.setPaidAt(Instant.now());
         ride.setStatus(RideStatus.FINISHED);
+
+        // Mark vehicle as available again, similar to endRide
+        Vehicle vehicle = ride.getVehicle();
+        if (vehicle != null) {
+            vehicle.setAvailable(true);
+            vehicleRepository.save(vehicle);
+        }
         
         // Add stop as new destination waypoint (order 1, since start is order 0)
         RideWaypoint stopWaypoint = new RideWaypoint();
