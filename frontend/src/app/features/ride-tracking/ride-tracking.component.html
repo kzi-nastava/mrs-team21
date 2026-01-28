@@ -209,12 +209,14 @@
             </svg>
           </button>
         </div>
-        <app-stop-ride
-          [stopInfo]="stopRideInfo()"
-          (stopRide)="onStopRide()"
-          (continueRide)="onContinueRide()"
-        >
-        </app-stop-ride>
+        <div class="stop-modal-body">
+          <app-stop-ride
+            [stopInfo]="stopRideInfo()"
+            (stopRide)="onStopRide()"
+            (continueRide)="onContinueRide()"
+          >
+          </app-stop-ride>
+        </div>
       </div>
     </div>
   }

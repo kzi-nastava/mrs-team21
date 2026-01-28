@@ -446,61 +446,66 @@
 }
 
 .stop-modal-content {
-  background: white;
-  border-radius: 16px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
   max-height: 90vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-lg);
   animation: slideUp 0.3s ease;
+
+  @media (min-width: 1024px) {
+    max-width: 800px;
+  }
 }
 
 .stop-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e8e6e2;
-  background: linear-gradient(135deg, #fef3c7 0%, #fff 100%);
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--white);
 
   .stop-modal-title {
-    font-size: 20px;
+    font-size: 24px;
     font-weight: 700;
-    color: #f59e0b;
+    color: var(--text-dark);
     margin: 0;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
 
     &::before {
       content: '';
-      width: 8px;
-      height: 8px;
-      background: #f59e0b;
+      width: 12px;
+      height: 12px;
+      background: var(--primary);
       border-radius: 50%;
+      box-shadow: 0 0 0 4px var(--primary-light);
+      opacity: 0.8;
     }
   }
 
   .stop-modal-close {
-    background: none;
+    background: var(--bg-warm);
     border: none;
-    padding: 8px;
+    padding: 10px;
     cursor: pointer;
-    color: #6b7280;
-    border-radius: 8px;
+    color: var(--text-medium);
+    border-radius: 50%;
     transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
 
     &:hover {
-      background: #fef3c7;
-      color: #f59e0b;
+      background: var(--border);
+      color: var(--text-dark);
+      transform: rotate(90deg);
     }
 
     svg {
@@ -510,7 +515,13 @@
   }
 }
 
-app-stop-ride {
+.stop-modal-body {
   flex: 1;
   overflow-y: auto;
+  background: var(--bg-cream);
+}
+
+app-stop-ride {
+  display: block;
+  height: 100%;
 }
