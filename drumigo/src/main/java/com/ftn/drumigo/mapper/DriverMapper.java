@@ -1,6 +1,6 @@
 package com.ftn.drumigo.mapper;
 
-import com.ftn.drumigo.domain.Driver;
+import com.ftn.drumigo.domain.users.Driver;
 import com.ftn.drumigo.dto.DriverResponse;
 import org.springframework.stereotype.Component;
 
@@ -21,8 +21,6 @@ public class DriverMapper {
             driver.getPhone(),
             driver.getProfilePictureUrl(),
             driver.getBlocked(),
-            driver.getActive(),
-            driver.getLicenseNumber(),
             driver.getActiveDriver(),
             driver.getLastStateChangeAt(),
             driver.getCreatedAt(),

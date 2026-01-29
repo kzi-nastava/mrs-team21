@@ -1,5 +1,6 @@
 package com.ftn.drumigo.domain;
 
+import com.ftn.drumigo.domain.users.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -28,10 +29,10 @@ public class PanicEvent {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
     
-    @Column(length = 500)
-    private String reason;
-    
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
+
+    @Column(name = "reason")
+    private String reason;
 }
 

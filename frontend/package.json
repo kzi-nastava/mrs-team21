@@ -22,6 +22,7 @@
     "@angular/forms": "^21.1.0",
     "@angular/platform-browser": "^21.1.0",
     "@angular/router": "^21.1.0",
+    "@mapbox/search-js-core": "^1.5.1",
     "mapbox-gl": "^3.18.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"

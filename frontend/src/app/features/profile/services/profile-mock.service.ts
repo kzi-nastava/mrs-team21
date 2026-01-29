@@ -5,7 +5,7 @@ import { ProfileData } from '../models/profile.model';
 export class ProfileMockService {
   /**
    * Returns mock profile data for testing.
-   * 
+   *
    * TODO: Replace with actual API call
    * Example:
    * ```
@@ -13,7 +13,7 @@ export class ProfileMockService {
    *   return this.http.get<ProfileData>('/api/profile');
    * }
    * ```
-   * 
+   *
    * To test different roles, change the `role` field to 'PASSENGER' or 'DRIVER'
    */
   getProfile(): ProfileData {
@@ -21,6 +21,7 @@ export class ProfileMockService {
     const testRole: 'DRIVER' | 'PASSENGER' = 'DRIVER';
 
     const baseProfile: ProfileData = {
+      id: 1,
       firstName: 'Marko',
       lastName: 'Petrović',
       email: 'marko.petrovic@example.com',

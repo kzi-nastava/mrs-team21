@@ -30,7 +30,8 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.scss"]
+            "styles": ["src/styles.scss"],
+            "externalDependencies": ["@mapbox/mapbox-sdk"]
           },
           "configurations": {
             "production": {

@@ -1,6 +1,6 @@
 package com.ftn.drumigo.repository;
 
-import com.ftn.drumigo.domain.Driver;
+import com.ftn.drumigo.domain.users.Driver;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.enums.RideStatus;
 import org.springframework.data.domain.Page;
@@ -17,6 +17,7 @@ import java.util.List;
 public interface RideRepository extends JpaRepository<Ride, Long> {
     List<Ride> findByStatus(RideStatus status);
     List<Ride> findByDriverAndStatus(Driver driver, RideStatus status);
+    Page<Ride> findByDriverAndStatusAndScheduledForAfter(Driver driver, RideStatus status, Instant scheduledFor, Pageable pageable);
     
     @Query("SELECT r FROM Ride r WHERE r.driver = :driver AND r.requestedAt BETWEEN :from AND :to")
     Page<Ride> findByDriverAndRequestedAtBetween(@Param("driver") Driver driver, 

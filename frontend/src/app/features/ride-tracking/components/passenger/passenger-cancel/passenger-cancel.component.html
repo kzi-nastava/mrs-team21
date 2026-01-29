@@ -1,0 +1,65 @@
+<div class="cancel-dialog-overlay" (click)="onOverlayClick($event)">
+  <div class="cancel-dialog-unified" (click)="$event.stopPropagation()">
+    <!-- Cancel Icon -->
+    <div class="cancel-icon">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="15" y1="9" x2="9" y2="15" />
+        <line x1="9" y1="9" x2="15" y2="15" />
+      </svg>
+    </div>
+
+    <h2 class="cancel-title">Cancel your ride?</h2>
+
+    <!-- Ride Info Summary -->
+    <div class="ride-info-compact">
+      <div class="route-summary">
+        <div class="route-point">
+          <span class="dot start"></span>
+          <span class="address">{{ ride.startAddress }}</span>
+        </div>
+        <div class="route-point">
+          <span class="dot end"></span>
+          <span class="address">{{ ride.destinationAddress }}</span>
+        </div>
+      </div>
+
+      @if (ride.driver) {
+        <div class="driver-summary">
+          <span class="driver-avatar">{{ ride.driver.initials }}</span>
+          <span class="driver-name">{{ ride.driver.firstName }} {{ ride.driver.lastName }}</span>
+          <span class="driver-car">{{ ride.driver.vehicle }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- Cancellation Policy Notice -->
+    <div class="policy-notice">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+      <p>You can cancel for free up to <strong>10 minutes</strong> before your scheduled ride.</p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <button type="button" class="btn-secondary" (click)="onKeepRide()">Keep ride</button>
+      <button type="button" class="btn-danger" (click)="onCancelRide()">Cancel ride</button>
+    </div>
+  </div>
+</div>

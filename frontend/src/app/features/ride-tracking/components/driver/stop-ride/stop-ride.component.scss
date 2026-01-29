@@ -1,0 +1,499 @@
+.stop-ride-container {
+  padding: 32px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+// Empty State & Loading
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 80px 0;
+  color: var(--text-medium);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Content Layout
+.content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  height: 100%;
+
+  @media (min-width: 1024px) {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.info-column,
+.action-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+// Cards
+.section-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+// Passenger Card
+.passenger-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.passenger-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  font-weight: 700;
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(91, 76, 219, 0.2);
+}
+
+.passenger-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.passenger-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-medium);
+
+  svg {
+    width: 16px;
+    height: 16px;
+    color: var(--warning);
+  }
+}
+
+// Route Details
+.route-details {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.route-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  z-index: 1;
+}
+
+.route-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4px;
+  flex-shrink: 0;
+
+  &.start {
+    color: var(--success);
+  }
+  &.end {
+    color: var(--accent);
+  }
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.route-connector {
+  position: absolute;
+  left: 11px;
+  top: 28px;
+  bottom: 28px;
+  width: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--border) 0,
+    var(--border) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+.route-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-light);
+  margin-bottom: 2px;
+}
+
+.route-value {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-dark);
+  line-height: 1.4;
+}
+
+// Ride Stats
+.ride-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.stat-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary-light);
+  }
+}
+
+.stat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  &.duration {
+    background: #eef2ff;
+    color: #4f46e5;
+  }
+  &.distance {
+    background: #fff7ed;
+    color: #f97316;
+  }
+  &.completion {
+    background: #f0fdf4;
+    color: #22c55e;
+  }
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-light);
+}
+
+// Stop Card
+.stop-card {
+  border: 2px solid var(--primary-light);
+  background: linear-gradient(to bottom right, var(--white), var(--bg-cream));
+}
+
+.stop-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stop-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  background: var(--primary);
+  color: var(--white);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(91, 76, 219, 0.3);
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.stop-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.stop-subtitle {
+  font-size: 13px;
+  color: var(--text-medium);
+  margin: 2px 0 0 0;
+}
+
+.location-box {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.location-icon {
+  color: var(--primary);
+  margin-top: 2px;
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.location-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-light);
+  margin-bottom: 4px;
+}
+
+.location-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.stop-address-input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: all 0.2s;
+  font-family: inherit;
+
+  &:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(91, 76, 219, 0.1);
+  }
+
+  &::placeholder {
+    color: var(--text-light);
+    font-weight: 500;
+  }
+}
+
+.fare-adjustment {
+  background: var(--primary-dark);
+  color: var(--white);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.fare-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.fare-label {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.fare-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 100px;
+}
+
+.fare-original {
+  font-size: 13px;
+  text-decoration: line-through;
+  opacity: 0.6;
+  margin-bottom: 4px;
+}
+
+.fare-new {
+  font-size: 32px;
+  font-weight: 800;
+
+  .currency {
+    font-size: 18px;
+    font-weight: 500;
+    opacity: 0.8;
+  }
+}
+
+.warning-note {
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+  color: #92400e;
+  background: #fffbeb;
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 4px solid var(--warning);
+
+  svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+}
+
+// Action Buttons
+.action-buttons {
+  display: flex;
+  gap: 16px;
+  margin-top: auto;
+}
+
+.btn-secondary,
+.btn-stop {
+  flex: 1;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: none;
+}
+
+.btn-secondary {
+  background: var(--bg-warm);
+  color: var(--text-dark);
+  border: 1px solid var(--border);
+
+  &:hover {
+    background: var(--border);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-stop {
+  background: var(--primary);
+  color: var(--white);
+  box-shadow: 0 4px 12px rgba(91, 76, 219, 0.3);
+
+  &:hover:not(:disabled) {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(91, 76, 219, 0.4);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.btn-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+// Mobile Adjustments
+@media (max-width: 768px) {
+  .stop-ride-container {
+    padding: 20px;
+  }
+
+  .ride-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .action-buttons {
+    flex-direction: column-reverse;
+  }
+
+  .btn-secondary,
+  .btn-stop {
+    width: 100%;
+  }
+
+  .fare-new {
+    font-size: 28px;
+  }
+}

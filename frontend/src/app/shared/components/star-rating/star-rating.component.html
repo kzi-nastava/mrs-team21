@@ -1,0 +1,49 @@
+<div
+  class="star-rating"
+  [class.star-rating--readonly]="readonly() || disabled()"
+  [class.star-rating--sm]="size() === 'sm'"
+  [class.star-rating--lg]="size() === 'lg'"
+  [class.star-rating--hovering]="isHovering()"
+  role="radiogroup"
+  [attr.aria-label]="label()"
+  (mouseleave)="onMouseLeave()"
+>
+  @for (star of stars; track star) {
+    <button
+      type="button"
+      class="star-rating__star"
+      [class.star-rating__star--filled]="isStarFilled(star)"
+      [class.star-rating__star--active]="star === getDisplayRating()"
+      [disabled]="readonly() || disabled()"
+      [attr.aria-label]="star + ' star' + (star !== 1 ? 's' : '')"
+      [attr.aria-checked]="star === (value() || rating())"
+      role="radio"
+      [tabindex]="star === (value() || rating() || 1) ? 0 : -1"
+      (click)="onStarClick(star)"
+      (mouseenter)="onStarHover(star)"
+      (keydown)="onKeyDown($event, star)"
+    >
+      <svg viewBox="0 0 24 24" class="star-icon">
+        @if (isStarFilled(star)) {
+          <!-- Filled star -->
+          <path
+            d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+            fill="currentColor"
+            stroke="currentColor"
+            stroke-width="1"
+            stroke-linejoin="round"
+          />
+        } @else {
+          <!-- Empty star -->
+          <path
+            d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linejoin="round"
+          />
+        }
+      </svg>
+    </button>
+  }
+</div>

@@ -1,0 +1,67 @@
+RIDE RATING TEST DATA - Usage Instructions
+==========================================
+
+This script creates test data for the ride rating feature (spec 2.8).
+It includes various ride scenarios to test different rating states.
+
+HOW TO USE
+----------
+1. Start the Spring Boot backend application
+2. Open H2 Console at: http://localhost:8080/h2-console
+3. Connect with the settings from application-dev.properties
+4. Paste and run the entire ride_rating.sql script
+5. Login to the frontend with the test passenger account
+
+TEST CREDENTIALS
+----------------
+Email: rating.passenger@test.local
+Password: Test1234
+
+TEST SCENARIOS CREATED
+----------------------
+| Ride ID | Status    | Age        | Can Rate? | Notes                        |
+|---------|-----------|------------|-----------|------------------------------|
+| 8001    | FINISHED  | 2 days ago | NO        | Already has a review         |
+| 8002    | FINISHED  | 1 day ago  | YES       | 2 days left to rate          |
+| 8003    | FINISHED  | 5 days ago | NO        | Deadline passed (>3 days)    |
+| 8004    | FINISHED  | ~3 days    | YES       | At deadline boundary         |
+| 8005    | CANCELLED | 1 day ago  | NO        | Cancelled rides cannot rate  |
+| 8006    | ACTIVE    | Now        | NO        | Must finish ride first       |
+
+TESTING THE RATING FEATURE
+--------------------------
+1. Navigate to ride history: http://localhost:4200/ride-history
+2. Click on a ride to open the details panel
+3. Check the Ratings section:
+   - Ride 8001: Should show "You've rated this ride"
+   - Ride 8002: Should show "Rate this ride" button with "2 days left"
+   - Ride 8003: Should show "Rating deadline has passed"
+   - Ride 8004: Should show "Rate this ride" button with "0 days left"
+   - Ride 8005: No rating section (cancelled)
+   - Ride 8006: Cannot open in history (still active)
+
+4. Click "Rate this ride" on Ride 8002 to test the rating modal:
+   - Select driver rating (1-5 stars)
+   - Select vehicle rating (1-5 stars)
+   - Optionally add a comment
+   - Submit the rating
+
+5. Verify the review was created:
+   - The ride should now show "You've rated this ride"
+   - Check the database: SELECT * FROM reviews WHERE ride_id = 8002;
+
+API ENDPOINTS
+-------------
+POST /api/rides/{rideId}/reviews - Submit a review (requires authentication)
+GET /api/rides/{rideId}/reviews - Get reviews for a ride
+GET /api/rides/{rideId}/rating-status - Check if user can rate the ride
+
+CLEANUP
+-------
+To remove test data, run the DELETE statements at the top of the SQL script,
+or simply rerun the entire script (it cleans up before inserting).
+
+NOTES
+-----
+- Password "Test1234" is SHA-256 hashed (matches system's PasswordUtil)
+- All rides use driver 8001 and vehicle 8001 for simplicity

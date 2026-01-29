@@ -1,12 +1,10 @@
-import { Component, OnInit } from '@angular/core';
-import {
-  ReactiveFormsModule,
-  FormBuilder,
-  FormGroup,
-  Validators,
-} from '@angular/forms';
-import { NgIf, CommonModule } from '@angular/common';
+import { Component, OnInit, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 import { PersonalInfoFormComponent } from '../../../shared/components/personal-info-form/personal-info-form.component';
+import { ProfilePhotoUploadComponent } from '../../../shared/components/profile-photo-upload/profile-photo-upload.component';
+import { DriverRegistrationService } from '../services/driver-registration.service';
 
 type VehicleCategory = 'Standard' | 'Luxury' | 'Van';
 
@@ -31,26 +29,35 @@ interface VehicleFormData {
 @Component({
   selector: 'app-driver-registration',
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf, CommonModule, PersonalInfoFormComponent],
+  imports: [
+    ReactiveFormsModule,
+    CommonModule,
+    PersonalInfoFormComponent,
+    ProfilePhotoUploadComponent,
+  ],
   templateUrl: './driver-registration.component.html',
   styleUrl: './driver-registration.component.scss',
 })
 export class DriverRegistrationComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private driverRegistrationService = inject(DriverRegistrationService);
+  private router = inject(Router);
+
   currentStep = 1;
   totalSteps = 2;
-  
+
   driverForm!: FormGroup;
   vehicleForm!: FormGroup;
-  
+
   driverSubmitted = false;
   vehicleSubmitted = false;
-  
+
   showSuccessMessage = false;
   isSubmitting = false;
 
-  vehicleCategories: VehicleCategory[] = ['Standard', 'Luxury', 'Van'];
+  selectedPhotoFile: File | null = null;
 
-  constructor(private fb: FormBuilder) {}
+  vehicleCategories: VehicleCategory[] = ['Standard', 'Luxury', 'Van'];
 
   ngOnInit(): void {
     this.initDriverForm();
@@ -87,6 +94,13 @@ export class DriverRegistrationComponent implements OnInit {
     return this.vehicleForm.controls;
   }
 
+  onPhotoSelected(file: File): void {
+    this.selectedPhotoFile = file;
+    console.log('Driver photo selected (auto-cropped to 1:1):', file.name, file.size, 'bytes');
+    // TODO: Upload to backend storage and get URL
+    // this.uploadService.uploadProfilePhoto(file).subscribe(url => ...);
+  }
+
   nextStep(): void {
     if (this.currentStep === 1) {
       this.driverSubmitted = true;
@@ -94,7 +108,7 @@ export class DriverRegistrationComponent implements OnInit {
         return;
       }
     }
-    
+
     if (this.currentStep < this.totalSteps) {
       this.currentStep++;
     }
@@ -142,37 +156,33 @@ export class DriverRegistrationComponent implements OnInit {
     const driverData: DriverFormData = this.driverForm.value;
     const vehicleData: VehicleFormData = this.vehicleForm.value;
 
-    const registrationPayload = {
-      driver: {
-        firstName: driverData.firstName,
-        lastName: driverData.lastName,
-        email: driverData.email,
-        phone: driverData.countryCode + driverData.phone,
-        address: driverData.address,
-      },
-      vehicle: {
-        model: vehicleData.model,
-        category: vehicleData.category,
-        licensePlate: vehicleData.licensePlate.toUpperCase(),
-        seats: vehicleData.seats,
-        features: {
-          babySeats: vehicleData.babySeats,
-          petFriendly: vehicleData.petFriendly,
-        },
-      },
+    const registrationRequest = {
+      name: driverData.firstName,
+      surname: driverData.lastName,
+      email: driverData.email,
+      phone: driverData.countryCode + driverData.phone,
+      address: driverData.address,
+      vehicleTypeId: this.driverRegistrationService.mapCategoryToTypeId(vehicleData.category),
+      vehicleModel: vehicleData.model,
+      vehicleLicensePlate: vehicleData.licensePlate.toUpperCase(),
+      vehicleNumSeats: vehicleData.seats,
+      vehicleBabyFriendly: vehicleData.babySeats,
+      vehiclePetFriendly: vehicleData.petFriendly,
     };
 
-    // TODO: Implement API call to create driver
-    // The backend will:
-    // 1. Create the driver account with a generated password
-    // 2. Send an email with password reset link to the driver
-    console.log('Driver registration submitted:', registrationPayload);
-
-    // Simulate API call
-    setTimeout(() => {
-      this.isSubmitting = false;
-      this.showSuccessMessage = true;
-    }, 1000);
+    this.driverRegistrationService.registerDriver(registrationRequest).subscribe({
+      next: (response) => {
+        console.log('Driver registered successfully:', response);
+        this.isSubmitting = false;
+        this.showSuccessMessage = true;
+      },
+      error: (error) => {
+        console.error('Error registering driver:', error);
+        this.isSubmitting = false;
+        // TODO: Show error message to user
+        alert(error.error?.message || 'Failed to register driver. Please try again.');
+      },
+    });
   }
 
   addAnotherDriver(): void {
@@ -180,6 +190,7 @@ export class DriverRegistrationComponent implements OnInit {
     this.currentStep = 1;
     this.driverSubmitted = false;
     this.vehicleSubmitted = false;
+    this.selectedPhotoFile = null;
     this.driverForm.reset({
       countryCode: '+381',
     });

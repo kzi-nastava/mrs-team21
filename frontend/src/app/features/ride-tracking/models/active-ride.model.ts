@@ -23,6 +23,7 @@ export interface ActiveRide {
     firstName: string;
     lastName: string;
     phone: string;
+    profilePictureUrl?: string;
   };
   vehicle: {
     id: number;

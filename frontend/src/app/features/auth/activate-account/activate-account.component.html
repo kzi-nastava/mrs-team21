@@ -1,0 +1,77 @@
+<div class="card">
+  <a routerLink="/login" class="back-link">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M19 12H5" />
+      <path d="M12 19l-7-7 7-7" />
+    </svg>
+    Back to login
+  </a>
+
+  <div class="icon-wrapper">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  </div>
+
+  <h1 class="card-title">Activate your account</h1>
+  <p class="card-description">
+    Click the button below to activate your account and get started with Drumigo.
+  </p>
+  <div *ngIf="error" class="alert alert-error">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="8" x2="12" y2="12" />
+      <line x1="12" y1="16" x2="12.01" y2="16" />
+    </svg>
+    <span>{{ error }}</span>
+  </div>
+
+  <div *ngIf="success" class="alert alert-success">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+    <span>Account activated successfully! Redirecting to login...</span>
+  </div>
+
+  <div *ngIf="!success">
+    <form (ngSubmit)="onSubmit()">
+      <button type="submit" class="btn-primary" [disabled]="!token || isSubmitting">
+        <ng-container *ngIf="isSubmitting; else notSubmitting">
+          <span class="loading-spinner"></span>
+          Activating...
+        </ng-container>
+        <ng-template #notSubmitting>Activate Account</ng-template>
+      </button>
+    </form>
+  </div>
+
+  <p class="help-text">Already activated? <a routerLink="/login">Sign in here</a></p>
+</div>

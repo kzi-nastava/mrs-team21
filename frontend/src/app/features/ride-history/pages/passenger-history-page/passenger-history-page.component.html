@@ -1,0 +1,47 @@
+<div class="page-container">
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">{{ config.pageTitle }}</h1>
+      <p class="page-subtitle">{{ config.pageSubtitle }}</p>
+    </div>
+
+    <!-- Filters -->
+    <app-ride-history-filters
+      [startDate]="startDate()"
+      [endDate]="endDate()"
+      [resultsCount]="filteredRides().length"
+      (filterChanged)="onFilterChanged($event)"
+      (filterCleared)="onFilterCleared()"
+    />
+
+    <!-- Rides Table -->
+    <app-ride-history-table
+      [rides]="filteredRides()"
+      [columns]="config.tableColumns"
+      [showEarnings]="config.showEarningsInTable || false"
+      [showPassengers]="false"
+      [showFavoriteButton]="true"
+      (rideSelected)="onRideSelected($event)"
+      (sortChanged)="onSortChanged($event)"
+      (favoriteToggled)="onFavoriteToggled($event)"
+    />
+  </main>
+</div>
+
+<!-- Ride Details Side Panel -->
+<app-ride-details
+  [ride]="selectedRide()"
+  [config]="config.detailsConfig"
+  (close)="onRideDetailsClosed()"
+  (rateRide)="onRateRide($event)"
+/>
+
+<!-- Rating Modal -->
+@if (showRatingModal() && rideToRate()) {
+  <app-rating-modal
+    [ride]="rideToRate()!"
+    (close)="closeRatingModal()"
+    (submitted)="onRatingSubmitted($event)"
+  ></app-rating-modal>
+}

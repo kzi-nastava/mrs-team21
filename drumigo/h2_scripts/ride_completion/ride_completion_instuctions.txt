@@ -1,0 +1,17 @@
+✅ How to use
+1) Open H2 console
+2) Paste the entire script (from the file) and run
+3) (Recommended) Log in as the driver:
+- Email: driver9001@test.local
+- Password: Test1234
+
+4) Open the ride-tracking page:
+`http://localhost:4200/ride-tracking/9001`
+
+5) Click "Stop Ride" and confirm.
+
+Notes:
+- The "Stop Ride" / ride completion flow is a DRIVER action (passengers do not end rides).
+- Currently, the backend endpoint `PUT /api/rides/{id}/end` is not protected (permitAll), so the stop action may still work even if you are not logged in. If you expect auth/role checks, this needs to be tightened in backend security config.
+- If you stop the ride once, its status becomes FINISHED and you cannot stop it again (you'll get: "Ride must be ACTIVE...").
+- If you restart the backend, the in-memory H2 DB resets; rerun the SQL script to recreate ride 9001.

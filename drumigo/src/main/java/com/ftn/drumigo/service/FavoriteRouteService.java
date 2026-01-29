@@ -3,7 +3,7 @@ package com.ftn.drumigo.service;
 import com.ftn.drumigo.domain.FavoriteRoute;
 import com.ftn.drumigo.domain.FavoriteRouteWaypoint;
 import com.ftn.drumigo.domain.Location;
-import com.ftn.drumigo.domain.Passenger;
+import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.VehicleType;
 import com.ftn.drumigo.dto.FavoriteRouteCreateRequest;
 import com.ftn.drumigo.exception.ResourceNotFoundException;

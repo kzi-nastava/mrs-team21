@@ -67,44 +67,11 @@
     </div>
 
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
-      <!-- Avatar Upload -->
-      <div class="avatar-section">
-        <div class="avatar-preview">
-          <img *ngIf="avatarPreview" [src]="avatarPreview" alt="Avatar preview" />
-          <svg
-            *ngIf="!avatarPreview"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-        </div>
-        <div class="avatar-info">
-          <h4>Profile photo <span class="optional-badge">Optional</span></h4>
-          <p>Upload a photo so drivers can recognize you</p>
-          <input
-            type="file"
-            id="avatar-input"
-            accept="image/*"
-            (change)="onFileSelected($event)"
-            hidden
-          />
-          <button type="button" class="btn-upload" (click)="avatarInput.click()">
-            Upload photo
-          </button>
-          <input
-            #avatarInput
-            type="file"
-            accept="image/*"
-            (change)="onFileSelected($event)"
-            hidden
-          />
-        </div>
+      <!-- Avatar Upload - Shared Component (auto-crops to 1:1) -->
+      <div class="photo-upload-wrapper">
+        <div class="photo-label">Set your profile picture</div>
+        <app-profile-photo-upload (fileSelected)="onPhotoSelected($event)">
+        </app-profile-photo-upload>
       </div>
 
       <!-- Personal Info - Reusable Component -->
@@ -128,11 +95,13 @@
             <a href="#">Privacy Policy</a></span
           >
         </label>
-        <div class="error-message" *ngIf="submitted && f['agreeToTerms'].errors">
-          <small *ngIf="f['agreeToTerms'].errors['required']"
-            >You must agree to the terms and conditions</small
-          >
-        </div>
+        @if (submitted && f['agreeToTerms'].errors) {
+          <div class="error-message">
+            @if (f['agreeToTerms'].errors['required']) {
+              <small>You must agree to the terms and conditions</small>
+            }
+          </div>
+        }
       </div>
 
       <button type="submit" class="btn-primary" [disabled]="submitted && registerForm.invalid">

@@ -1,14 +1,15 @@
 package com.ftn.drumigo.controller;
 
-import com.ftn.drumigo.domain.Driver;
-import com.ftn.drumigo.domain.DriverDocument;
+import com.ftn.drumigo.domain.users.Driver;
 import com.ftn.drumigo.domain.Review;
 import com.ftn.drumigo.domain.Ride;
+import com.ftn.drumigo.domain.RideWaypoint;
 import com.ftn.drumigo.dto.*;
-import com.ftn.drumigo.mapper.DriverDocumentMapper;
+import com.ftn.drumigo.dto.ride.response.RideResponse;
 import com.ftn.drumigo.mapper.DriverMapper;
 import com.ftn.drumigo.mapper.DriverRideHistoryMapper;
 import com.ftn.drumigo.mapper.ReviewMapper;
+import com.ftn.drumigo.mapper.RideMapper;
 import com.ftn.drumigo.service.DriverService;
 import com.ftn.drumigo.service.ReviewService;
 import com.ftn.drumigo.service.RideService;
@@ -33,11 +34,11 @@ public class DriverController {
     
     private final DriverService driverService;
     private final DriverMapper driverMapper;
-    private final DriverDocumentMapper driverDocumentMapper;
     private final ReviewService reviewService;
     private final ReviewMapper reviewMapper;
     private final RideService rideService;
     private final DriverRideHistoryMapper driverRideHistoryMapper;
+    private final RideMapper rideMapper;
     
     @PostMapping
     public ResponseEntity<DriverResponse> createDriver(@Valid @RequestBody DriverCreateRequest request) {
@@ -77,14 +78,6 @@ public class DriverController {
         return ResponseEntity.ok(driverMapper.toResponse(driver));
     }
     
-    @PostMapping("/{id}/documents")
-    public ResponseEntity<DriverDocumentResponse> createDocument(
-            @PathVariable Long id,
-            @Valid @RequestBody DriverDocumentCreateRequest request) {
-        DriverDocument document = driverService.createDocument(id, request);
-        return ResponseEntity.status(201).body(driverDocumentMapper.toResponse(document));
-    }
-    
     @PostMapping("/{id}/activation")
     public ResponseEntity<ActivationTokenResponse> createActivationToken(@PathVariable Long id) {
         String token = driverService.createActivationToken(id);
@@ -120,6 +113,29 @@ public class DriverController {
         Page<Ride> rides = rideService.getDriverRideHistory(driverId, from, to, pageable);
         Page<DriverRideHistoryItemResponse> responses = rides.map(driverRideHistoryMapper::toResponse);
         
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/{driverId}/rides/upcoming")
+    public ResponseEntity<Page<RideResponse>> getUpcomingDriverRides(
+            @PathVariable Long driverId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "scheduledFor,asc") String sort) {
+
+        String[] sortParams = sort.split(",");
+        Sort.Direction direction = sortParams.length > 1 && sortParams[1].equalsIgnoreCase("desc")
+                ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Sort sortObj = Sort.by(direction, sortParams[0]);
+
+        Pageable pageable = PageRequest.of(page, size, sortObj);
+        Page<Ride> rides = rideService.getUpcomingDriverRides(driverId, from, pageable);
+        Page<RideResponse> responses = rides.map(ride -> {
+            List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
+            return rideMapper.toResponse(ride, waypoints);
+        });
+
         return ResponseEntity.ok(responses);
     }
     

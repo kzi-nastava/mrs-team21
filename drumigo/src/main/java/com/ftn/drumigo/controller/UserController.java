@@ -1,6 +1,6 @@
 package com.ftn.drumigo.controller;
 
-import com.ftn.drumigo.domain.User;
+import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.domain.UserNote;
 import com.ftn.drumigo.dto.*;
 import com.ftn.drumigo.mapper.UserMapper;

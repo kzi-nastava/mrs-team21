@@ -1,10 +1,10 @@
 package com.ftn.drumigo.service;
 
-import com.ftn.drumigo.domain.Passenger;
+import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.UserToken;
 import com.ftn.drumigo.domain.enums.TokenType;
 import com.ftn.drumigo.domain.enums.UserRole;
-import com.ftn.drumigo.dto.PassengerCreateRequest;
+import com.ftn.drumigo.dto.auth.request.PassengerRegisterRequest;
 import com.ftn.drumigo.exception.BadRequestException;
 import com.ftn.drumigo.exception.ConflictException;
 import com.ftn.drumigo.repository.PassengerRepository;
@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ftn.drumigo.util.TokenUtil;
+import com.ftn.drumigo.util.PasswordUtil;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -26,8 +27,24 @@ public class PassengerService {
     private final PassengerRepository passengerRepository;
     private final UserRepository userRepository;
     private final UserTokenRepository userTokenRepository;
+    private final EmailService emailService;
     
-    public Passenger create(PassengerCreateRequest request) {
+    public Passenger register(PassengerRegisterRequest request) {
+        String password = request.password();
+        String confirm = request.confirmPassword();
+
+        // Check if passwords match
+        if (!password.equals(confirm)) {
+            throw new BadRequestException("Passwords don't match");
+        }
+
+        // Validate password strength: 6-64 chars, at least one uppercase, one lowercase, and one digit or special char
+        if (!isValidPassword(password)) {
+            throw new BadRequestException(
+                "Password must be 6-64 characters and contain at least one uppercase letter, one lowercase letter, and one digit or special character"
+            );
+        }
+
         // Check if email already exists
         if (userRepository.existsByEmail(request.email())) {
             throw new ConflictException("User with email " + request.email() + " already exists");
@@ -35,22 +52,24 @@ public class PassengerService {
         
         // Create passenger
         Passenger passenger = new Passenger();
-        passenger.setName(request.name());
-        passenger.setSurname(request.surname());
+        passenger.setName(request.firstName());
+        passenger.setSurname(request.lastName());
         passenger.setEmail(request.email());
         passenger.setAddress(request.address());
-        passenger.setPhone(request.phone());
+        passenger.setPhone(request.phoneNumber());
         passenger.setRole(UserRole.PASSENGER);
-        passenger.setActive(false); // Not activated yet
+
         passenger.setBlocked(false);
         passenger.setCreatedAt(Instant.now());
         passenger.setUpdatedAt(Instant.now());
-        
+        passenger.setPasswordHash(PasswordUtil.hashPassword(password)); // Hash password
+
         passenger = passengerRepository.save(passenger);
         
-        // Create activation token
-        createActivationToken(passenger);
-        
+        // Create token and send confirmation email
+        String token = createActivationToken(passenger);
+        emailService.sendActivationEmail(passenger.getEmail(), token);
+
         return passenger;
     }
     
@@ -67,14 +86,16 @@ public class PassengerService {
         userToken.setUsedAt(Instant.now());
         userTokenRepository.save(userToken);
         
-        // Activate user
-        Passenger passenger = (Passenger) userToken.getUser();
-        passenger.setActive(true);
+        // Fetch the Passenger entity directly to avoid proxy casting issues
+        Passenger passenger = passengerRepository.findById(userToken.getUser().getId())
+            .orElseThrow(() -> new BadRequestException("Passenger not found"));
+
+        // Update timestamp
         passenger.setUpdatedAt(Instant.now());
         passengerRepository.save(passenger);
     }
     
-    private void createActivationToken(Passenger passenger) {
+    private String createActivationToken(Passenger passenger) {
         // Generate token
         String token = UUID.randomUUID().toString();
         String tokenHash = TokenUtil.hashToken(token);
@@ -88,7 +109,12 @@ public class PassengerService {
         userToken.setCreatedAt(Instant.now());
         
         userTokenRepository.save(userToken);
+        return token;
     }
-    
-}
 
+    // Password must be 6-64 chars, contain at least one uppercase letter, one lowercase letter, and one digit or special character
+    private boolean isValidPassword(String password) {
+        if (password == null) return false;
+        return password.matches("(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9\\W]).{6,64}");
+    }
+}

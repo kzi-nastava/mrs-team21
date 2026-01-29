@@ -1,7 +1,7 @@
 package com.ftn.drumigo.service;
 
 import com.ftn.drumigo.domain.Message;
-import com.ftn.drumigo.domain.User;
+import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.domain.enums.MessageType;
 import com.ftn.drumigo.dto.SupportMessageCreateRequest;
 import com.ftn.drumigo.exception.ResourceNotFoundException;

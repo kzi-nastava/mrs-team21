@@ -3,16 +3,19 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, map, throwError } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 
-type LngLat = { lat: number; lng: number };
+interface LngLat {
+  lat: number;
+  lng: number;
+}
 
 interface DirectionsResponse {
   code: string;
-  routes: Array<{
+  routes: {
     geometry: {
       type: 'LineString';
       coordinates: [number, number][];
     };
-  }>;
+  }[];
 }
 
 @Injectable({ providedIn: 'root' })

@@ -1,6 +1,6 @@
 import {
   Component,
-  Input,
+  input,
   OnDestroy,
   ElementRef,
   ViewChild,
@@ -26,21 +26,21 @@ export interface MapConfig {
   styleUrl: './map.component.scss',
 })
 export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
-  @ViewChild('mapContainer', { static: true }) mapContainer!: ElementRef;
+  @ViewChild('mapContainer') mapContainer!: ElementRef;
 
-  @Input() config: MapConfig = {
+  config = input<MapConfig>({
     center: [19.8200, 45.2500], // Novi Sad [lng, lat] - Mapbox uses lng,lat order
     zoom: 12.5,
-  };
+  });
 
-  @Input() markers: MapMarker[] = [];
-  @Input() showControls = true;
-  @Input() showRoute = false;
-  @Input() routeCoordinates?: [number, number][]; // [lng, lat] pairs
-  @Input() routeColor = '#5b4cdb';
-  @Input() routeWidth = 4;
-  @Input() useCarIcon = false;
-  @Input() carBearing?: number; // Bearing in degrees
+  markers = input<MapMarker[]>([]);
+  showControls = input(true);
+  showRoute = input(false);
+  routeCoordinates = input<[number, number][] | undefined>(undefined); // [lng, lat] pairs
+  routeColor = input('#5b4cdb');
+  routeWidth = input(4);
+  useCarIcon = input(false);
+  carBearing = input<number | undefined>(undefined); // Bearing in degrees
 
   @Output() mapReady = new EventEmitter<mapboxgl.Map>();
   @Output() mapClick = new EventEmitter<{ lat: number; lng: number }>();
@@ -62,13 +62,17 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
 
     // Update route when route coordinates change
     if ((changes['routeCoordinates'] || changes['showRoute']) && this.map) {
-      if (this.showRoute && this.routeCoordinates && this.routeCoordinates.length >= 2) {
+      const coords = this.routeCoordinates();
+      if (this.showRoute() && coords && coords.length >= 2) {
         // Wait for map to be ready if it's still loading
         if (this.map.loaded()) {
-          this.drawRoute(this.routeCoordinates);
+          this.drawRoute(coords);
         } else {
           this.map.once('load', () => {
-            this.drawRoute(this.routeCoordinates!);
+            const currentCoords = this.routeCoordinates();
+            if (currentCoords) {
+              this.drawRoute(currentCoords);
+            }
           });
         }
       } else {
@@ -81,7 +85,7 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
       changes['carBearing'] &&
       !changes['carBearing']?.firstChange &&
       this.map &&
-      this.useCarIcon
+      this.useCarIcon()
     ) {
       this.updateCarBearing();
     }
@@ -107,8 +111,8 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
       this.map = new mapboxgl.Map({
         container: this.mapContainer.nativeElement,
         style: 'mapbox://styles/mapbox/streets-v12',
-        center: [this.config.center[0], this.config.center[1]], // [lng, lat]
-        zoom: this.config.zoom,
+        center: [this.config().center[0], this.config().center[1]], // [lng, lat]
+        zoom: this.config().zoom,
         attributionControl: true,
       });
     } catch (error) {
@@ -117,14 +121,14 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
       return;
     }
 
-    if (this.showControls) {
+    if (this.showControls()) {
       this.map.addControl(new mapboxgl.NavigationControl(), 'top-left');
     }
 
     this.map.on('load', () => {
       this.addMarkers();
-      if (this.showRoute && this.routeCoordinates && this.routeCoordinates.length >= 2) {
-        this.drawRoute(this.routeCoordinates);
+      if (this.showRoute() && this.routeCoordinates() && this.routeCoordinates()!.length >= 2) {
+        this.drawRoute(this.routeCoordinates()!);
       } else {
         this.clearRoute();
       }
@@ -146,9 +150,9 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
     this.markerInstances.forEach((marker) => marker.remove());
     this.markerInstances = [];
 
-    this.markers.forEach((marker) => {
+    this.markers().forEach((marker) => {
       const el = this.createMarkerElement(marker);
-      const isCarIcon = this.useCarIcon && marker.status === 'busy';
+      const isCarIcon = this.useCarIcon() && marker.status === 'busy';
 
       const mapboxMarker = new mapboxgl.Marker({
         element: el,
@@ -187,24 +191,37 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
 
   private createMarkerElement(marker: MapMarker): HTMLElement {
     // Use car icon if enabled and this is the vehicle marker (status: busy)
-    if (this.useCarIcon && marker.status === 'busy') {
-      return this.createCarIcon(this.carBearing);
+    if (this.useCarIcon() && marker.status === 'busy') {
+      return this.createCarIcon(this.carBearing());
     }
 
     const el = document.createElement('div');
     el.className = `vehicle-marker ${marker.status}`;
 
-    // Create marker with pin shape and car icon
-    el.innerHTML = `
-      <div class="marker-pin">
-        <div class="marker-icon">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
-          </svg>
-        </div>
-        <div class="pulse-ring"></div>
-      </div>
-    `;
+    // Create marker with pin shape and car icon using proper DOM methods
+    const markerPin = document.createElement('div');
+    markerPin.className = 'marker-pin';
+
+    const markerIcon = document.createElement('div');
+    markerIcon.className = 'marker-icon';
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'currentColor');
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z');
+
+    svg.appendChild(path);
+    markerIcon.appendChild(svg);
+
+    const pulseRing = document.createElement('div');
+    pulseRing.className = 'pulse-ring';
+
+    markerPin.appendChild(markerIcon);
+    markerPin.appendChild(pulseRing);
+    el.appendChild(markerPin);
+
     return el;
   }
 
@@ -240,13 +257,13 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
   private updateCarBearing(): void {
     // Update bearing for car icon markers
     this.markerInstances.forEach((marker, index) => {
-      const markerData = this.markers[index];
-      if (markerData && markerData.status === 'busy' && this.useCarIcon) {
+      const markerData = this.markers()[index];
+      if (markerData && markerData.status === 'busy' && this.useCarIcon()) {
         const element = marker.getElement();
         if (element) {
           const icon = element.querySelector('.car-icon-svg') as HTMLElement | null;
-          if (icon && this.carBearing !== undefined) {
-            icon.style.transform = `rotate(${this.carBearing}deg)`;
+          if (icon && this.carBearing() !== undefined) {
+            icon.style.transform = `rotate(${this.carBearing()}deg)`;
             icon.style.transformOrigin = 'center center';
           }
         }
@@ -290,8 +307,8 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
         'line-cap': 'round',
       },
       paint: {
-        'line-color': this.routeColor,
-        'line-width': this.routeWidth,
+        'line-color': this.routeColor(),
+        'line-width': this.routeWidth(),
         'line-opacity': 0.75,
       },
     });
@@ -315,11 +332,6 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
       this.clearRoute();
       this.map.remove();
     }
-  }
-
-  updateMarkers(markers: MapMarker[]): void {
-    this.markers = markers;
-    this.addMarkers();
   }
 
   setView(lat: number, lng: number, zoom?: number): void {

@@ -213,6 +213,89 @@
   gap: 12px;
 }
 
+.post-ride-error {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+  border: 1px solid #fecaca;
+}
+
+.post-ride-panel {
+  padding: 16px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .post-ride-text {
+    margin: 0;
+    font-size: 13px;
+    color: #475569;
+  }
+}
+
+.next-ride-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .summary-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #94a3b8;
+    font-weight: 600;
+  }
+
+  .value {
+    font-size: 13px;
+    color: #1e293b;
+  }
+}
+
+.post-ride-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: #4f46e5;
+  color: #fff;
+}
+
+.btn-secondary {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
 .btn-panic {
   width: 100%;
   display: flex;
@@ -310,204 +393,6 @@
   }
 }
 
-// Modal
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-  animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.modal-content {
-  background: white;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow:
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24px;
-  border-bottom: 1px solid #e8e6e2;
-
-  .modal-title {
-    font-size: 20px;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin: 0;
-  }
-
-  .modal-close {
-    background: none;
-    border: none;
-    padding: 8px;
-    cursor: pointer;
-    color: #6b7280;
-    border-radius: 6px;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    &:hover {
-      background: #f5f3ef;
-      color: #1a1a1a;
-    }
-
-    svg {
-      width: 20px;
-      height: 20px;
-    }
-  }
-}
-
-.modal-body {
-  padding: 24px;
-}
-
-.modal-description {
-  font-size: 14px;
-  color: #6b7280;
-  line-height: 1.6;
-  margin-bottom: 24px;
-}
-
-.success-message {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: #d1fae5;
-  color: #065f46;
-  border-radius: 8px;
-  margin-bottom: 24px;
-  font-size: 14px;
-  font-weight: 500;
-
-  svg {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-  }
-}
-
-// Form
-.form-group {
-  margin-bottom: 24px;
-}
-
-.form-label {
-  display: block;
-  font-size: 14px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 8px;
-}
-
-.form-textarea {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: inherit;
-  resize: vertical;
-  transition: border-color 0.2s;
-  box-sizing: border-box;
-
-  &:focus {
-    outline: none;
-    border-color: #5b4cdb;
-    box-shadow: 0 0 0 3px rgba(91, 76, 219, 0.1);
-  }
-
-  &::placeholder {
-    color: #9ca3af;
-  }
-}
-
-.form-hint {
-  font-size: 12px;
-  color: #6b7280;
-  margin-top: 6px;
-}
-
-.form-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-.btn-cancel,
-.btn-submit {
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-}
-
-.btn-cancel {
-  background: #f5f3ef;
-  color: #6b7280;
-
-  &:hover {
-    background: #e8e6e2;
-  }
-}
-
-.btn-submit {
-  background: #5b4cdb;
-  color: white;
-
-  &:hover:not(:disabled) {
-    background: #4c3fb8;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
 // Responsive
 @media (max-width: 768px) {
   .tracking-main {
@@ -540,113 +425,9 @@
     margin: 0;
     border-radius: 12px 12px 0 0;
   }
-
-  .panic-modal-content {
-    max-width: 100%;
-    max-height: 90vh;
-    margin: 0;
-    border-radius: 16px 16px 0 0;
-  }
 }
 
-// Panic Modal
-.panic-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-  animation: fadeIn 0.2s ease;
-}
-
-.panic-modal-content {
-  background: white;
-  border-radius: 16px;
-  width: 100%;
-  max-width: 420px;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
-  animation: slideUp 0.3s ease;
-}
-
-.panic-modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e8e6e2;
-  background: linear-gradient(135deg, #fef2f2 0%, #fff 100%);
-
-  .panic-modal-title {
-    font-size: 20px;
-    font-weight: 700;
-    color: #dc2626;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    &::before {
-      content: '';
-      width: 8px;
-      height: 8px;
-      background: #dc2626;
-      border-radius: 50%;
-      animation: emergencyPulse 1s ease-in-out infinite;
-    }
-  }
-
-  .panic-modal-close {
-    background: none;
-    border: none;
-    padding: 8px;
-    cursor: pointer;
-    color: #6b7280;
-    border-radius: 8px;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    &:hover {
-      background: #fee2e2;
-      color: #dc2626;
-    }
-
-    svg {
-      width: 20px;
-      height: 20px;
-    }
-  }
-}
-
-@keyframes emergencyPulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(1.2);
-  }
-}
-
-app-panic-button {
-  flex: 1;
-  overflow-y: auto;
-}
+// Panic Modal removed - styles moved to panic component
 
 // Stop Modal
 .stop-modal-overlay {
@@ -665,61 +446,66 @@ app-panic-button {
 }
 
 .stop-modal-content {
-  background: white;
-  border-radius: 16px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
   max-height: 90vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-lg);
   animation: slideUp 0.3s ease;
+
+  @media (min-width: 1024px) {
+    max-width: 800px;
+  }
 }
 
 .stop-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e8e6e2;
-  background: linear-gradient(135deg, #fef3c7 0%, #fff 100%);
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--white);
 
   .stop-modal-title {
-    font-size: 20px;
+    font-size: 24px;
     font-weight: 700;
-    color: #f59e0b;
+    color: var(--text-dark);
     margin: 0;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
 
     &::before {
       content: '';
-      width: 8px;
-      height: 8px;
-      background: #f59e0b;
+      width: 12px;
+      height: 12px;
+      background: var(--primary);
       border-radius: 50%;
+      box-shadow: 0 0 0 4px var(--primary-light);
+      opacity: 0.8;
     }
   }
 
   .stop-modal-close {
-    background: none;
+    background: var(--bg-warm);
     border: none;
-    padding: 8px;
+    padding: 10px;
     cursor: pointer;
-    color: #6b7280;
-    border-radius: 8px;
+    color: var(--text-medium);
+    border-radius: 50%;
     transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
 
     &:hover {
-      background: #fef3c7;
-      color: #f59e0b;
+      background: var(--border);
+      color: var(--text-dark);
+      transform: rotate(90deg);
     }
 
     svg {
@@ -729,7 +515,13 @@ app-panic-button {
   }
 }
 
-app-stop-ride {
+.stop-modal-body {
   flex: 1;
   overflow-y: auto;
+  background: var(--bg-cream);
+}
+
+app-stop-ride {
+  display: block;
+  height: 100%;
 }

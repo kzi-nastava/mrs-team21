@@ -1,7 +1,7 @@
 package com.ftn.drumigo.controller;
 
-import com.ftn.drumigo.domain.Passenger;
-import com.ftn.drumigo.dto.PassengerCreateRequest;
+import com.ftn.drumigo.domain.users.Passenger;
+import com.ftn.drumigo.dto.auth.request.PassengerRegisterRequest;
 import com.ftn.drumigo.mapper.UserMapper;
 import com.ftn.drumigo.dto.UserResponse;
 import com.ftn.drumigo.service.PassengerService;
@@ -19,8 +19,8 @@ public class PassengerController {
     private final UserMapper userMapper;
     
     @PostMapping
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody PassengerCreateRequest request) {
-        Passenger passenger = passengerService.create(request);
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody PassengerRegisterRequest request) {
+        Passenger passenger = passengerService.register(request);
         return ResponseEntity.status(201).body(userMapper.toResponse(passenger));
     }
     

@@ -1,0 +1,127 @@
+RIDE TRACKING INCONSISTENCY TEST DATA - Usage Instructions
+==========================================================
+
+This script creates test data for the ride tracking inconsistency feature (spec 2.6.2).
+It includes an active ride with multiple passengers for testing inconsistency reporting.
+
+HOW TO USE
+----------
+1. Start the Spring Boot backend application
+2. Open H2 Console at: http://localhost:8080/h2-console
+3. Connect with the settings from application-dev.properties
+4. Paste and run the entire ride_tracking_inconsistency.sql script
+5. Login to the frontend with one of the test passenger accounts
+
+TEST CREDENTIALS
+----------------
+All accounts use the password: Test1234
+
+| Email                           | Role       | Can Report? | Notes                      |
+|---------------------------------|------------|-------------|----------------------------|
+| main.passenger@test.local       | PASSENGER  | YES         | Ordering passenger         |
+| linked.passenger@test.local     | PASSENGER  | YES         | Linked passenger           |
+| another.linked@test.local       | PASSENGER  | YES         | Linked passenger           |
+| unauthorized.passenger@test.local| PASSENGER | NO          | Not part of ride           |
+| tracking.driver@test.local      | DRIVER     | NO          | Drivers cannot report      |
+
+TEST SCENARIOS CREATED
+----------------------
+| Ride ID | Status | Passengers                    | Inconsistencies |
+|---------|--------|-------------------------------|-----------------|
+| 6001    | ACTIVE | 3 (1 ordering + 2 linked)     | 2 existing      |
+
+TESTING THE INCONSISTENCY REPORT FEATURE
+----------------------------------------
+1. Login as a passenger (e.g., main.passenger@test.local / Test1234)
+2. Navigate to ride tracking page: http://localhost:4200/ride-tracking/6001
+3. Click the "Report Inconsistency" button
+4. Enter a description (minimum 10 characters)
+5. Click "Submit Report"
+
+EXPECTED RESULTS
+----------------
+SUCCESS CASES:
+- Login as main.passenger@test.local -> Report works (ordering passenger)
+- Login as linked.passenger@test.local -> Report works (linked passenger)
+- Login as another.linked@test.local -> Report works (linked passenger)
+
+FAILURE CASES:
+- Login as unauthorized.passenger@test.local -> 400 Bad Request
+  (User is not authorized to report inconsistencies for this ride)
+- Login as tracking.driver@test.local -> 403 Forbidden
+  (Endpoint requires PASSENGER role)
+
+VERIFYING INCONSISTENCY REPORTS
+-------------------------------
+Option 1: Check H2 database directly
+  SELECT * FROM ride_inconsistencies WHERE ride_id = 6001;
+
+Option 2: Use the GET API endpoint
+  GET /api/rides/6001/inconsistencies
+  
+Option 3: View in ride details
+  GET /api/rides/6001/details
+  (Includes inconsistencies in the response)
+
+API ENDPOINTS USED
+------------------
+POST /api/rides/{id}/inconsistencies - Create inconsistency report
+  - Requires PASSENGER role (JWT token)
+  - Request body: { "note": "Description of the issue..." }
+  - Response: RideInconsistencyResponse
+
+GET /api/rides/{id}/inconsistencies - Get all inconsistency reports for a ride
+  - Response: Array of RideInconsistencyResponse
+
+EXAMPLE API CALLS
+-----------------
+# Report inconsistency (requires JWT token with PASSENGER role)
+POST /api/rides/6001/inconsistencies
+Content-Type: application/json
+Authorization: Bearer <jwt_token>
+
+{
+  "note": "Driver took a detour through Futoska street instead of going directly."
+}
+
+# Response (201 Created)
+{
+  "id": 6003,
+  "rideId": 6001,
+  "passengerId": 6002,
+  "passengerName": "Main",
+  "passengerSurname": "Passenger",
+  "note": "Driver took a detour through Futoska street instead of going directly.",
+  "createdAt": "2026-01-28T14:30:00Z"
+}
+
+# Get inconsistencies for ride
+GET /api/rides/6001/inconsistencies
+
+# Response (200 OK)
+[
+  {
+    "id": 6001,
+    "rideId": 6001,
+    "passengerId": 6002,
+    "passengerName": "Main",
+    "passengerSurname": "Passenger",
+    "note": "Driver took a longer route through Liman...",
+    "createdAt": "2026-01-28T14:27:00Z"
+  },
+  ...
+]
+
+CLEANUP
+-------
+To remove test data, run the DELETE statements at the top of the SQL script,
+or simply rerun the entire script (it cleans up before inserting).
+
+NOTES
+-----
+- Password "Test1234" is SHA-256 hashed (matches system's PasswordUtil)
+- Ride 6001 is ACTIVE, simulating an ongoing ride
+- Passenger must be part of the ride to report (ordering or linked)
+- Minimum note length is 10 characters
+- Maximum note length is 1000 characters
+- Inconsistencies appear in ride history and ride details views

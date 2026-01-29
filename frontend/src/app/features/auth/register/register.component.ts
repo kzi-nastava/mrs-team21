@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, OnInit, inject } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import {
   ReactiveFormsModule,
   FormBuilder,
@@ -8,24 +8,34 @@ import {
   AbstractControl,
   ValidationErrors,
 } from '@angular/forms';
-import { NgIf, CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { PersonalInfoFormComponent } from '../../../shared/components/personal-info-form/personal-info-form.component';
+import { ProfilePhotoUploadComponent } from '../../../shared/components/profile-photo-upload/profile-photo-upload.component';
+import { RegisterService, PassengerRegisterRequest } from '../services/register.service';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, NgIf, CommonModule, PersonalInfoFormComponent],
+  imports: [
+    RouterLink,
+    ReactiveFormsModule,
+    CommonModule,
+    PersonalInfoFormComponent,
+    ProfilePhotoUploadComponent,
+  ],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss',
 })
 export class RegisterComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private registerService = inject(RegisterService);
+  private router = inject(Router);
+
   registerForm!: FormGroup;
   submitted = false;
-  showPassword: boolean = false;
-  showConfirmPassword: boolean = false;
-  avatarPreview: string | null = null;
-
-  constructor(private fb: FormBuilder) {}
+  showPassword = false;
+  showConfirmPassword = false;
+  selectedPhotoFile: File | null = null;
 
   ngOnInit(): void {
     this.registerForm = this.fb.group(
@@ -47,7 +57,7 @@ export class RegisterComponent implements OnInit {
         confirmPassword: ['', [Validators.required]],
         agreeToTerms: [false, [Validators.requiredTrue]],
       },
-      { validators: this.passwordMatchValidator }
+      { validators: this.passwordMatchValidator },
     );
   }
 
@@ -73,16 +83,11 @@ export class RegisterComponent implements OnInit {
     this.showConfirmPassword = !this.showConfirmPassword;
   }
 
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.avatarPreview = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
-    }
+  onPhotoSelected(file: File): void {
+    this.selectedPhotoFile = file;
+    console.log('Photo selected (auto-cropped to 1:1):', file.name, file.size, 'bytes');
+    // TODO: Upload to backend storage and get URL
+    // this.uploadService.uploadProfilePhoto(file).subscribe(url => ...);
   }
 
   onSubmit(): void {
@@ -92,14 +97,28 @@ export class RegisterComponent implements OnInit {
       return;
     }
 
-    // TODO: Implement registration logic in KT2
     const formValue = this.registerForm.value;
-    console.log('Registration submitted:', {
+    const payload: PassengerRegisterRequest = {
       firstName: formValue.firstName,
       lastName: formValue.lastName,
       email: formValue.email,
-      phone: formValue.countryCode + formValue.phone,
+      phoneNumber: formValue.countryCode + formValue.phone,
       address: formValue.address,
+      password: formValue.password,
+      confirmPassword: formValue.confirmPassword,
+      profilePicture: this.selectedPhotoFile ? this.selectedPhotoFile.name : undefined, // Placeholder; replace with actual URL after upload
+    };
+
+    this.registerService.register(payload).subscribe({
+      next: (response) => {
+        console.log('Registration successful:', response);
+        // TODO: Show success message
+        this.router.navigate(['/login']); // Navigate to login after successful registration
+      },
+      error: (error) => {
+        console.error('Registration failed:', error);
+        // TODO: Show error message
+      },
     });
   }
 }

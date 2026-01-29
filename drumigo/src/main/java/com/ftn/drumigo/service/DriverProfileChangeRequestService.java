@@ -1,7 +1,7 @@
 package com.ftn.drumigo.service;
 
-import com.ftn.drumigo.domain.Admin;
-import com.ftn.drumigo.domain.Driver;
+import com.ftn.drumigo.domain.users.Admin;
+import com.ftn.drumigo.domain.users.Driver;
 import com.ftn.drumigo.domain.DriverProfileChangeRequest;
 import com.ftn.drumigo.domain.enums.RequestStatus;
 import com.ftn.drumigo.dto.DriverProfileChangeRequestCreateRequest;
@@ -103,10 +103,7 @@ public class DriverProfileChangeRequestService {
                 driver.setProfilePictureUrl(profilePictureUrl);
             }
             
-            String licenseNumber = extractJsonValue(json, "licenseNumber");
-            if (licenseNumber != null) {
-                driver.setLicenseNumber(licenseNumber);
-            }
+            // licenseNumber field removed from Driver entity
             
             // Note: email changes should be handled separately with uniqueness checks
             // For KT1, we skip email updates via profile change requests

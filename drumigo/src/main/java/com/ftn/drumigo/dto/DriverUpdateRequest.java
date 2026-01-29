@@ -8,7 +8,6 @@ public record DriverUpdateRequest(
     @Email(message = "Email must be valid")
     String email,
     String address,
-    String phone,
-    String licenseNumber
+    String phone
 ) {}
 

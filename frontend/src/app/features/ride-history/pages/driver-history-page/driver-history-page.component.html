@@ -1,0 +1,92 @@
+<div class="page-container">
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">{{ config().pageTitle }}</h1>
+      <p class="page-subtitle">{{ config().pageSubtitle }}</p>
+    </div>
+
+    <div class="view-toggle">
+      <button
+        type="button"
+        class="toggle-btn"
+        [class.active]="viewMode() === 'history'"
+        (click)="setViewMode('history')"
+      >
+        History
+      </button>
+      <button
+        type="button"
+        class="toggle-btn"
+        [class.active]="viewMode() === 'upcoming'"
+        (click)="setViewMode('upcoming')"
+      >
+        Upcoming scheduled
+      </button>
+    </div>
+
+    <!-- Filters -->
+    <app-ride-history-filters
+      [startDate]="startDate()"
+      [endDate]="endDate()"
+      [resultsCount]="totalElements()"
+      [showDateFilters]="viewMode() === 'history'"
+      (filterChanged)="onFilterChanged($event)"
+      (filterCleared)="onFilterCleared()"
+    />
+
+    @if (isLoading() || isUpcomingLoading()) {
+      <div class="loading-banner">
+        {{ viewMode() === 'upcoming' ? 'Loading upcoming rides...' : 'Loading ride history...' }}
+      </div>
+    }
+
+    <!-- Rides Table -->
+    <app-ride-history-table
+      [rides]="filteredRides()"
+      [columns]="config().tableColumns"
+      [showEarnings]="config().showEarningsInTable || false"
+      [showPassengers]="viewMode() === 'history'"
+      [emptyMessage]="viewMode() === 'upcoming' ? 'No upcoming scheduled rides.' : 'No rides found.'"
+      (rideSelected)="onRideSelected($event)"
+      (sortChanged)="onSortChanged($event)"
+    />
+
+    <!-- Pagination Controls (only for history view) -->
+    @if (viewMode() === 'history' && totalPages() > 1) {
+      <div class="pagination">
+        <button
+          type="button"
+          class="pagination-btn"
+          [disabled]="currentPage() === 0 || isLoading()"
+          (click)="goToPreviousPage()"
+        >
+          <span class="pagination-icon">&#8592;</span>
+          Previous
+        </button>
+
+        <span class="pagination-info">
+          Page {{ currentPage() + 1 }} of {{ totalPages() }}
+          <span class="pagination-total">({{ totalElements() }} rides)</span>
+        </span>
+
+        <button
+          type="button"
+          class="pagination-btn"
+          [disabled]="currentPage() >= totalPages() - 1 || isLoading()"
+          (click)="goToNextPage()"
+        >
+          Next
+          <span class="pagination-icon">&#8594;</span>
+        </button>
+      </div>
+    }
+  </main>
+</div>
+
+<!-- Ride Details Side Panel -->
+<app-ride-details
+  [ride]="selectedRide()"
+  [config]="config().detailsConfig"
+  (close)="onRideDetailsClosed()"
+/>

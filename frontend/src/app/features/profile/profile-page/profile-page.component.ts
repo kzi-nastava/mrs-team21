@@ -1,25 +1,41 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal, DestroyRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ProfileMockService } from '../services/profile-mock.service';
-import { ProfileData, PersonalInfoForm, VehicleInfoForm, VehicleCategory } from '../models/profile.model';
+import { ProfileApiService } from '../services/profile-api.service';
+import {
+  ProfileData,
+  PersonalInfoForm,
+  VehicleInfoForm,
+  VehicleCategory,
+} from '../models/profile.model';
+import { ProfilePhotoUploadComponent } from '../../../shared/components/profile-photo-upload/profile-photo-upload.component';
+import { NotificationApiService } from '../services/notification-api.service';
+import { UserNotification } from '../models/notification.model';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-profile-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ProfilePhotoUploadComponent],
   templateUrl: './profile-page.component.html',
   styleUrls: ['./profile-page.component.scss'],
 })
-export class ProfilePageComponent {
-  private readonly profileService = inject(ProfileMockService);
+export class ProfilePageComponent implements OnInit {
+  private readonly profileService = inject(ProfileApiService);
   private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder);
+  private readonly notificationService = inject(NotificationApiService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  readonly profile: ProfileData = this.profileService.getProfile();
+  readonly profile = signal<ProfileData | null>(null);
+  readonly profileLoading = signal<boolean>(true);
+  readonly profileError = signal<string | null>(null);
+  readonly notifications = signal<UserNotification[]>([]);
+  readonly notificationsLoading = signal<boolean>(false);
+  readonly notificationsError = signal<string | null>(null);
 
-  // Photo upload preview
-  previewUrl: string | null = null;
+  // Photo upload
   private selectedFile: File | null = null;
 
   // Edit modal states
@@ -29,59 +45,77 @@ export class ProfilePageComponent {
   showPendingMessage = false;
   successMessage = '';
 
-  // Edit form data
-  editPersonalForm: PersonalInfoForm = {
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    address: '',
-  };
+  // Reactive forms
+  personalForm = this.fb.group({
+    firstName: [''],
+    lastName: [''],
+    email: [''],
+    phone: [''],
+    address: [''],
+  });
 
-  editVehicleForm: VehicleInfoForm = {
-    model: '',
-    category: 'Standard',
-    licensePlate: '',
-    seats: 4,
-    babySeats: false,
-    petFriendly: false,
-  };
+  vehicleForm = this.fb.group({
+    model: [''],
+    category: ['Standard'],
+    licensePlate: [''],
+    seats: [4],
+    babySeats: [false],
+    petFriendly: [false],
+  });
 
   // Vehicle category options
   vehicleCategories: VehicleCategory[] = ['Standard', 'Luxury', 'Van'];
 
-  readonly fullName = computed(() => `${this.profile.firstName} ${this.profile.lastName}`.trim());
+  readonly fullName = computed(() => {
+    const p = this.profile();
+    return p ? `${p.firstName} ${p.lastName}`.trim() : '';
+  });
 
   /**
    * Determines if the current user is a driver.
-   * 
-   * TODO: Connect to actual auth/user service
-   * Example integration:
-   * ```
-   * private readonly authService = inject(AuthService);
-   * readonly isDriver = computed(() => this.authService.currentUser()?.role === 'DRIVER');
-   * ```
-   * 
-   * The role should come from:
-   * 1. JWT token claims after login
-   * 2. User service that fetches user data
-   * 3. Auth guard that determines access
    */
-  readonly isDriver = computed(() => this.profile.role === 'DRIVER');
+  readonly isDriver = computed(() => this.profile()?.role === 'DRIVER');
+
+  ngOnInit(): void {
+    // TODO: Get userId from auth service
+    const userId = 1; // Hardcoded for now
+
+    this.profileService
+      .getProfile(userId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          this.profile.set(data);
+          this.profileLoading.set(false);
+
+          // Load notifications only for non-drivers
+          if (data.role !== 'DRIVER') {
+            this.loadNotifications();
+          }
+        },
+        error: (error) => {
+          console.error('Failed to load profile:', error);
+          this.profileError.set('Failed to load profile data');
+          this.profileLoading.set(false);
+        },
+      });
+  }
 
   /**
    * Check if there are any pending changes awaiting admin approval
    */
-  readonly hasPendingChanges = computed(() => 
-    this.profile.pendingChanges?.some(c => c.status === 'pending') || false
-  );
+  readonly hasPendingChanges = computed(() => {
+    const p = this.profile();
+    return p?.pendingChanges?.some((c) => c.status === 'pending') || false;
+  });
 
   /**
    * Calculate the percentage of daily driving limit used.
    * Maximum allowed is 8 hours in 24 hours.
    */
   getActiveHoursPercentage(): number {
-    const hoursWorked = this.profile.activeHoursLast24h?.hoursWorked || 0;
+    const p = this.profile();
+    const hoursWorked = p?.activeHoursLast24h?.hoursWorked || 0;
     const maxHours = 8;
     return Math.min((hoursWorked / maxHours) * 100, 100);
   }
@@ -90,7 +124,8 @@ export class ProfilePageComponent {
    * Get remaining hours the driver can work today.
    */
   getRemainingHours(): number {
-    const hoursWorked = this.profile.activeHoursLast24h?.hoursWorked || 0;
+    const p = this.profile();
+    const hoursWorked = p?.activeHoursLast24h?.hoursWorked || 0;
     return Math.max(8 - hoursWorked, 0);
   }
 
@@ -105,46 +140,36 @@ export class ProfilePageComponent {
   }
 
   /**
-   * Handle file selection for profile photo upload.
-   * Shows preview before confirming.
+   * Handle file selection from shared component.
+   * File is already cropped to 1:1 by the component.
    */
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.selectedFile = input.files[0];
-      
-      // Create preview URL
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.previewUrl = e.target?.result as string;
-      };
-      reader.readAsDataURL(this.selectedFile);
-    }
-  }
+  onPhotoSelected(file: File): void {
+    this.selectedFile = file;
+    console.log('Photo selected (auto-cropped to 1:1):', file.name, file.size, 'bytes');
 
-  /**
-   * Confirm and save the selected photo.
-   * TODO: Implement actual upload to backend
-   */
-  confirmPhotoUpload(): void {
-    if (this.selectedFile && this.previewUrl) {
-      // TODO: Upload to backend
-      // this.profileService.uploadAvatar(this.selectedFile).subscribe(...)
-      
-      // For now, just update the local preview
-      this.profile.avatarUrl = this.previewUrl;
-      console.log('Photo uploaded:', this.selectedFile.name);
-      
-      this.cancelPhotoUpload();
-    }
-  }
+    // For now, use FileReader to convert to base64 data URL for backend storage
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      const p = this.profile();
+      if (!p) return;
 
-  /**
-   * Cancel photo upload and clear preview.
-   */
-  cancelPhotoUpload(): void {
-    this.previewUrl = null;
-    this.selectedFile = null;
+      // Update profile with new picture
+      this.profileService
+        .updateProfile(p.id, { profilePictureUrl: dataUrl })
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (updatedProfile) => {
+            this.profile.set(updatedProfile);
+            this.showSuccess('Profile photo updated successfully');
+          },
+          error: (err) => {
+            console.error('Upload failed:', err);
+            this.showSuccess('Failed to update profile photo');
+          },
+        });
+    };
+    reader.readAsDataURL(file);
   }
 
   /**
@@ -167,14 +192,17 @@ export class ProfilePageComponent {
    * Open edit personal information modal
    */
   onEditProfile(): void {
+    const p = this.profile();
+    if (!p) return;
+
     // Pre-fill form with current data
-    this.editPersonalForm = {
-      firstName: this.profile.firstName,
-      lastName: this.profile.lastName,
-      email: this.profile.email,
-      phone: this.profile.phone,
-      address: this.profile.address,
-    };
+    this.personalForm.patchValue({
+      firstName: p.firstName,
+      lastName: p.lastName,
+      email: p.email,
+      phone: p.phone,
+      address: p.address,
+    });
     this.showEditPersonalModal = true;
   }
 
@@ -193,7 +221,7 @@ export class ProfilePageComponent {
   savePersonalInfo(): void {
     if (this.isDriver()) {
       // Driver: Submit change request for admin approval
-      this.submitDriverChangeRequest('personal', this.editPersonalForm);
+      this.submitDriverChangeRequest('personal', this.personalForm.value as PersonalInfoForm);
     } else {
       // Passenger: Save directly
       this.savePassengerPersonalInfo();
@@ -205,24 +233,40 @@ export class ProfilePageComponent {
    * Save passenger personal info directly
    */
   private savePassengerPersonalInfo(): void {
-    // Update profile data locally
-    this.profile.firstName = this.editPersonalForm.firstName;
-    this.profile.lastName = this.editPersonalForm.lastName;
-    this.profile.email = this.editPersonalForm.email;
-    this.profile.phone = this.editPersonalForm.phone;
-    this.profile.address = this.editPersonalForm.address;
+    const values = this.personalForm.value as PersonalInfoForm;
+    const p = this.profile();
+    if (!p) return;
 
-    // TODO: Call backend API
-    // this.profileService.updateProfile(this.editPersonalForm).subscribe(...)
-
-    this.showSuccess('Your profile has been updated successfully!');
-    console.log('Passenger profile updated:', this.editPersonalForm);
+    // Call backend API to update profile
+    this.profileService
+      .updateProfile(p.id, {
+        name: values.firstName,
+        surname: values.lastName,
+        email: values.email,
+        phone: values.phone,
+        address: values.address,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (updatedProfile) => {
+          this.profile.set(updatedProfile);
+          this.showSuccess('Your profile has been updated successfully!');
+          console.log('Passenger profile updated:', values);
+        },
+        error: (err) => {
+          console.error('Failed to update profile:', err);
+          this.showSuccess('Failed to update profile');
+        },
+      });
   }
 
   /**
    * Submit driver change request for admin approval
    */
-  private submitDriverChangeRequest(type: 'personal' | 'vehicle', changes: PersonalInfoForm | VehicleInfoForm): void {
+  private submitDriverChangeRequest(
+    type: 'personal' | 'vehicle',
+    changes: PersonalInfoForm | VehicleInfoForm,
+  ): void {
     // Create pending change request
     const request = {
       id: `req-${Date.now()}`,
@@ -233,15 +277,21 @@ export class ProfilePageComponent {
     };
 
     // Add to pending changes
-    if (!this.profile.pendingChanges) {
-      this.profile.pendingChanges = [];
-    }
-    this.profile.pendingChanges.push(request);
+    this.profile.update((p) => {
+      if (!p) return null;
+      const pendingChanges = p.pendingChanges || [];
+      return {
+        ...p,
+        pendingChanges: [...pendingChanges, request],
+      };
+    });
 
     // TODO: Call backend API to submit change request
     // this.profileService.submitChangeRequest(request).subscribe(...)
 
-    this.showPending(`Your ${type} information change request has been submitted for admin approval.`);
+    this.showPending(
+      `Your ${type} information change request has been submitted for admin approval.`,
+    );
     console.log('Driver change request submitted:', request);
   }
 
@@ -249,17 +299,18 @@ export class ProfilePageComponent {
    * Open edit vehicle information modal
    */
   onEditVehicle(): void {
-    if (this.profile.vehicle) {
-      // Pre-fill form with current data
-      this.editVehicleForm = {
-        model: this.profile.vehicle.model,
-        category: this.profile.vehicle.category,
-        licensePlate: this.profile.vehicle.licensePlate,
-        seats: this.profile.vehicle.seats,
-        babySeats: this.profile.vehicle.features.babySeats,
-        petFriendly: this.profile.vehicle.features.petFriendly,
-      };
-    }
+    const p = this.profile();
+    if (!p?.vehicle) return;
+
+    // Pre-fill form with current data
+    this.vehicleForm.patchValue({
+      model: p.vehicle.model,
+      category: p.vehicle.category,
+      licensePlate: p.vehicle.licensePlate,
+      seats: p.vehicle.seats,
+      babySeats: p.vehicle.features.babySeats,
+      petFriendly: p.vehicle.features.petFriendly,
+    });
     this.showEditVehicleModal = true;
   }
 
@@ -275,7 +326,7 @@ export class ProfilePageComponent {
    * Always submits as change request for admin approval (driver only)
    */
   saveVehicleInfo(): void {
-    this.submitDriverChangeRequest('vehicle', this.editVehicleForm);
+    this.submitDriverChangeRequest('vehicle', this.vehicleForm.value as VehicleInfoForm);
     this.closeEditVehicleModal();
   }
 
@@ -307,5 +358,44 @@ export class ProfilePageComponent {
   closeNotification(): void {
     this.showSuccessMessage = false;
     this.showPendingMessage = false;
+  }
+
+  openRideHistory(rideId?: number | null): void {
+    if (rideId) {
+      this.router.navigate(['/ride-history'], { queryParams: { rideId } });
+      return;
+    }
+    this.router.navigate(['/ride-history']);
+  }
+
+  formatNotificationDate(date: string): string {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(date));
+  }
+
+  private loadNotifications(): void {
+    const p = this.profile();
+    if (!p) return;
+
+    this.notificationsLoading.set(true);
+    this.notificationsError.set(null);
+    this.notificationService
+      .getUserNotifications(p.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (notifications) => {
+          this.notifications.set(notifications);
+          this.notificationsLoading.set(false);
+        },
+        error: (error) => {
+          console.error('Failed to load notifications', error);
+          this.notificationsError.set('Unable to load notifications.');
+          this.notificationsLoading.set(false);
+        },
+      });
   }
 }

@@ -1,45 +1,88 @@
-<div class="app-container">
-  <!-- Sidebar Slot - Component will be added here later -->
-  <aside class="sidebar-slot">
-    <!-- 
-      TODO: Add sidebar component here
-      Example: <app-sidebar [userRole]="profile.role"></app-sidebar>
-      
-      The sidebar should be a separate reusable component that handles navigation
-      based on user role (PASSENGER/DRIVER/ADMIN)
-    -->
-    <div class="sidebar-placeholder">
-      <div class="placeholder-logo">
-        <div class="logo-icon">
-          <img src="images/logo/logo-white-v2.svg" alt="Drumigo Logo" />
-        </div>
-        <span class="logo-text">Drumigo</span>
-      </div>
-      <p class="placeholder-text">Sidebar navigation will be added here</p>
+<div class="page-container">
+  <!-- Loading State -->
+  @if (profileLoading()) {
+    <div class="loading-state">
+      <p>Loading profile...</p>
     </div>
-  </aside>
+  }
 
-  <!-- Main Content -->
-  <main class="main-content">
-    <!-- Pending Changes Banner -->
-    <div class="pending-banner" *ngIf="isDriver() && hasPendingChanges()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
-        <polyline
-          points="12 6 12 12 16 14"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-      </svg>
-      <span>You have pending profile changes awaiting admin approval.</span>
+  <!-- Error State -->
+  @if (!profileLoading() && profileError()) {
+    <div class="error-state">
+      <p>{{ profileError() }}</p>
     </div>
+  }
+
+  <!-- Profile Content -->
+  @if (!profileLoading() && !profileError() && profile()) {
+    <!-- Pending Changes Banner -->
+    @if (isDriver() && hasPendingChanges()) {
+      <div class="pending-banner">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+          <polyline
+            points="12 6 12 12 16 14"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <span>You have pending profile changes awaiting admin approval.</span>
+      </div>
+    }
 
     <div class="page-header">
       <h1 class="page-title">My Profile</h1>
       <p class="page-subtitle">Manage your personal information and preferences</p>
     </div>
+
+    @if (!isDriver()) {
+      <div class="profile-card notifications-card">
+        <div class="card-header">
+          <h3 class="card-title">Notifications</h3>
+          <span class="card-subtitle">Recent ride updates</span>
+        </div>
+
+        @if (notificationsLoading()) {
+          <div class="notification-state">Loading notifications...</div>
+        }
+
+        @if (!notificationsLoading() && notificationsError()) {
+          <div class="notification-state error">{{ notificationsError() }}</div>
+        }
+
+        @if (!notificationsLoading() && !notificationsError()) {
+          @if (notifications().length === 0) {
+            <div class="notification-state">No notifications yet.</div>
+          }
+          @if (notifications().length > 0) {
+            <div class="notification-list">
+              @for (item of notifications(); track item.id) {
+                <div class="notification-item" [class.unread]="!item.readAt">
+                  <div class="notification-content">
+                    <div class="notification-message">{{ item.message }}</div>
+                    <div class="notification-meta">
+                      <span>{{ formatNotificationDate(item.createdAt) }}</span>
+                      <span class="badge">{{ item.type }}</span>
+                    </div>
+                  </div>
+                  @if (item.type === 'RIDE_FINISHED') {
+                    <button
+                      type="button"
+                      class="notification-action"
+                      (click)="openRideHistory(item.rideId)"
+                    >
+                      Rate ride
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+    }
 
     <!-- Combined Personal Information Card with Photo -->
     <div class="profile-card personal-card">
@@ -68,59 +111,19 @@
       </button>
 
       <div class="personal-card-layout">
-        <!-- Left: Photo Section -->
-        <div class="photo-section">
-          <div class="avatar-wrapper">
-            <div class="avatar">
-              <img
-                [src]="profile.avatarUrl || 'images/default-avatar.svg'"
-                alt="Profile photo"
-                (error)="onImageError($event)"
-              />
-            </div>
-            <input
-              type="file"
-              #fileInput
-              hidden
-              accept="image/*"
-              (change)="onFileSelected($event)"
-            />
-            <button
-              class="avatar-upload-btn"
-              type="button"
-              (click)="fileInput.click()"
-              aria-label="Upload profile photo"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path
-                  d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
-                  stroke="white"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <circle cx="12" cy="13" r="4" stroke="white" stroke-width="2" />
-              </svg>
-            </button>
-          </div>
+        <!-- Left: Photo Section - Shared Component (auto-crops to 1:1) -->
+        <div class="photo-and-info">
+          <app-profile-photo-upload
+            [currentPhotoUrl]="profile()!.avatarUrl"
+            (fileSelected)="onPhotoSelected($event)"
+          >
+          </app-profile-photo-upload>
 
-          <h2 class="user-name">{{ fullName() }}</h2>
-          <span class="user-role-badge" [class.driver]="isDriver()">
-            {{ profile.role === 'DRIVER' ? 'Driver' : 'Passenger' }}
-          </span>
-
-          <!-- Photo Preview -->
-          <div class="photo-preview" *ngIf="previewUrl">
-            <p class="preview-label">Preview</p>
-            <img [src]="previewUrl" alt="Photo preview" class="preview-image" />
-            <div class="preview-actions">
-              <button class="btn-secondary btn-sm" type="button" (click)="cancelPhotoUpload()">
-                Cancel
-              </button>
-              <button class="btn-primary btn-sm" type="button" (click)="confirmPhotoUpload()">
-                Save
-              </button>
-            </div>
+          <div class="user-info-section">
+            <h2 class="user-name">{{ fullName() }}</h2>
+            <span class="user-role-badge" [class.driver]="isDriver()">
+              {{ profile()!.role === 'DRIVER' ? 'Driver' : 'Passenger' }}
+            </span>
           </div>
         </div>
 
@@ -129,27 +132,27 @@
           <div class="info-grid">
             <div class="info-item">
               <span class="info-label">First Name</span>
-              <span class="info-value">{{ profile.firstName }}</span>
+              <span class="info-value">{{ profile()!.firstName }}</span>
             </div>
 
             <div class="info-item">
               <span class="info-label">Last Name</span>
-              <span class="info-value">{{ profile.lastName }}</span>
+              <span class="info-value">{{ profile()!.lastName }}</span>
             </div>
 
             <div class="info-item">
               <span class="info-label">Email Address</span>
-              <span class="info-value">{{ profile.email }}</span>
+              <span class="info-value">{{ profile()!.email }}</span>
             </div>
 
             <div class="info-item">
               <span class="info-label">Phone Number</span>
-              <span class="info-value">{{ profile.phone }}</span>
+              <span class="info-value">{{ profile()!.phone }}</span>
             </div>
 
             <div class="info-item full-width">
               <span class="info-label">Address</span>
-              <span class="info-value">{{ profile.address }}</span>
+              <span class="info-value">{{ profile()!.address }}</span>
             </div>
           </div>
 
@@ -179,441 +182,467 @@
     </div>
 
     <!-- Driver Active Hours Section -->
-    <div class="profile-card active-hours-card" *ngIf="isDriver()">
-      <div class="active-hours-header">
-        <div class="active-hours-title">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
-            <polyline
-              points="12 6 12 12 16 14"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          <span>Active Hours (Last 24h)</span>
-        </div>
-        <div class="active-hours-value">
-          <span class="hours-current">{{ profile.activeHoursLast24h?.hoursWorked || 0 }}</span>
-          <span class="hours-separator">/</span>
-          <span class="hours-max">8h</span>
-        </div>
-      </div>
-
-      <div class="hours-graph">
-        <div class="graph-track">
-          <div
-            class="graph-fill"
-            [style.width.%]="getActiveHoursPercentage()"
-            [class.warning]="getActiveHoursPercentage() >= 75"
-            [class.danger]="getActiveHoursPercentage() >= 100"
-          ></div>
-          <div class="graph-markers">
-            <span class="marker" *ngFor="let hour of [0, 2, 4, 6, 8]" [style.left.%]="hour * 12.5">
-              {{ hour }}h
-            </span>
+    @if (isDriver() && profile()!.activeHoursLast24h) {
+      <div class="profile-card active-hours-card">
+        <div class="active-hours-header">
+          <div class="active-hours-title">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+              <polyline
+                points="12 6 12 12 16 14"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span>Active Hours (Last 24h)</span>
+          </div>
+          <div class="active-hours-value">
+            <span class="hours-current">{{ profile()!.activeHoursLast24h?.hoursWorked || 0 }}</span>
+            <span class="hours-separator">/</span>
+            <span class="hours-max">8h</span>
           </div>
         </div>
-        <p class="hours-description">
-          <ng-container *ngIf="getActiveHoursPercentage() < 75">
-            You have {{ getRemainingHours() }} hours remaining today.
-          </ng-container>
-          <ng-container
-            *ngIf="getActiveHoursPercentage() >= 75 && getActiveHoursPercentage() < 100"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z"
-                fill="#F59E0B"
-              />
-            </svg>
-            Approaching daily limit. {{ getRemainingHours() }} hours remaining.
-          </ng-container>
-          <ng-container *ngIf="getActiveHoursPercentage() >= 100">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z"
-                fill="#EF4444"
-              />
-            </svg>
-            Daily limit reached. Please rest before continuing.
-          </ng-container>
-        </p>
+
+        <div class="hours-graph">
+          <div class="graph-track">
+            <div
+              class="graph-fill"
+              [style.width.%]="getActiveHoursPercentage()"
+              [class.warning]="getActiveHoursPercentage() >= 75"
+              [class.danger]="getActiveHoursPercentage() >= 100"
+            ></div>
+            <div class="graph-markers">
+              @for (hour of [0, 2, 4, 6, 8]; track hour) {
+                <span class="marker" [style.left.%]="hour * 12.5"> {{ hour }}h </span>
+              }
+            </div>
+          </div>
+          <p class="hours-description">
+            @if (getActiveHoursPercentage() < 75) {
+              You have {{ getRemainingHours() }} hours remaining today.
+            }
+            @if (getActiveHoursPercentage() >= 75 && getActiveHoursPercentage() < 100) {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z"
+                  fill="#F59E0B"
+                />
+              </svg>
+              Approaching daily limit. {{ getRemainingHours() }} hours remaining.
+            }
+            @if (getActiveHoursPercentage() >= 100) {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z"
+                  fill="#EF4444"
+                />
+              </svg>
+              Daily limit reached. Please rest before continuing.
+            }
+          </p>
+        </div>
       </div>
-    </div>
+    }
 
     <!-- Vehicle Information Card (Driver Only) -->
-    <div class="profile-card vehicle-card" *ngIf="isDriver() && profile.vehicle as v">
-      <button
-        class="edit-btn"
-        type="button"
-        (click)="onEditVehicle()"
-        aria-label="Edit vehicle information"
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path
-            d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-          <path
-            d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </button>
-
-      <div class="card-header">
-        <h3 class="card-title">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    @if (isDriver() && profile()!.vehicle; as v) {
+      <div class="profile-card vehicle-card">
+        <button
+          class="edit-btn"
+          type="button"
+          (click)="onEditVehicle()"
+          aria-label="Edit vehicle information"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path
-              d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2.5-5.5a2 2 0 0 0-1.8-1.1H10.3a2 2 0 0 0-1.8 1.1L6 10l-2.5 1.1C2.7 11.3 2 12.1 2 13v3c0 .6.4 1 1 1h2"
+              d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
               stroke="currentColor"
               stroke-width="2"
               stroke-linecap="round"
               stroke-linejoin="round"
             />
-            <circle cx="7" cy="17" r="2" stroke="currentColor" stroke-width="2" />
-            <circle cx="17" cy="17" r="2" stroke="currentColor" stroke-width="2" />
+            <path
+              d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
-          Vehicle Information
-        </h3>
-      </div>
+        </button>
 
-      <div class="vehicle-showcase">
-        <div class="vehicle-main">
-          <div class="vehicle-icon-large">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+        <div class="card-header">
+          <h3 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
-                d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5H6.5C5.84 5 5.29 5.42 5.08 6.01L3 12V20C3 20.55 3.45 21 4 21H5C5.55 21 6 20.55 6 20V19H18V20C18 20.55 18.45 21 19 21H20C20.55 21 21 20.55 21 20V12L18.92 6.01ZM6.5 16C5.67 16 5 15.33 5 14.5C5 13.67 5.67 13 6.5 13C7.33 13 8 13.67 8 14.5C8 15.33 7.33 16 6.5 16ZM17.5 16C16.67 16 16 15.33 16 14.5C16 13.67 16.67 13 17.5 13C18.33 13 19 13.67 19 14.5C19 15.33 18.33 16 17.5 16ZM5 11L6.5 6.5H17.5L19 11H5Z"
-                fill="currentColor"
+                d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2.5-5.5a2 2 0 0 0-1.8-1.1H10.3a2 2 0 0 0-1.8 1.1L6 10l-2.5 1.1C2.7 11.3 2 12.1 2 13v3c0 .6.4 1 1 1h2"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
               />
+              <circle cx="7" cy="17" r="2" stroke="currentColor" stroke-width="2" />
+              <circle cx="17" cy="17" r="2" stroke="currentColor" stroke-width="2" />
             </svg>
-          </div>
-          <div class="vehicle-title">
-            <h4>{{ v.model }}</h4>
-            <span class="vehicle-type-badge" [class]="getVehicleTypeClass(v.category)">
-              {{ v.category }}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div class="info-grid vehicle-grid">
-        <div class="info-item">
-          <span class="info-label">Registration Tag</span>
-          <span class="info-value license-plate">{{ v.licensePlate }}</span>
+            Vehicle Information
+          </h3>
         </div>
 
-        <div class="info-item">
-          <span class="info-label">Passengers Possible</span>
-          <span class="info-value">{{ v.seats }} seats</span>
-        </div>
-
-        <div class="info-item full-width">
-          <span class="info-label">Special Features</span>
-          <div class="features-list">
-            <span class="feature-badge" [class.active]="v.features.babySeats">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <div class="vehicle-showcase">
+          <div class="vehicle-main">
+            <div class="vehicle-icon-large">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
                 <path
-                  *ngIf="v.features.babySeats"
-                  d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z"
-                  fill="currentColor"
-                />
-                <path
-                  *ngIf="!v.features.babySeats"
-                  d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z"
+                  d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5H6.5C5.84 5 5.29 5.42 5.08 6.01L3 12V20C3 20.55 3.45 21 4 21H5C5.55 21 6 20.55 6 20V19H18V20C18 20.55 18.45 21 19 21H20C20.55 21 21 20.55 21 20V12L18.92 6.01ZM6.5 16C5.67 16 5 15.33 5 14.5C5 13.67 5.67 13 6.5 13C7.33 13 8 13.67 8 14.5C8 15.33 7.33 16 6.5 16ZM17.5 16C16.67 16 16 15.33 16 14.5C16 13.67 16.67 13 17.5 13C18.33 13 19 13.67 19 14.5C19 15.33 18.33 16 17.5 16ZM5 11L6.5 6.5H17.5L19 11H5Z"
                   fill="currentColor"
                 />
               </svg>
-              Baby Seats
-            </span>
-            <span class="feature-badge" [class.active]="v.features.petFriendly">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path
-                  *ngIf="v.features.petFriendly"
-                  d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z"
-                  fill="currentColor"
-                />
-                <path
-                  *ngIf="!v.features.petFriendly"
-                  d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z"
-                  fill="currentColor"
-                />
-              </svg>
-              Pet Friendly
-            </span>
+            </div>
+            <div class="vehicle-title">
+              <h4>{{ v.model }}</h4>
+              <span class="vehicle-type-badge" [ngClass]="getVehicleTypeClass(v.category)">
+                {{ v.category }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-grid vehicle-grid">
+          <div class="info-item">
+            <span class="info-label">Registration Tag</span>
+            <span class="info-value license-plate">{{ v.licensePlate }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Passengers Possible</span>
+            <span class="info-value">{{ v.seats }} seats</span>
+          </div>
+
+          <div class="info-item full-width">
+            <span class="info-label">Special Features</span>
+            <div class="features-list">
+              <span class="feature-badge" [class.active]="v.features.babySeats">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  @if (v.features.babySeats) {
+                    <path
+                      d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z"
+                      fill="currentColor"
+                    />
+                  }
+                  @if (!v.features.babySeats) {
+                    <path
+                      d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z"
+                      fill="currentColor"
+                    />
+                  }
+                </svg>
+                Baby Seats
+              </span>
+              <span class="feature-badge" [class.active]="v.features.petFriendly">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  @if (v.features.petFriendly) {
+                    <path
+                      d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z"
+                      fill="currentColor"
+                    />
+                  }
+                  @if (!v.features.petFriendly) {
+                    <path
+                      d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z"
+                      fill="currentColor"
+                    />
+                  }
+                </svg>
+                Pet Friendly
+              </span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </main>
-</div>
-<!-- Notification Messages -->
-<div class="notification success" *ngIf="showSuccessMessage" (click)="closeNotification()">
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path
-      d="M22 11.08V12a10 10 0 1 1-5.93-9.14"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-    <polyline
-      points="22 4 12 14.01 9 11.01"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-  </svg>
-  <span>{{ successMessage }}</span>
-  <button class="notification-close" type="button" aria-label="Close notification">×</button>
-</div>
+    }
 
-<div class="notification pending" *ngIf="showPendingMessage" (click)="closeNotification()">
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
-    <polyline
-      points="12 6 12 12 16 14"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-  </svg>
-  <span>{{ successMessage }}</span>
-  <button class="notification-close" type="button" aria-label="Close notification">×</button>
-</div>
-
-<!-- Edit Personal Information Modal -->
-<div class="modal-overlay" *ngIf="showEditPersonalModal" (click)="closeEditPersonalModal()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h2 class="modal-title">Edit Personal Information</h2>
-      <button
-        class="modal-close"
-        type="button"
-        (click)="closeEditPersonalModal()"
-        aria-label="Close modal"
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <!-- Notification Messages -->
+    @if (showSuccessMessage) {
+      <div class="notification success" (click)="closeNotification()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path
-            d="M18 6L6 18M6 6l12 12"
+            d="M22 11.08V12a10 10 0 1 1-5.93-9.14"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <polyline
+            points="22 4 12 14.01 9 11.01"
             stroke="currentColor"
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
           />
         </svg>
-      </button>
-    </div>
-
-    <div class="modal-body">
-      <div class="form-row">
-        <div class="form-group">
-          <label for="firstName">First Name</label>
-          <input
-            type="text"
-            id="firstName"
-            [(ngModel)]="editPersonalForm.firstName"
-            placeholder="Enter first name"
-          />
-        </div>
-        <div class="form-group">
-          <label for="lastName">Last Name</label>
-          <input
-            type="text"
-            id="lastName"
-            [(ngModel)]="editPersonalForm.lastName"
-            placeholder="Enter last name"
-          />
-        </div>
+        <span>{{ successMessage }}</span>
+        <button class="notification-close" type="button" aria-label="Close notification">×</button>
       </div>
+    }
 
-      <div class="form-group">
-        <label for="email">Email Address</label>
-        <input
-          type="email"
-          id="email"
-          [(ngModel)]="editPersonalForm.email"
-          placeholder="Enter email address"
-        />
-      </div>
-
-      <div class="form-group">
-        <label for="phone">Phone Number</label>
-        <input
-          type="tel"
-          id="phone"
-          [(ngModel)]="editPersonalForm.phone"
-          placeholder="Enter phone number"
-        />
-      </div>
-
-      <div class="form-group">
-        <label for="address">Address</label>
-        <input
-          type="text"
-          id="address"
-          [(ngModel)]="editPersonalForm.address"
-          placeholder="Enter address"
-        />
-      </div>
-
-      <div class="driver-notice" *ngIf="isDriver()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    @if (showPendingMessage) {
+      <div class="notification pending" (click)="closeNotification()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
-          <line
-            x1="12"
-            y1="8"
-            x2="12"
-            y2="12"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-          <line
-            x1="12"
-            y1="16"
-            x2="12.01"
-            y2="16"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-        </svg>
-        <p>As a driver, your changes will be sent to an admin for approval before taking effect.</p>
-      </div>
-    </div>
-
-    <div class="modal-footer">
-      <button class="btn-secondary" type="button" (click)="closeEditPersonalModal()">Cancel</button>
-      <button class="btn-primary" type="button" (click)="savePersonalInfo()">
-        {{ isDriver() ? 'Submit for Approval' : 'Save Changes' }}
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- Edit Vehicle Information Modal -->
-<div class="modal-overlay" *ngIf="showEditVehicleModal" (click)="closeEditVehicleModal()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h2 class="modal-title">Edit Vehicle Information</h2>
-      <button
-        class="modal-close"
-        type="button"
-        (click)="closeEditVehicleModal()"
-        aria-label="Close modal"
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path
-            d="M18 6L6 18M6 6l12 12"
+          <polyline
+            points="12 6 12 12 16 14"
             stroke="currentColor"
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
           />
         </svg>
-      </button>
-    </div>
+        <span>{{ successMessage }}</span>
+        <button class="notification-close" type="button" aria-label="Close notification">×</button>
+      </div>
+    }
 
-    <div class="modal-body">
-      <div class="form-row">
-        <div class="form-group">
-          <label for="vehicleModel">Vehicle Model</label>
-          <input
-            type="text"
-            id="vehicleModel"
-            [(ngModel)]="editVehicleForm.model"
-            placeholder="e.g., Toyota Camry 2022"
-          />
-        </div>
-        <div class="form-group">
-          <label for="vehicleCategory">Category</label>
-          <select id="vehicleCategory" [(ngModel)]="editVehicleForm.category">
-            <option *ngFor="let cat of vehicleCategories" [value]="cat">{{ cat }}</option>
-          </select>
+    <!-- Edit Personal Information Modal -->
+    @if (showEditPersonalModal) {
+      <div class="modal-overlay" (click)="closeEditPersonalModal()">
+        <div class="modal-container" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2 class="modal-title">Edit Personal Information</h2>
+            <button
+              class="modal-close"
+              type="button"
+              (click)="closeEditPersonalModal()"
+              aria-label="Close modal"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M18 6L6 18M6 6l12 12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <form class="modal-body" [formGroup]="personalForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="firstName">First Name</label>
+                <input
+                  type="text"
+                  id="firstName"
+                  formControlName="firstName"
+                  placeholder="Enter first name"
+                />
+              </div>
+              <div class="form-group">
+                <label for="lastName">Last Name</label>
+                <input
+                  type="text"
+                  id="lastName"
+                  formControlName="lastName"
+                  placeholder="Enter last name"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email Address</label>
+              <input
+                type="email"
+                id="email"
+                formControlName="email"
+                placeholder="Enter email address"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Phone Number</label>
+              <input
+                type="tel"
+                id="phone"
+                formControlName="phone"
+                placeholder="Enter phone number"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="address">Address</label>
+              <input
+                type="text"
+                id="address"
+                formControlName="address"
+                placeholder="Enter address"
+              />
+            </div>
+
+            @if (isDriver()) {
+              <div class="driver-notice">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                  <line
+                    x1="12"
+                    y1="8"
+                    x2="12"
+                    y2="12"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <line
+                    x1="12"
+                    y1="16"
+                    x2="12.01"
+                    y2="16"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                <p>
+                  As a driver, your changes will be sent to an admin for approval before taking
+                  effect.
+                </p>
+              </div>
+            }
+          </form>
+
+          <div class="modal-footer">
+            <button class="btn-secondary" type="button" (click)="closeEditPersonalModal()">
+              Cancel
+            </button>
+            <button class="btn-primary" type="button" (click)="savePersonalInfo()">
+              {{ isDriver() ? 'Submit for Approval' : 'Save Changes' }}
+            </button>
+          </div>
         </div>
       </div>
+    }
 
-      <div class="form-row">
-        <div class="form-group">
-          <label for="licensePlate">Registration Tag</label>
-          <input
-            type="text"
-            id="licensePlate"
-            [(ngModel)]="editVehicleForm.licensePlate"
-            placeholder="e.g., NS-123-AB"
-          />
-        </div>
-        <div class="form-group">
-          <label for="seats">Passengers Possible</label>
-          <input
-            type="number"
-            id="seats"
-            [(ngModel)]="editVehicleForm.seats"
-            min="1"
-            max="8"
-            placeholder="Number of seats"
-          />
+    <!-- Edit Vehicle Information Modal -->
+    @if (showEditVehicleModal) {
+      <div class="modal-overlay" (click)="closeEditVehicleModal()">
+        <div class="modal-container" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2 class="modal-title">Edit Vehicle Information</h2>
+            <button
+              class="modal-close"
+              type="button"
+              (click)="closeEditVehicleModal()"
+              aria-label="Close modal"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M18 6L6 18M6 6l12 12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <form class="modal-body" [formGroup]="vehicleForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="vehicleModel">Vehicle Model</label>
+                <input
+                  type="text"
+                  id="vehicleModel"
+                  formControlName="model"
+                  placeholder="e.g., Toyota Camry 2022"
+                />
+              </div>
+              <div class="form-group">
+                <label for="vehicleCategory">Category</label>
+                <select id="vehicleCategory" formControlName="category">
+                  @for (cat of vehicleCategories; track cat) {
+                    <option [value]="cat">{{ cat }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="licensePlate">Registration Tag</label>
+                <input
+                  type="text"
+                  id="licensePlate"
+                  formControlName="licensePlate"
+                  placeholder="e.g., NS-123-AB"
+                />
+              </div>
+              <div class="form-group">
+                <label for="seats">Passengers Possible</label>
+                <input
+                  type="number"
+                  id="seats"
+                  formControlName="seats"
+                  min="1"
+                  max="8"
+                  placeholder="Number of seats"
+                />
+              </div>
+            </div>
+
+            <div class="form-group features-group">
+              <label>Special Features</label>
+              <div class="checkbox-row">
+                <label class="checkbox-label">
+                  <input type="checkbox" formControlName="babySeats" />
+                  <span class="checkbox-custom"></span>
+                  Baby Seats Available
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" formControlName="petFriendly" />
+                  <span class="checkbox-custom"></span>
+                  Pet Friendly
+                </label>
+              </div>
+            </div>
+
+            <div class="driver-notice">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                <line
+                  x1="12"
+                  y1="8"
+                  x2="12"
+                  y2="12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <line
+                  x1="12"
+                  y1="16"
+                  x2="12.01"
+                  y2="16"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <p>Vehicle changes require admin approval before taking effect.</p>
+            </div>
+          </form>
+
+          <div class="modal-footer">
+            <button class="btn-secondary" type="button" (click)="closeEditVehicleModal()">
+              Cancel
+            </button>
+            <button class="btn-primary" type="button" (click)="saveVehicleInfo()">
+              Submit for Approval
+            </button>
+          </div>
         </div>
       </div>
-
-      <div class="form-group features-group">
-        <label>Special Features</label>
-        <div class="checkbox-row">
-          <label class="checkbox-label">
-            <input type="checkbox" [(ngModel)]="editVehicleForm.babySeats" />
-            <span class="checkbox-custom"></span>
-            Baby Seats Available
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" [(ngModel)]="editVehicleForm.petFriendly" />
-            <span class="checkbox-custom"></span>
-            Pet Friendly
-          </label>
-        </div>
-      </div>
-
-      <div class="driver-notice">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
-          <line
-            x1="12"
-            y1="8"
-            x2="12"
-            y2="12"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-          <line
-            x1="12"
-            y1="16"
-            x2="12.01"
-            y2="16"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-        </svg>
-        <p>Vehicle changes require admin approval before taking effect.</p>
-      </div>
-    </div>
-
-    <div class="modal-footer">
-      <button class="btn-secondary" type="button" (click)="closeEditVehicleModal()">Cancel</button>
-      <button class="btn-primary" type="button" (click)="saveVehicleInfo()">
-        Submit for Approval
-      </button>
-    </div>
-  </div>
+    }
+  }
 </div>

@@ -1,7 +1,7 @@
 package com.ftn.drumigo.repository;
 
 import com.ftn.drumigo.domain.Notification;
-import com.ftn.drumigo.domain.User;
+import com.ftn.drumigo.domain.users.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -1,15 +1,24 @@
 package com.ftn.drumigo.service;
 
 import com.ftn.drumigo.domain.*;
+import com.ftn.drumigo.domain.enums.CancelReasonType;
 import com.ftn.drumigo.domain.enums.NotificationType;
 import com.ftn.drumigo.domain.enums.RideStatus;
+import com.ftn.drumigo.domain.users.Driver;
+import com.ftn.drumigo.domain.users.Passenger;
+import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.dto.RideCreateRequest;
-import com.ftn.drumigo.dto.RideInconsistencyCreateRequest;
-import com.ftn.drumigo.dto.RideStopRequest;
+import com.ftn.drumigo.dto.ride.request.RideStopRequest;
+import com.ftn.drumigo.dto.ride.request.RideCancelByDriverRequest;
+import com.ftn.drumigo.event.RideFinishedEvent;
 import com.ftn.drumigo.exception.BadRequestException;
 import com.ftn.drumigo.exception.ResourceNotFoundException;
 import com.ftn.drumigo.repository.*;
+import com.ftn.drumigo.dto.map.LocationDTO;
+import com.ftn.drumigo.dto.ride.request.EstimateRequest;
+import com.ftn.drumigo.dto.ride.response.EstimateResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -42,7 +51,9 @@ public class RideService {
     private final UserRepository userRepository;
     private final PanicEventRepository panicEventRepository;
     private final ReviewRepository reviewRepository;
-    
+    private final ApplicationEventPublisher eventPublisher;
+    private final MapService mapService;
+
     public List<Ride> getActiveRides() {
         return rideRepository.findByStatus(RideStatus.ACTIVE);
     }
@@ -56,15 +67,41 @@ public class RideService {
         return rideWaypointRepository.findByRideOrderByWaypointOrderAsc(ride);
     }
     
-    public RideInconsistency createInconsistency(Long rideId, RideInconsistencyCreateRequest request) {
+    /**
+     * Create a ride inconsistency report.
+     * Security: Only passengers who are part of the ride can report inconsistencies.
+     * 
+     * @param rideId the ride ID
+     * @param email the email of the authenticated passenger
+     * @param note the inconsistency description
+     * @return the created RideInconsistency
+     * @throws ResourceNotFoundException if ride or passenger not found
+     * @throws BadRequestException if passenger is not part of the ride
+     */
+    public RideInconsistency createInconsistency(Long rideId, String email, String note) {
         Ride ride = getById(rideId);
-        Passenger passenger = passengerRepository.findById(request.passengerId())
-            .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with id: " + request.passengerId()));
+        
+        // Find passenger by email
+        Passenger passenger = passengerRepository.findByEmail(email)
+            .filter(p -> p instanceof Passenger)
+            .map(p -> (Passenger) p)
+            .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with email: " + email));
+        
+        // Validate passenger is part of the ride (ordering passenger or linked passenger)
+        boolean isOrderingPassenger = ride.getOrderingPassenger() != null 
+            && ride.getOrderingPassenger().getId().equals(passenger.getId());
+        
+        boolean isLinkedPassenger = ridePassengerRepository.findByRide(ride).stream()
+            .anyMatch(rp -> rp.getPassenger().getId().equals(passenger.getId()));
+        
+        if (!isOrderingPassenger && !isLinkedPassenger) {
+            throw new BadRequestException("You are not authorized to report inconsistencies for this ride");
+        }
         
         RideInconsistency inconsistency = new RideInconsistency();
         inconsistency.setRide(ride);
         inconsistency.setPassenger(passenger);
-        inconsistency.setNote(request.note());
+        inconsistency.setNote(note);
         
         return rideInconsistencyRepository.save(inconsistency);
     }
@@ -87,34 +124,28 @@ public class RideService {
         
         ride.setStatus(RideStatus.FINISHED);
         ride.setEndTime(Instant.now());
-        
-        if (ride.getVehicle() != null) {
-            Vehicle vehicle = ride.getVehicle();
-            vehicle.setAvailable(true);
-            vehicleRepository.save(vehicle);
-        }
+        ride.setPaidAt(Instant.now());
         
         ride = rideRepository.save(ride);
-        
-        // Create notifications for ordering passenger and linked passengers
-        createFinishNotifications(ride);
+        eventPublisher.publishEvent(new RideFinishedEvent(ride.getId()));
         
         return ride;
     }
-    
-    private void createFinishNotifications(Ride ride) {
-        // Get all passengers for this ride
-        List<RidePassenger> ridePassengers = ridePassengerRepository.findByRide(ride);
-        
-        // Create notification for each linked passenger
-        for (RidePassenger rp : ridePassengers) {
-            Notification notification = new Notification();
-            notification.setUser(rp.getPassenger());
-            notification.setRide(ride);
-            notification.setType(NotificationType.RIDE_FINISHED);
-            notification.setMessage("Your ride has finished");
-            notificationRepository.save(notification);
+
+    /**
+     * End a ride as the authenticated driver.
+     * Security: only the driver assigned to the ride can end it.
+     */
+    public Ride endRideByDriverEmail(Long rideId, String driverEmail) {
+        Driver driver = driverRepository.findByEmail(driverEmail)
+            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with email: " + driverEmail));
+
+        Ride ride = getById(rideId);
+        if (ride.getDriver() == null || !ride.getDriver().getId().equals(driver.getId())) {
+            throw new BadRequestException("Driver is not assigned to this ride");
         }
+
+        return endRide(rideId);
     }
     
     public Page<Ride> getDriverRideHistory(Long driverId, Instant from, Instant to, Pageable pageable) {
@@ -129,6 +160,22 @@ public class RideService {
         }
         
         return rideRepository.findByDriverAndRequestedAtBetween(driver, from, to, pageable);
+    }
+
+    public Page<Ride> getUpcomingDriverRides(Long driverId, Instant from, Pageable pageable) {
+        Driver driver = driverRepository.findById(driverId)
+            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + driverId));
+
+        if (from == null) {
+            from = Instant.now();
+        }
+
+        return rideRepository.findByDriverAndStatusAndScheduledForAfter(
+            driver,
+            RideStatus.ACCEPTED,
+            from,
+            pageable
+        );
     }
     
     public Ride create(Long orderingPassengerId, RideCreateRequest request) {
@@ -223,8 +270,6 @@ public class RideService {
                 .orElse(null);
             if (vehicle != null) {
                 ride.setVehicle(vehicle);
-                vehicle.setAvailable(false);
-                vehicleRepository.save(vehicle);
             }
             ride.setStatus(RideStatus.ACCEPTED);
             
@@ -354,16 +399,14 @@ public class RideService {
             // Check if driver has a vehicle of the requested type
             Vehicle vehicle = vehicleRepository.findByDriver(driver).orElse(null);
             if (vehicle != null && vehicle.getVehicleType().getId().equals(vehicleType.getId())) {
-                // Check vehicle availability and requirements
-                if (vehicle.getAvailable()) {
-                    if (ride.getBabyTransport() && !vehicle.getBabyFriendly()) {
-                        continue;
-                    }
-                    if (ride.getPetTransport() && !vehicle.getPetFriendly()) {
-                        continue;
-                    }
-                    return driver;
+                // Check vehicle requirements
+                if (ride.getBabyTransport() && !vehicle.getBabyFriendly()) {
+                    continue;
                 }
+                if (ride.getPetTransport() && !vehicle.getPetFriendly()) {
+                    continue;
+                }
+                return driver;
             }
         }
         
@@ -471,12 +514,17 @@ public class RideService {
         }
     }
     
-    public Ride cancelByDriver(Long rideId, Long driverId, String reason) {
+    public void cancelByDriver(Long rideId, String email, RideCancelByDriverRequest request) {
         Ride ride = getById(rideId);
-        Driver driver = driverRepository.findById(driverId)
-            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + driverId));
-        
-        if (ride.getDriver() == null || !ride.getDriver().getId().equals(driverId)) {
+        Object driverObj = driverRepository.findByEmail(email)
+            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with email: " + email));
+        if (!(driverObj instanceof Driver)) {
+            throw new ResourceNotFoundException("Driver not found with email: " + email);
+        }
+        Driver driver = (Driver) driverObj;
+
+        // Cannot cancel if driver is not assigned to this ride
+        if (ride.getDriver() == null || !ride.getDriver().getEmail().equals(email)) {
             throw new BadRequestException("Driver is not assigned to this ride");
         }
         
@@ -484,93 +532,71 @@ public class RideService {
             throw new BadRequestException("Ride cannot be cancelled. Current status: " + ride.getStatus());
         }
         
-        ride.setStatus(RideStatus.CANCELLED);
-        ride.setCancelReason(reason);
-        ride.setCanceledByUser(driver);
-        
-        if (ride.getVehicle() != null) {
-            Vehicle vehicle = ride.getVehicle();
-            vehicle.setAvailable(true);
-            vehicleRepository.save(vehicle);
-        }
-        
-        ride = rideRepository.save(ride);
-        
-        // Create cancellation notifications
-        createCancellationNotifications(ride);
-        
-        return ride;
+        cancelRide(ride, request.cancelReasonType(), request.reason(), driver);
     }
     
-    public Ride withdrawByPassenger(Long rideId, Long passengerId) {
+    public void cancelByPassenger(Long rideId, String email) {
         Ride ride = getById(rideId);
-        Passenger passenger = passengerRepository.findById(passengerId)
-            .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with id: " + passengerId));
-        
+        Object passengerObject = passengerRepository.findByEmail(email)
+            .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with email: " + email));
+        if (!(passengerObject instanceof Passenger)) {
+            throw new BadRequestException("User with email " + email + " is not a passenger");
+        }
+        Passenger passenger = (Passenger) passengerObject;
         // Check if passenger is the ordering passenger
-        if (ride.getOrderingPassenger() == null || !ride.getOrderingPassenger().getId().equals(passengerId)) {
-            throw new BadRequestException("Only the ordering passenger can withdraw a ride");
+        if (ride.getOrderingPassenger() == null || !ride.getOrderingPassenger().getEmail().equals(email)) {
+            throw new BadRequestException("Only the ordering passenger can cancel a ride");
         }
-        
-        // Cannot withdraw if ride is already ACTIVE or FINISHED
+
+        // Cannot cancel if ride is already ACTIVE or FINISHED
         if (ride.getStatus() == RideStatus.ACTIVE || ride.getStatus() == RideStatus.FINISHED) {
-            throw new BadRequestException("Cannot withdraw a ride that is already " + ride.getStatus());
+            throw new BadRequestException("Cannot cancel a ride that is already " + ride.getStatus());
         }
-        
+
         if (ride.getStatus() != RideStatus.PENDING && ride.getStatus() != RideStatus.ACCEPTED) {
-            throw new BadRequestException("Ride cannot be withdrawn. Current status: " + ride.getStatus());
+            throw new BadRequestException("Ride cannot be canceled. Current status: " + ride.getStatus());
         }
-        
-        // Enforce "≥10 minutes before scheduled start" (spec 2.5)
-        Instant now = Instant.now();
+
+        // Cannot cancel if ride is in less than 10 minutes
         if (ride.getScheduledFor() != null) {
-            // For scheduled rides, check 10 minutes before scheduled time
+            Instant now = Instant.now();
             Instant tenMinutesBefore = ride.getScheduledFor().minusSeconds(10 * 60);
             if (now.isAfter(tenMinutesBefore)) {
-                throw new BadRequestException("Cannot withdraw ride less than 10 minutes before scheduled start");
+                throw new BadRequestException("Cannot cancel ride less than 10 minutes before scheduled start");
             }
-        } else {
-            // For immediate rides, check if ride was requested more than 10 minutes ago
-            // If it was requested less than 10 minutes ago, allow withdrawal
-            // If it was requested more than 10 minutes ago and is still PENDING/ACCEPTED, 
-            // we allow withdrawal (no strict 10-minute rule for immediate rides)
-            // But if it's ACTIVE, we already rejected above
         }
-        
+
+        cancelRide(ride, CancelReasonType.OTHER, "Canceled by passenger", passenger);
+    }
+
+    private void cancelRide(Ride ride, CancelReasonType reasonType, String reason, User canceledBy) {
         ride.setStatus(RideStatus.CANCELLED);
-        ride.setCancelReason("Withdrawn by passenger");
-        ride.setCanceledByUser(passenger);
-        
+        ride.setCancelReasonType(reasonType);
+        ride.setCancelReason(reason);
+        ride.setCanceledByUser(canceledBy);
+
         if (ride.getVehicle() != null) {
             Vehicle vehicle = ride.getVehicle();
-            vehicle.setAvailable(true);
-            vehicleRepository.save(vehicle);
         }
-        
-        ride = rideRepository.save(ride);
-        
-        // Create cancellation notifications
-        createCancellationNotifications(ride);
-        
-        return ride;
+        // TODO: create cancellation notifications
     }
     
-    public Ride stopRide(Long rideId, Long driverId, RideStopRequest request) {
+    public Ride stopRide(Long rideId, String email, RideStopRequest request) {
         Ride ride = getById(rideId);
-        
-        if (ride.getDriver() == null || !ride.getDriver().getId().equals(driverId)) {
+
+        if (ride.getDriver() == null || !ride.getDriver().getEmail().equals(email)) {
             throw new BadRequestException("Driver is not assigned to this ride");
         }
-        
+
         if (ride.getStatus() != RideStatus.ACTIVE) {
             throw new BadRequestException("Ride must be ACTIVE to be stopped. Current status: " + ride.getStatus());
         }
-        
+
         // Create or find stop location
         Location stopLocation = locationRepository.findByAddressAndLatAndLng(
                 request.stopAddress(), request.stopLat(), request.stopLng())
                 .orElse(null);
-        
+
         if (stopLocation == null) {
             stopLocation = new Location();
             stopLocation.setAddress(request.stopAddress());
@@ -578,27 +604,41 @@ public class RideService {
             stopLocation.setLng(request.stopLng());
             stopLocation = locationRepository.save(stopLocation);
         }
-        
-        // Basic validation: check if stop location is reasonable (not too far from route)
-        // For KT1, we'll do a simple check: stop should be within reasonable distance from any waypoint
+
         List<RideWaypoint> currentWaypoints = getRideWaypoints(ride);
-        boolean isReasonable = false;
-        if (!currentWaypoints.isEmpty()) {
-            for (RideWaypoint wp : currentWaypoints) {
-                BigDecimal distance = calculateDistanceBetweenLocations(wp.getLocation(), stopLocation);
-                // Allow stops within 50km of any waypoint (reasonable for ride-hailing)
-                if (distance.compareTo(new BigDecimal("50")) <= 0) {
-                    isReasonable = true;
-                    break;
-                }
+
+        // Find the original destination (highest order)
+        RideWaypoint originalDestination = currentWaypoints.stream()
+            .max((wp1, wp2) -> Integer.compare(wp1.getWaypointOrder(), wp2.getWaypointOrder()))
+            .orElse(null);
+
+        if (originalDestination != null) {
+            // Calculate distance from stop to original destination using MapService
+            EstimateRequest estimateRequest = new EstimateRequest(
+                new LocationDTO(stopLocation.getLat().doubleValue(), stopLocation.getLng().doubleValue(), stopLocation.getAddress()),
+                new LocationDTO(originalDestination.getLocation().getLat().doubleValue(), originalDestination.getLocation().getLng().doubleValue(), originalDestination.getLocation().getAddress()),
+                List.of(),
+                null
+            );
+            try {
+                EstimateResponse estimate = mapService.estimateRide(estimateRequest);
+                BigDecimal remainingDistance = BigDecimal.valueOf(estimate.distanceInKm());
+                BigDecimal remainingCost = remainingDistance.multiply(ride.getPricingPricePerKm());
+
+                // Subtract remaining cost from original total cost
+                BigDecimal newCost = ride.getTotalCost().subtract(remainingCost);
+                ride.setTotalCost(newCost.max(BigDecimal.ZERO)); // Ensure non-negative
+
+                // Update total distance (subtract remaining distance)
+                BigDecimal newDistance = ride.getTotalDistanceKm().subtract(remainingDistance);
+                ride.setTotalDistanceKm(newDistance.max(BigDecimal.ZERO));
+            } catch (Exception ex) {
+                // If Mapbox (via MapService) is unavailable or fails, skip recalculation
+                // and keep existing totalCost and totalDistanceKm to allow ride to be stopped.
             }
         }
-        if (!isReasonable && !currentWaypoints.isEmpty()) {
-            throw new BadRequestException("Stop location is too far from the ride route");
-        }
-        
-        // Remove all waypoints after the start (we'll keep start and add stop as destination)
-        // Remove waypoints with order > 0 (keep start at order 0, remove all destinations)
+
+        // Remove all waypoints after the start (keep start, remove destinations)
         for (RideWaypoint wp : currentWaypoints) {
             if (wp.getWaypointOrder() > 0) {
                 rideWaypointRepository.delete(wp);
@@ -608,42 +648,15 @@ public class RideService {
         // Update ride
         ride.setStoppedAt(Instant.now());
         ride.setStopLocation(stopLocation);
+        ride.setEndTime(Instant.now());
+        ride.setPaidAt(Instant.now());
+        ride.setStatus(RideStatus.FINISHED);
+
+        // Vehicle availability removed - no longer tracking
         
-        // Recompute distance and price from start to stop location
-        if (!currentWaypoints.isEmpty()) {
-            Location startLocation = currentWaypoints.get(0).getLocation();
-            BigDecimal newDistance = calculateDistanceBetweenLocations(startLocation, stopLocation);
-            
-            // Update total distance (partial)
-            ride.setTotalDistanceKm(newDistance);
-            
-            // Recompute price
-            BigDecimal newCost = ride.getPricingStartPrice()
-                .add(newDistance.multiply(ride.getPricingPricePerKm()));
-            ride.setTotalCost(newCost);
-        }
-        
-        // Add stop as new destination waypoint (order 1, since start is order 0)
-        RideWaypoint stopWaypoint = new RideWaypoint();
-        stopWaypoint.setRide(ride);
-        stopWaypoint.setLocation(stopLocation);
-        stopWaypoint.setWaypointOrder(1);
-        rideWaypointRepository.save(stopWaypoint);
-        
-        // Ride remains ACTIVE after stopping (spec 2.6.5 doesn't specify status change)
         ride = rideRepository.save(ride);
-        
+        eventPublisher.publishEvent(new RideFinishedEvent(ride.getId()));
         return ride;
-    }
-    
-    private BigDecimal calculateDistanceBetweenLocations(Location loc1, Location loc2) {
-        double lat1 = loc1.getLat().doubleValue();
-        double lon1 = loc1.getLng().doubleValue();
-        double lat2 = loc2.getLat().doubleValue();
-        double lon2 = loc2.getLng().doubleValue();
-        
-        double distance = haversineDistance(lat1, lon1, lat2, lon2);
-        return BigDecimal.valueOf(distance).setScale(2, java.math.RoundingMode.HALF_UP);
     }
     
     private void createCancellationNotifications(Ride ride) {

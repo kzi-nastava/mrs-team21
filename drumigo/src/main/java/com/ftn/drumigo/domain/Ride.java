@@ -1,6 +1,10 @@
 package com.ftn.drumigo.domain;
 
+import com.ftn.drumigo.domain.enums.CancelReasonType;
 import com.ftn.drumigo.domain.enums.RideStatus;
+import com.ftn.drumigo.domain.users.Driver;
+import com.ftn.drumigo.domain.users.Passenger;
+import com.ftn.drumigo.domain.users.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -37,6 +41,9 @@ public class Ride {
     
     @Column(name = "end_time")
     private Instant endTime;
+
+    @Column(name = "paid_at")
+    private Instant paidAt;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "driver_id")
@@ -76,7 +83,11 @@ public class Ride {
     
     @Column(name = "pet_transport", nullable = false)
     private Boolean petTransport = false;
-    
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "cancel_reason_type")
+    private CancelReasonType cancelReasonType;
+
     @Column(name = "cancel_reason", length = 500)
     private String cancelReason;
     
