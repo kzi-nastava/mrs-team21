@@ -34,11 +34,12 @@ export class LayoutComponent implements OnInit {
     if (token) {
       try {
         const payload = this.decodeJwtPayload(token);
-        const userId = payload.userId || payload.sub;
+        const userIdRaw = payload.userId || payload.sub;
+        const userId = typeof userIdRaw === 'string' ? parseInt(userIdRaw, 10) : userIdRaw;
         const role = payload.role;
 
         // Fetch full profile including avatar
-        if (userId) {
+        if (userId && !isNaN(userId)) {
           this.profileService.getProfile(userId).subscribe({
             next: (profile) => {
               this.user = {
@@ -65,16 +66,33 @@ export class LayoutComponent implements OnInit {
         console.error('Error decoding token:', error);
       }
     }
-  }
+    
+    // Fallback: use email and role from AuthService if token parsing fails
     const email = this.authService.getEmail();
     const role = this.authService.getRole();
-    if (email && role) {
+    if (email && role && this.user.name === 'User') {
       this.user = {
         name: email,
         initials: this.getInitials(email),
-        role: role === 'PASSENGER' ? 'Passenger' : 'Driver',
-        type: role === 'PASSENGER' ? 'passenger' : 'driver',
+        role: role === 'PASSENGER' ? 'Passenger' : role === 'DRIVER' ? 'Driver' : 'Admin',
+        type: role === 'PASSENGER' ? 'passenger' : role === 'DRIVER' ? 'driver' : 'admin',
       };
+    }
+  }
+
+  private decodeJwtPayload(token: string): { userId?: number; sub?: string; role?: string } {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      return JSON.parse(jsonPayload);
+    } catch {
+      return {};
     }
   }
 

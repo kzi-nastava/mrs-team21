@@ -39,37 +39,37 @@ VALUES ('STANDARD', 200.00, 50.00);
 -- Driver user (password: Test1234)
 MERGE INTO users (
     id, name, surname, email, password_hash, address, phone,
-    profile_picture_url, blocked, role, active, created_at, updated_at, dtype
+    profile_picture_url, blocked, role, created_at, updated_at, dtype
 ) KEY (id) VALUES (
     8001, 'Rating', 'TestDriver', 'rating.driver@test.local', '07480fb9e85b9396af06f006cf1c95024af2531c65fb505cfbd0add1e2f31573',
-    'Test Driver Address', '+381 64 111 0001', NULL, FALSE, 'DRIVER', TRUE,
+    'Test Driver Address', '+381 64 111 0001', NULL, FALSE, 'DRIVER',
     CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'Driver'
 );
 
 -- Passenger 1 (main test passenger, password: Test1234)
 MERGE INTO users (
     id, name, surname, email, password_hash, address, phone,
-    profile_picture_url, blocked, role, active, created_at, updated_at, dtype
+    profile_picture_url, blocked, role, created_at, updated_at, dtype
 ) KEY (id) VALUES (
     8002, 'Rating', 'TestPassenger', 'rating.passenger@test.local', '07480fb9e85b9396af06f006cf1c95024af2531c65fb505cfbd0add1e2f31573',
-    'Test Passenger Address', '+381 64 222 0002', NULL, FALSE, 'PASSENGER', TRUE,
+    'Test Passenger Address', '+381 64 222 0002', NULL, FALSE, 'PASSENGER',
     CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'Passenger'
 );
 
 -- Passenger 2 (linked passenger for some rides, password: Test1234)
 MERGE INTO users (
     id, name, surname, email, password_hash, address, phone,
-    profile_picture_url, blocked, role, active, created_at, updated_at, dtype
+    profile_picture_url, blocked, role, created_at, updated_at, dtype
 ) KEY (id) VALUES (
     8003, 'Linked', 'Passenger', 'linked.passenger@test.local', '07480fb9e85b9396af06f006cf1c95024af2531c65fb505cfbd0add1e2f31573',
-    'Linked Passenger Address', '+381 64 333 0003', NULL, FALSE, 'PASSENGER', TRUE,
+    'Linked Passenger Address', '+381 64 333 0003', NULL, FALSE, 'PASSENGER',
     CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'Passenger'
 );
 
 -- Driver subclass
-MERGE INTO drivers (user_id, license_number, active_driver, last_state_change_at)
+MERGE INTO drivers (user_id, active_driver, last_state_change_at)
 KEY (user_id)
-VALUES (8001, 'LIC-RATING-8001', TRUE, CURRENT_TIMESTAMP());
+VALUES (8001, TRUE, CURRENT_TIMESTAMP());
 
 -- Passenger subclasses
 MERGE INTO passengers (user_id) KEY (user_id) VALUES (8002);
@@ -79,12 +79,12 @@ MERGE INTO passengers (user_id) KEY (user_id) VALUES (8003);
 -- VEHICLE
 -- ============================================
 MERGE INTO vehicles (
-    id, driver_id, vehicle_type_id, model, license_plate, num_seats,
-    baby_friendly, pet_friendly, current_lat, current_lng, available
+    id, driver_id, vehicle_type_id, license_plate, num_seats,
+    baby_friendly, pet_friendly, current_lat, current_lng
 ) KEY (id) VALUES (
     8001, 8001, (SELECT id FROM vehicle_types WHERE name = 'STANDARD'),
-    'Rating Test Vehicle', 'RT-8001', 4,
-    FALSE, FALSE, 45.2600, 19.8300, TRUE
+    'RT-8001', 4,
+    FALSE, FALSE, 45.2600, 19.8300
 );
 
 -- ============================================
