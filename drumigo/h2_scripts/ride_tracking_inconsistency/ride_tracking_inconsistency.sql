@@ -9,18 +9,7 @@
 -- ============================================
 -- CLEANUP: Remove previous test data
 -- ============================================
-DELETE FROM notifications WHERE ride_id = 6001 OR user_id IN (6001, 6002, 6003, 6004, 6005);
-DELETE FROM reviews WHERE ride_id = 6001;
-DELETE FROM ride_inconsistencies WHERE ride_id = 6001;
-DELETE FROM panic_events WHERE ride_id = 6001;
-DELETE FROM ride_waypoints WHERE ride_id = 6001;
-DELETE FROM ride_passengers WHERE ride_id = 6001;
-DELETE FROM rides WHERE id = 6001;
-DELETE FROM vehicles WHERE id = 6001;
-DELETE FROM locations WHERE id BETWEEN 6001 AND 6010;
-DELETE FROM drivers WHERE user_id = 6001;
-DELETE FROM passengers WHERE user_id IN (6002, 6003, 6004, 6005);
-DELETE FROM users WHERE id IN (6001, 6002, 6003, 6004, 6005);
+-- (intentionally omitted; assume empty DB)
 
 -- ============================================
 -- SETUP: Ensure vehicle type exists
@@ -36,10 +25,10 @@ VALUES ('STANDARD', 200.00, 50.00);
 -- Driver user (password: Test1234)
 MERGE INTO users (
     id, name, surname, email, password_hash, address, phone,
-    profile_picture_url, blocked, role, active, created_at, updated_at, dtype
+    profile_picture_url, blocked, role, created_at, updated_at, dtype
 ) KEY (id) VALUES (
     6001, 'Tracking', 'TestDriver', 'tracking.driver@test.local', '07480fb9e85b9396af06f006cf1c95024af2531c65fb505cfbd0add1e2f31573',
-    'Driver Test Address 1', '+381 64 600 0001', NULL, FALSE, 'DRIVER', TRUE,
+    'Driver Test Address 1', '+381 64 600 0001', NULL, FALSE, 'DRIVER',
     CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'Driver'
 );
 
@@ -47,10 +36,10 @@ MERGE INTO users (
 -- Use this to test reporting inconsistencies as the main passenger
 MERGE INTO users (
     id, name, surname, email, password_hash, address, phone,
-    profile_picture_url, blocked, role, active, created_at, updated_at, dtype
+    profile_picture_url, blocked, role, created_at, updated_at, dtype
 ) KEY (id) VALUES (
     6002, 'Main', 'Passenger', 'main.passenger@test.local', '07480fb9e85b9396af06f006cf1c95024af2531c65fb505cfbd0add1e2f31573',
-    'Passenger Test Address 1', '+381 64 600 0002', NULL, FALSE, 'PASSENGER', TRUE,
+    'Passenger Test Address 1', '+381 64 600 0002', NULL, FALSE, 'PASSENGER',
     CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'Passenger'
 );
 
@@ -58,20 +47,20 @@ MERGE INTO users (
 -- Use this to test reporting inconsistencies as a linked passenger
 MERGE INTO users (
     id, name, surname, email, password_hash, address, phone,
-    profile_picture_url, blocked, role, active, created_at, updated_at, dtype
+    profile_picture_url, blocked, role, created_at, updated_at, dtype
 ) KEY (id) VALUES (
     6003, 'Linked', 'Passenger', 'linked.passenger@test.local', '07480fb9e85b9396af06f006cf1c95024af2531c65fb505cfbd0add1e2f31573',
-    'Passenger Test Address 2', '+381 64 600 0003', NULL, FALSE, 'PASSENGER', TRUE,
+    'Passenger Test Address 2', '+381 64 600 0003', NULL, FALSE, 'PASSENGER',
     CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'Passenger'
 );
 
 -- Passenger 3: Another linked passenger (password: Test1234)
 MERGE INTO users (
     id, name, surname, email, password_hash, address, phone,
-    profile_picture_url, blocked, role, active, created_at, updated_at, dtype
+    profile_picture_url, blocked, role, created_at, updated_at, dtype
 ) KEY (id) VALUES (
     6004, 'Another', 'LinkedPassenger', 'another.linked@test.local', '07480fb9e85b9396af06f006cf1c95024af2531c65fb505cfbd0add1e2f31573',
-    'Passenger Test Address 3', '+381 64 600 0004', NULL, FALSE, 'PASSENGER', TRUE,
+    'Passenger Test Address 3', '+381 64 600 0004', NULL, FALSE, 'PASSENGER',
     CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'Passenger'
 );
 
@@ -79,17 +68,17 @@ MERGE INTO users (
 -- Use this to test authorization - should get 400 error when trying to report
 MERGE INTO users (
     id, name, surname, email, password_hash, address, phone,
-    profile_picture_url, blocked, role, active, created_at, updated_at, dtype
+    profile_picture_url, blocked, role, created_at, updated_at, dtype
 ) KEY (id) VALUES (
     6005, 'Unauthorized', 'Passenger', 'unauthorized.passenger@test.local', '07480fb9e85b9396af06f006cf1c95024af2531c65fb505cfbd0add1e2f31573',
-    'Passenger Test Address 4', '+381 64 600 0005', NULL, FALSE, 'PASSENGER', TRUE,
+    'Passenger Test Address 4', '+381 64 600 0005', NULL, FALSE, 'PASSENGER',
     CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'Passenger'
 );
 
 -- Driver subclass
-MERGE INTO drivers (user_id, license_number, active_driver, last_state_change_at)
+MERGE INTO drivers (user_id, active_driver, last_state_change_at)
 KEY (user_id)
-VALUES (6001, 'LIC-TRACKING-6001', TRUE, CURRENT_TIMESTAMP());
+VALUES (6001, TRUE, CURRENT_TIMESTAMP());
 
 -- Passenger subclasses
 MERGE INTO passengers (user_id) KEY (user_id) VALUES (6002);
@@ -101,12 +90,12 @@ MERGE INTO passengers (user_id) KEY (user_id) VALUES (6005);
 -- VEHICLE
 -- ============================================
 MERGE INTO vehicles (
-    id, driver_id, vehicle_type_id, model, license_plate, num_seats,
-    baby_friendly, pet_friendly, current_lat, current_lng, available
+    id, driver_id, vehicle_type_id, license_plate, num_seats,
+    baby_friendly, pet_friendly, current_lat, current_lng
 ) KEY (id) VALUES (
     6001, 6001, (SELECT id FROM vehicle_types WHERE name = 'STANDARD'),
-    'Toyota Corolla', 'NS-6001-AA', 4,
-    TRUE, FALSE, 45.2550, 19.8350, FALSE
+    'NS-6001-AA', 4,
+    TRUE, FALSE, 45.2550, 19.8350
 );
 
 -- ============================================
