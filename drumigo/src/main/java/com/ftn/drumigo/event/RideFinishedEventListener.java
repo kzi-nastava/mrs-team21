@@ -5,7 +5,7 @@ import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RidePassenger;
 import com.ftn.drumigo.domain.RideWaypoint;
-import com.ftn.drumigo.domain.User;
+import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.domain.enums.NotificationType;
 import com.ftn.drumigo.repository.NotificationRepository;
 import com.ftn.drumigo.repository.RidePassengerRepository;

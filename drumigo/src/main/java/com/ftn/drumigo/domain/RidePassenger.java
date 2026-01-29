@@ -1,6 +1,7 @@
 package com.ftn.drumigo.domain;
 
 import com.ftn.drumigo.domain.users.Passenger;
+import com.ftn.drumigo.domain.users.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

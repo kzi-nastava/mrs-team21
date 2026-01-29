@@ -11,10 +11,7 @@ import java.util.List;
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 
     java.util.Optional<Vehicle> findByDriver(com.ftn.drumigo.domain.users.Driver driver);
-
-    List<Vehicle> findByAvailableTrue();
     boolean existsByLicensePlate(String licensePlate);
-    java.util.Optional<Vehicle> findByDriver(com.ftn.drumigo.domain.Driver driver);
     
     /**
      * Find all vehicles belonging to active drivers (drivers currently working).
