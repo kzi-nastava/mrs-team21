@@ -12,6 +12,7 @@ public record DriverResponse(
     String profilePictureUrl,
     Boolean blocked,
     Boolean activeDriver,
+    Boolean isBusy,
     Instant lastStateChangeAt,
     Instant createdAt,
     Instant updatedAt

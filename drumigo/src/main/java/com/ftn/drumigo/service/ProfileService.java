@@ -44,6 +44,7 @@ public class ProfileService {
         // Add driver-specific fields if user is a driver
         if (user instanceof Driver driver) {
             response.setActiveDriver(driver.getActiveDriver());
+            response.setIsBusy(driver.isBusy());
             response.setLastStateChangeAt(driver.getLastStateChangeAt());
             
             // Add vehicle info if driver has a vehicle

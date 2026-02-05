@@ -105,7 +105,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void updateSelectedNavItem(int destinationId) {
         int menuItemId;
-        if (destinationId == R.id.loginFragment) {
+        if (destinationId == R.id.activeVehiclesMapFragment) {
+            menuItemId = R.id.nav_active_vehicles;
+        } else if (destinationId == R.id.loginFragment) {
             menuItemId = R.id.nav_login;
         } else if (destinationId == R.id.registrationFragment) {
             menuItemId = R.id.nav_registration;
@@ -124,8 +126,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         int itemId = item.getItemId();
-        
-        if (itemId == R.id.nav_login) {
+
+        if (itemId == R.id.nav_active_vehicles) {
+            navController.navigate(R.id.activeVehiclesMapFragment);
+        } else if (itemId == R.id.nav_login) {
             navController.navigate(R.id.loginFragment);
         } else if (itemId == R.id.nav_registration) {
             navController.navigate(R.id.registrationFragment);

@@ -2,6 +2,18 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+import java.util.Properties
+
+val secretsPropertiesFile = rootProject.file("secrets.properties")
+val secretsProperties = Properties().apply {
+    if (secretsPropertiesFile.exists()) {
+        secretsPropertiesFile.inputStream().use { load(it) }
+    }
+}
+
+val mapboxAccessToken = secretsProperties.getProperty("MAPBOX_ACCESS_TOKEN") ?: "MAPBOX_API_KEY"
+val apiBaseUrl = secretsProperties.getProperty("API_BASE_URL") ?: "http://localhost:8080/api"
+
 android {
     namespace = "com.drumigo.mobile"
     compileSdk = 36
@@ -14,6 +26,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxAccessToken}\"")
+        buildConfigField("String", "API_BASE_URL", "\"${apiBaseUrl}\"")
     }
 
     buildTypes {
@@ -33,6 +48,7 @@ android {
     
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 }
 
@@ -46,6 +62,14 @@ dependencies {
     // Navigation Component
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
+
+    // Maps (Mapbox)
+    implementation(libs.mapbox.maps)
+    implementation(libs.mapbox.annotation)
+
+    // Networking
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
     
     // Testing
     testImplementation(libs.junit)

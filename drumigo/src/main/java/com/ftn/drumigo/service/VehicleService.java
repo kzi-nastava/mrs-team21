@@ -5,9 +5,10 @@ import com.ftn.drumigo.domain.Vehicle;
 import com.ftn.drumigo.domain.VehicleType;
 import com.ftn.drumigo.dto.VehicleCreateRequest;
 import com.ftn.drumigo.dto.VehicleLocationUpdateRequest;
+import com.ftn.drumigo.dto.VehicleResponse;
 import com.ftn.drumigo.dto.VehicleUpdateRequest;
-import com.ftn.drumigo.exception.ConflictException;
 import com.ftn.drumigo.exception.ResourceNotFoundException;
+import com.ftn.drumigo.mapper.VehicleMapper;
 import com.ftn.drumigo.repository.DriverRepository;
 import com.ftn.drumigo.repository.VehicleRepository;
 import com.ftn.drumigo.repository.VehicleTypeRepository;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +27,7 @@ public class VehicleService {
     private final VehicleRepository vehicleRepository;
     private final DriverRepository driverRepository;
     private final VehicleTypeRepository vehicleTypeRepository;
+    private final VehicleMapper vehicleMapper;
     
     /**
      * Get all vehicles from active drivers for display on the landing page map.
@@ -34,6 +37,16 @@ public class VehicleService {
     public List<Vehicle> getActiveVehicles() {
         return vehicleRepository.findByDriverActiveDriverTrue();
 
+    }
+
+    public List<VehicleResponse> getActiveVehicleResponses() {
+        List<Vehicle> vehicles = vehicleRepository.findByDriverActiveDriverTrue();
+        return vehicles.stream()
+            .map(vehicle -> vehicleMapper.toResponseWithAvailability(
+                vehicle,
+                vehicle.getDriver() == null || !vehicle.getDriver().isBusy()
+            ))
+            .collect(Collectors.toList());
     }
     
     public Vehicle getById(Long id) {

@@ -99,6 +99,9 @@
     <string name="nav_drawer_close">Close navigation drawer</string>
     <string name="open_navigation">Open navigation</string>
     <string name="nav_ride_history">Ride History</string>
+    <string name="nav_active_vehicles">Active Vehicles</string>
+    <string name="mapbox_token_missing">Mapbox token missing. Add it to mobile/secrets.properties.</string>
+    <string name="active_vehicles_load_failed">Unable to load active vehicles</string>
 
     <!-- Validation Messages -->
     <string name="error_email_required">Email is required</string>

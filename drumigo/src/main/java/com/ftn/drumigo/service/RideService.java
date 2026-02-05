@@ -125,6 +125,7 @@ public class RideService {
         ride.setStatus(RideStatus.FINISHED);
         ride.setEndTime(Instant.now());
         ride.setPaidAt(Instant.now());
+        setDriverBusy(ride.getDriver(), false);
         
         ride = rideRepository.save(ride);
         eventPublisher.publishEvent(new RideFinishedEvent(ride.getId()));
@@ -336,6 +337,7 @@ public class RideService {
         
         ride.setStatus(RideStatus.ACTIVE);
         ride.setStartTime(Instant.now());
+        setDriverBusy(driver, true);
         
         // Update estimated arrival based on start time
         if (ride.getEstimatedDurationSec() != null) {
@@ -391,6 +393,9 @@ public class RideService {
         List<Driver> activeDrivers = driverRepository.findByActiveDriverTrue();
         
         for (Driver driver : activeDrivers) {
+            if (driver.isBusy()) {
+                continue;
+            }
             // Check if driver has worked less than 8 hours in last 24 hours
             if (hasExceededWorkingHours(driver)) {
                 continue;
@@ -411,6 +416,14 @@ public class RideService {
         }
         
         return null;
+    }
+
+    private void setDriverBusy(Driver driver, boolean busy) {
+        if (driver == null) {
+            return;
+        }
+        driver.setBusy(busy);
+        driverRepository.save(driver);
     }
     
     private boolean hasExceededWorkingHours(Driver driver) {
@@ -574,10 +587,8 @@ public class RideService {
         ride.setCancelReasonType(reasonType);
         ride.setCancelReason(reason);
         ride.setCanceledByUser(canceledBy);
+        setDriverBusy(ride.getDriver(), false);
 
-        if (ride.getVehicle() != null) {
-            Vehicle vehicle = ride.getVehicle();
-        }
         // TODO: create cancellation notifications
     }
     
@@ -653,6 +664,7 @@ public class RideService {
         ride.setStatus(RideStatus.FINISHED);
 
         // Vehicle availability removed - no longer tracking
+        setDriverBusy(ride.getDriver(), false);
         
         ride = rideRepository.save(ride);
         eventPublisher.publishEvent(new RideFinishedEvent(ride.getId()));
