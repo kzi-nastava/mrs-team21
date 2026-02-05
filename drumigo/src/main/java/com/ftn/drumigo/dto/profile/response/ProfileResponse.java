@@ -25,6 +25,7 @@ public class ProfileResponse {
     
     // Driver-specific fields
     private Boolean activeDriver;
+    private Boolean isBusy;
     private Instant lastStateChangeAt;
     private VehicleInfoResponse vehicle;
 }

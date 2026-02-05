@@ -13,6 +13,7 @@ public record VehicleResponse(
     Boolean babyFriendly,
     Boolean petFriendly,
     BigDecimal currentLat,
-    BigDecimal currentLng
+    BigDecimal currentLng,
+    Boolean available
 ) {}
 

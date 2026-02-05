@@ -1,7 +1,7 @@
 package com.ftn.drumigo.repository;
 
-import com.ftn.drumigo.domain.Driver;
 import com.ftn.drumigo.domain.Vehicle;
+import com.ftn.drumigo.domain.users.Driver;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

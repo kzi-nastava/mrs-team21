@@ -8,6 +8,10 @@ import org.springframework.stereotype.Component;
 public class VehicleMapper {
     
     public VehicleResponse toResponse(Vehicle vehicle) {
+        return toResponseWithAvailability(vehicle, null);
+    }
+
+    public VehicleResponse toResponseWithAvailability(Vehicle vehicle, Boolean available) {
         if (vehicle == null) {
             return null;
         }
@@ -22,7 +26,8 @@ public class VehicleMapper {
             vehicle.getBabyFriendly(),
             vehicle.getPetFriendly(),
             vehicle.getCurrentLat(),
-            vehicle.getCurrentLng()
+            vehicle.getCurrentLng(),
+            available
         );
     }
 }
