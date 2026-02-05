@@ -2,6 +2,8 @@ package com.drumigo.mobile;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
@@ -15,18 +17,37 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.navigation.NavController;
+import androidx.navigation.NavDestination;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.drumigo.mobile.databinding.ActivityMainBinding;
+import com.drumigo.mobile.data.api.ApiClient;
+import com.drumigo.mobile.data.api.RideApiService;
+import com.drumigo.mobile.data.model.ride.RideResponse;
+import com.drumigo.mobile.ui.ride.RideTrackingConfig;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.navigation.NavigationView;
 
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     private ActivityMainBinding binding;
     private NavController navController;
     private DrawerLayout drawerLayout;
     private MaterialToolbar toolbar;
+    private RideApiService rideApiService;
+    private final Handler ridePollingHandler = new Handler(Looper.getMainLooper());
+    private final Runnable ridePollingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            checkActiveRides();
+            ridePollingHandler.postDelayed(this, 10_000L);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +65,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setupDrawer();
 
         setupBackPressedHandler();
+
+        rideApiService = ApiClient.getRideApiService();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        startRideAutoTracking();
+    }
+
+    @Override
+    protected void onStop() {
+        stopRideAutoTracking();
+        super.onStop();
     }
 
     private void setupEdgeToEdge() {
@@ -117,6 +152,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             menuItemId = R.id.nav_reset_password;
         } else if (destinationId == R.id.profileFragment) {
             menuItemId = R.id.nav_profile;
+        } else if (destinationId == R.id.rideTrackingFragment) {
+            return;
         } else {
             return;
         }
@@ -192,6 +229,63 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }
             }
         });
+    }
+
+    private void startRideAutoTracking() {
+        ridePollingHandler.removeCallbacks(ridePollingRunnable);
+        ridePollingHandler.post(ridePollingRunnable);
+    }
+
+    private void stopRideAutoTracking() {
+        ridePollingHandler.removeCallbacks(ridePollingRunnable);
+    }
+
+    private void checkActiveRides() {
+        if (navController == null) {
+            return;
+        }
+        NavDestination current = navController.getCurrentDestination();
+        if (current != null && current.getId() == R.id.rideTrackingFragment) {
+            return;
+        }
+
+        if (RideTrackingConfig.USE_MOCK_UPDATES) {
+            navigateToRide(RideTrackingConfig.MOCK_RIDE_ID);
+            return;
+        }
+
+        if (rideApiService == null) {
+            return;
+        }
+        rideApiService.getActiveRides().enqueue(new Callback<List<RideResponse>>() {
+            @Override
+            public void onResponse(
+                @NonNull Call<List<RideResponse>> call,
+                @NonNull Response<List<RideResponse>> response
+            ) {
+                if (!response.isSuccessful() || response.body() == null || response.body().isEmpty()) {
+                    return;
+                }
+                RideResponse firstRide = response.body().get(0);
+                if (firstRide == null || firstRide.id == null) {
+                    return;
+                }
+                navigateToRide(firstRide.id);
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<List<RideResponse>> call, @NonNull Throwable t) {
+            }
+        });
+    }
+
+    private void navigateToRide(long rideId) {
+        if (navController == null) {
+            return;
+        }
+        Bundle args = new Bundle();
+        args.putLong("rideId", rideId);
+        navController.navigate(R.id.rideTrackingFragment, args);
     }
 
     @Override

@@ -102,6 +102,24 @@
     <string name="nav_active_vehicles">Active Vehicles</string>
     <string name="mapbox_token_missing">Mapbox token missing. Add it to mobile/secrets.properties.</string>
     <string name="active_vehicles_load_failed">Unable to load active vehicles</string>
+    <string name="back">Back</string>
+    <string name="ride_tracking_title">Tracking Ride</string>
+    <string name="ride_tracking_id_placeholder">Ride #--</string>
+    <string name="ride_tracking_id_format">Ride #%1$s</string>
+    <string name="ride_tracking_driver_placeholder">Driver</string>
+    <string name="ride_tracking_vehicle_placeholder">Vehicle</string>
+    <string name="ride_tracking_eta_label">Estimated arrival</string>
+    <string name="ride_tracking_eta_placeholder">--</string>
+    <string name="ride_tracking_from">From</string>
+    <string name="ride_tracking_to">To</string>
+    <string name="ride_tracking_from_placeholder">Start address</string>
+    <string name="ride_tracking_to_placeholder">Destination address</string>
+    <string name="ride_tracking_stop_ride">Stop Ride</string>
+    <string name="ride_tracking_panic">Emergency / Panic</string>
+    <string name="ride_tracking_report_issue">Report route issue</string>
+    <string name="ride_tracking_completed">Ride completed</string>
+    <string name="ride_tracking_load_failed">Unable to load ride tracking</string>
+    <string name="ride_tracking_not_implemented">This action is not implemented yet</string>
 
     <!-- Validation Messages -->
     <string name="error_email_required">Email is required</string>

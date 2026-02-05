@@ -12,6 +12,18 @@
         tools:layout="@layout/fragment_active_vehicles_map" />
 
     <fragment
+        android:id="@+id/rideTrackingFragment"
+        android:name="com.drumigo.mobile.ui.ride.RideTrackingFragment"
+        android:label="@string/ride_tracking_title"
+        tools:layout="@layout/fragment_ride_tracking">
+
+        <argument
+            android:name="rideId"
+            app:argType="long"
+            android:defaultValue="0" />
+    </fragment>
+
+    <fragment
         android:id="@+id/loginFragment"
         android:name="com.drumigo.mobile.ui.auth.LoginFragment"
         android:label="Login"

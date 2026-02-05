@@ -16,6 +16,10 @@ public class ApiClient {
         return getRetrofit().create(VehicleApiService.class);
     }
 
+    public static RideApiService getRideApiService() {
+        return getRetrofit().create(RideApiService.class);
+    }
+
     private static Retrofit getRetrofit() {
         if (retrofit == null) {
             retrofit = new Retrofit.Builder()
