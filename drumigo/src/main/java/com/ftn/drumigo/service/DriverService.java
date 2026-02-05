@@ -56,7 +56,6 @@ public class DriverService {
         driver.setAddress(request.address());
         driver.setPhone(request.phone());
         driver.setRole(UserRole.DRIVER);
-        driver.setActive(false); // Not active until password is set
         driver.setActiveDriver(false);
         driver.setBlocked(false);
         driver.setCreatedAt(Instant.now());
@@ -68,12 +67,10 @@ public class DriverService {
         Vehicle vehicle = new Vehicle();
         vehicle.setDriver(driver);
         vehicle.setVehicleType(vehicleType);
-        vehicle.setModel(request.vehicleModel());
         vehicle.setLicensePlate(request.vehicleLicensePlate());
         vehicle.setNumSeats(request.vehicleNumSeats());
         vehicle.setBabyFriendly(request.vehicleBabyFriendly() != null ? request.vehicleBabyFriendly() : false);
         vehicle.setPetFriendly(request.vehiclePetFriendly() != null ? request.vehiclePetFriendly() : false);
-        vehicle.setAvailable(true);
         
         vehicleRepository.save(vehicle);
         

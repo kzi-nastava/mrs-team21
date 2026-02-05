@@ -1,9 +1,11 @@
 package com.ftn.drumigo.controller;
 
+import com.ftn.drumigo.domain.Vehicle;
 import com.ftn.drumigo.dto.VehicleCreateRequest;
 import com.ftn.drumigo.dto.VehicleLocationUpdateRequest;
 import com.ftn.drumigo.dto.VehicleResponse;
 import com.ftn.drumigo.dto.VehicleUpdateRequest;
+import com.ftn.drumigo.mapper.VehicleMapper;
 import com.ftn.drumigo.service.VehicleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/vehicles")
