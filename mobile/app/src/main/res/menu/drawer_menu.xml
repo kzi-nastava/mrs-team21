@@ -3,6 +3,11 @@
 
     <group android:checkableBehavior="single">
         <item
+            android:id="@+id/nav_active_vehicles"
+            android:title="@string/nav_active_vehicles"
+            android:icon="@drawable/ic_car" />
+
+        <item
             android:id="@+id/nav_login"
             android:title="@string/nav_login" />
 
