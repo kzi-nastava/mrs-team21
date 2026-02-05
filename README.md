@@ -33,7 +33,7 @@ Drumigo is a multi-platform ride-hailing system featuring:
 
 - Frontend: Angular, TypeScript, RxJS
 - Mobile: Android (Java/Kotlin), MVVM
-- Backend: Spring Boot, Java, PostgreSQL
+- Backend: Spring Boot, Java, MySQL
 - Real-time: WebSocket
 - Maps: Mapbox GL JS
 
@@ -64,10 +64,22 @@ Use the `npm` scripts so the local CLI version is used (`npm start`, `npm run bu
 #### Backend
 
 ```bash
-cd backend
+cd drumigo
 ./mvnw spring-boot:run
 # API typically runs on http://localhost:8080
 ```
+
+#### Backend (MySQL setup + maintenance reset)
+
+- Configure MySQL in `drumigo/src/main/resources/application-dev.properties` (or via env vars `MYSQL_URL`, `MYSQL_USER`, `MYSQL_PASSWORD`).
+- Ensure the maintenance basic auth credentials are set (`maintenance.basic.username` / `maintenance.basic.password`).
+
+Maintenance endpoint (drops/recreates schema from JPA + seeds data):
+
+- Method: `POST`
+- URL: `http://localhost:8080/api/maintenance/reset`
+- Auth: Basic (use the maintenance credentials)
+- Seed script: `drumigo/src/main/resources/db/seed/mysql-seed.sql`
 
 #### Mobile
 
