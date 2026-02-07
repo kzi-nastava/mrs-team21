@@ -144,7 +144,7 @@ Drumigo is a multi-platform ride-hailing system featuring:
 - ✅ Email service for account activation and password reset
 - ✅ Role-based access control (PASSENGER, DRIVER, ADMIN)
 
-## �️ Tech Stack
+## 🛠️ Tech Stack
 
 ### Frontend (Web)
 
@@ -362,7 +362,7 @@ The `drumigo/h2_scripts/` directory contains SQL scripts for various testing sce
 
 These are for reference only; use the MySQL seed script for actual development.
 
-## � Documentation
+## 📚 Documentation
 
 - [docs/specifikacija.md](docs/specifikacija.md) - Complete project specification (Serbian)
 - [docs/assets/branding/](docs/assets/branding/) - Logo and brand assets
