@@ -27,4 +27,3 @@ mapbox-annotation = { group = "com.mapbox.maps", name = "plugin-annotation", ver
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-
