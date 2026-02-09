@@ -70,6 +70,12 @@ dependencies {
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
 
+    // Retrofit
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp.logging)
+
+
     // Maps (Mapbox)
     implementation(libs.mapbox.maps)
     implementation(libs.mapbox.annotation)
