@@ -20,6 +20,10 @@ public class ApiClient {
         return getRetrofit().create(RideApiService.class);
     }
 
+    public static DriverApiService getDriverApiService() {
+        return getRetrofit().create(DriverApiService.class);
+    }
+
     private static Retrofit getRetrofit() {
         if (retrofit == null) {
             retrofit = new Retrofit.Builder()

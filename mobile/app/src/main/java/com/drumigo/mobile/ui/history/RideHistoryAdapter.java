@@ -1,4 +1,4 @@
-package com.ridesharing.app.ui.history;
+package com.drumigo.mobile.ui.history;
 
 import android.content.Context;
 import android.util.Log;
@@ -12,7 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 import com.drumigo.mobile.R;
-import com.ridesharing.app.data.model.Ride;
+import com.drumigo.mobile.data.model.Ride;
 import java.util.List;
 
 public class RideHistoryAdapter extends RecyclerView.Adapter<RideHistoryAdapter.RideViewHolder> {
