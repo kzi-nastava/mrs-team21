@@ -81,7 +81,7 @@
     <string name="confirm_new_password_placeholder">Confirm new password</string>
     <string name="reset_password">Reset password</string>
     <string name="password_requirements_title">Password requirements</string>
-    <string name="requirement_length">At least 8 characters</string>
+    <string name="requirement_length">At least 6 characters</string>
     <string name="requirement_uppercase">One uppercase letter</string>
     <string name="requirement_lowercase">One lowercase letter</string>
     <string name="requirement_special">One number or special character</string>
