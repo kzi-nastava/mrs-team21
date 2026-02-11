@@ -179,7 +179,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             navController.navigate(R.id.loginFragment);
         } else if (itemId == R.id.nav_ride_history) {
             // Launch RideHistoryActivity
-            Intent intent = new Intent(this, com.ridesharing.app.ui.history.RideHistoryActivity.class);
+            Intent intent = new Intent(this, com.drumigo.mobile.ui.history.RideHistoryActivity.class);
             startActivity(intent);
         } else if (itemId == R.id.nav_profile) {
             // Navigate to profile fragment

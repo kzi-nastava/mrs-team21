@@ -1,27 +1,43 @@
-package com.ridesharing.app.ui.history;
+package com.drumigo.mobile.ui.history;
 
 import android.app.DatePickerDialog;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
-import android.util.Log;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.drumigo.mobile.R;
-import com.ridesharing.app.data.model.Ride;
+import com.drumigo.mobile.data.api.ApiClient;
+import com.drumigo.mobile.data.api.DriverApiService;
+import com.drumigo.mobile.data.model.Ride;
+import com.drumigo.mobile.data.model.history.DriverRideHistoryItemResponse;
+import com.drumigo.mobile.data.model.history.PageResponse;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class RideHistoryActivity extends AppCompatActivity {
 
     private static final String TAG = "RideHistoryActivity";
+    private static final long DRIVER_ID = 7001L;
+    private static final int DEFAULT_PAGE = 0;
+    private static final int DEFAULT_PAGE_SIZE = 10;
+    private static final String DEFAULT_SORT = "requestedAt,desc";
 
     private RecyclerView recyclerView;
     private RideHistoryAdapter adapter;
@@ -29,6 +45,7 @@ public class RideHistoryActivity extends AppCompatActivity {
     private Button applyFilterButton;
     private Calendar fromDate, toDate;
     private SimpleDateFormat dateFormat;
+    private DriverApiService driverApiService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +62,7 @@ public class RideHistoryActivity extends AppCompatActivity {
             initializeViews();
             setupRecyclerView();
             setupDatePickers();
+            driverApiService = ApiClient.getDriverApiService();
             loadRideHistory();
         } catch (Exception e) {
             // Log and show a toast instead of crashing so we can diagnose in logs
@@ -101,7 +119,7 @@ public class RideHistoryActivity extends AppCompatActivity {
 
     private void showDatePicker(boolean isFromDate) {
         Calendar calendar = isFromDate ? fromDate : toDate;
-        
+
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 this,
                 0,
@@ -117,7 +135,7 @@ public class RideHistoryActivity extends AppCompatActivity {
                 calendar.get(Calendar.MONTH),
                 calendar.get(Calendar.DAY_OF_MONTH)
         );
-        
+
         datePickerDialog.show();
     }
 
@@ -126,35 +144,90 @@ public class RideHistoryActivity extends AppCompatActivity {
     }
 
     private void loadRideHistory() {
-        List<Ride> rides = getDummyRides();
-        if (adapter != null) adapter.updateRides(rides);
-        if (resultsCountText != null) resultsCountText.setText("Showing " + rides.size() + " rides");
+        if (driverApiService == null) {
+            driverApiService = ApiClient.getDriverApiService();
+        }
+        if (driverApiService == null) {
+            showHistoryLoadError();
+            return;
+        }
+
+        String from = toIsoStartOfDay(fromDate);
+        String to = toIsoEndOfDay(toDate);
+        driverApiService.getDriverRideHistory(
+            DRIVER_ID,
+            from,
+            to,
+            DEFAULT_PAGE,
+            DEFAULT_PAGE_SIZE,
+            DEFAULT_SORT
+        ).enqueue(new Callback<PageResponse<DriverRideHistoryItemResponse>>() {
+            @Override
+            public void onResponse(
+                Call<PageResponse<DriverRideHistoryItemResponse>> call,
+                Response<PageResponse<DriverRideHistoryItemResponse>> response
+            ) {
+                if (!response.isSuccessful() || response.body() == null || response.body().content == null) {
+                    showHistoryLoadError();
+                    updateHistoryResults(new ArrayList<>());
+                    return;
+                }
+                List<Ride> rides = new ArrayList<>();
+                for (DriverRideHistoryItemResponse item : response.body().content) {
+                    Ride mapped = DriverRideHistoryMapper.toRide(item);
+                    if (mapped != null) {
+                        rides.add(mapped);
+                    }
+                }
+                updateHistoryResults(rides);
+            }
+
+            @Override
+            public void onFailure(
+                Call<PageResponse<DriverRideHistoryItemResponse>> call,
+                Throwable t
+            ) {
+                showHistoryLoadError();
+                updateHistoryResults(new ArrayList<>());
+            }
+        });
     }
 
-    private List<Ride> getDummyRides() {
-        List<Ride> rides = new ArrayList<>();
-        
-        rides.add(new Ride(1L, "Dec 18, 2024", "14:30 - 14:52",
-                "Bulevar Oslobođenja 76", "Faculty of Technical Sciences",
-                new String[]{"JD"}, 1, "Completed", null, "+450 RSD", false));
+    private void updateHistoryResults(List<Ride> rides) {
+        if (adapter != null) {
+            adapter.updateRides(rides);
+        }
+        if (resultsCountText != null) {
+            resultsCountText.setText("Showing " + (rides == null ? 0 : rides.size()) + " rides");
+        }
+    }
 
-        rides.add(new Ride(2L, "Dec 18, 2024", "12:15 - 12:38",
-                "City Center Mall", "Novi Sad Airport",
-                new String[]{"AN", "MK"}, 2, "Completed", null, "+980 RSD", false));
+    private void showHistoryLoadError() {
+        Toast.makeText(this, "Failed to load ride history", Toast.LENGTH_SHORT).show();
+    }
 
-        rides.add(new Ride(3L, "Dec 17, 2024", "18:45 - 19:02",
-                "Liman Park", "Spens Sports Center",
-                new String[]{"SV"}, 1, "Cancelled", "By Passenger", "—", false));
+    private String toIsoStartOfDay(Calendar calendar) {
+        if (calendar == null) {
+            return null;
+        }
+        ZoneId zone = ZoneId.systemDefault();
+        LocalDate localDate = Instant.ofEpochMilli(calendar.getTimeInMillis())
+            .atZone(zone)
+            .toLocalDate();
+        ZonedDateTime start = localDate.atStartOfDay(zone);
+        return start.toInstant().toString();
+    }
 
-        rides.add(new Ride(4L, "Dec 16, 2024", "22:10 - 22:35",
-                "Petrovaradin Fortress", "Grbavica District",
-                new String[]{"NK"}, 1, "Completed", null, "+620 RSD", true));
-
-        rides.add(new Ride(5L, "Dec 15, 2024", "08:30 - 08:45",
-                "Bus Station", "University Campus",
-                new String[]{"TM", "LP", "+1"}, 3, "Completed", null, "+380 RSD", false));
-
-        return rides;
+    private String toIsoEndOfDay(Calendar calendar) {
+        if (calendar == null) {
+            return null;
+        }
+        ZoneId zone = ZoneId.systemDefault();
+        LocalDate localDate = Instant.ofEpochMilli(calendar.getTimeInMillis())
+            .atZone(zone)
+            .toLocalDate();
+        ZonedDateTime end = localDate.atTime(LocalTime.MAX).atZone(zone);
+        return end.toInstant().toString();
     }
 
     @Override

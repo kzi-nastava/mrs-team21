@@ -1,4 +1,4 @@
-package com.ridesharing.app.data.model;
+package com.drumigo.mobile.data.model;
 
 public class Ride {
     private Long id;
