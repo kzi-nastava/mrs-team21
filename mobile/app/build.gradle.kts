@@ -26,6 +26,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        val secretsFile = rootProject.file("secrets.properties")
+        val secretsProps = Properties()
+        if (secretsFile.exists()) {
+            secretsFile.inputStream().use { secretsProps.load(it) }
+        }
+        val apiBaseUrl = secretsProps.getProperty("API_BASE_URL", "").trim()
 
         val secretsFile = rootProject.file("secrets.properties")
         val secretsProps = Properties()
