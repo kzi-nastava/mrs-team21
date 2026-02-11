@@ -526,12 +526,8 @@ public class RideService {
     
     public void cancelByDriver(Long rideId, Long driverId, RideCancelByDriverRequest request) {
         Ride ride = getById(rideId);
-        Object driverObj = driverRepository.findById(driverId)
+        Driver driver = driverRepository.findById(driverId)
             .orElseThrow(() -> new ResourceNotFoundException("Driver not found with ID: " + driverId));
-        if (!(driverObj instanceof Driver)) {
-            throw new ResourceNotFoundException("Driver not found with ID: " + driverId);
-        }
-        Driver driver = (Driver) driverObj;
 
         // Cannot cancel if driver is not assigned to this ride
         if (ride.getDriver() == null || !ride.getDriver().getId().equals(driverId)) {
