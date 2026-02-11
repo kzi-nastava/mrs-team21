@@ -100,10 +100,14 @@ public class LoginFragment extends Fragment {
                             .putString("role", loginResponse.role)
                             .apply();
 
-                    Toast.makeText(requireContext(), "Welcome back, " + loginResponse.email + "!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(
+                            requireContext(),
+                            "Welcome back, " + loginResponse.email + "! You're signed in.",
+                            Toast.LENGTH_SHORT
+                    ).show();
                     // TODO: Navigate to main app screen
                 } else {
-                    String errorMsg = "HTTP " + response.code() + " - " + response.message();
+                    String errorMsg = getLoginErrorMessage(response.code(), response.message());
                     Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_LONG).show();
                 }
             }
@@ -113,7 +117,8 @@ public class LoginFragment extends Fragment {
                 if (!isAdded()) {
                     return;
                 }
-                Toast.makeText(requireContext(), "Failed to reach server: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                String errorMsg = getNetworkErrorMessage(t);
+                Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -154,6 +159,41 @@ public class LoginFragment extends Fragment {
 
     private void handleGuestAccess() {
         // TODO KT2: Navigate to ride estimation screen
+    }
+
+    private String getLoginErrorMessage(int httpCode, String httpMessage) {
+        switch (httpCode) {
+            case 400:
+                return "Check your email and password and try again.";
+            case 401:
+                return "Incorrect email or password.";
+            case 403:
+                return "Your account doesn't have access yet.";
+            case 404:
+                return "We couldn't find that account.";
+            case 500:
+            case 502:
+            case 503:
+            case 504:
+                return "The server is having trouble right now. Please try again in a moment.";
+            default:
+                return "Sign-in failed (" + httpCode + "). Please try again.";
+        }
+    }
+
+    private String getNetworkErrorMessage(Throwable t) {
+        String message = t.getMessage() != null ? t.getMessage() : "";
+        String lower = message.toLowerCase();
+        if (lower.contains("timeout")) {
+            return "The request timed out. Check your connection and try again.";
+        }
+        if (lower.contains("unable to resolve host") || lower.contains("unknownhost")) {
+            return "Can't reach the server. Check your internet or server address.";
+        }
+        if (lower.contains("ssl") || lower.contains("certificate")) {
+            return "Secure connection failed. Check your HTTPS certificate setup.";
+        }
+        return "Couldn't reach the server. Please try again.";
     }
 
     @Override
