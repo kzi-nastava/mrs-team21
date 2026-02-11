@@ -7,6 +7,7 @@ import com.ftn.drumigo.dto.*;
 import com.ftn.drumigo.dto.ride.response.RideResponse;
 import com.ftn.drumigo.mapper.DriverProfileChangeRequestMapper;
 import com.ftn.drumigo.mapper.RideMapper;
+import com.ftn.drumigo.security.CustomUserDetails;
 import com.ftn.drumigo.service.DriverProfileChangeRequestService;
 import com.ftn.drumigo.service.ReportService;
 import com.ftn.drumigo.service.RideService;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -68,16 +70,16 @@ public class AdminController {
     @PutMapping("/profile-change-requests/{id}/approve")
     public ResponseEntity<DriverProfileChangeRequestResponse> approveProfileChangeRequest(
             @PathVariable Long id,
-            @RequestParam Long adminId) {
-        DriverProfileChangeRequest request = profileChangeRequestService.approve(id, adminId);
+            @AuthenticationPrincipal CustomUserDetails adminDetails) {
+        DriverProfileChangeRequest request = profileChangeRequestService.approve(id, adminDetails.getUserId());
         return ResponseEntity.ok(profileChangeRequestMapper.toResponse(request));
     }
     
     @PutMapping("/profile-change-requests/{id}/reject")
     public ResponseEntity<DriverProfileChangeRequestResponse> rejectProfileChangeRequest(
             @PathVariable Long id,
-            @RequestParam Long adminId) {
-        DriverProfileChangeRequest request = profileChangeRequestService.reject(id, adminId);
+            @AuthenticationPrincipal CustomUserDetails adminDetails) {
+        DriverProfileChangeRequest request = profileChangeRequestService.reject(id, adminDetails.getUserId());
         return ResponseEntity.ok(profileChangeRequestMapper.toResponse(request));
     }
     

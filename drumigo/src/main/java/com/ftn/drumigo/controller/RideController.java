@@ -16,6 +16,7 @@ import com.ftn.drumigo.dto.ride.response.RideResponse;
 import com.ftn.drumigo.dto.RideTrackingResponse;
 import com.ftn.drumigo.mapper.RideInconsistencyMapper;
 import com.ftn.drumigo.mapper.RideMapper;
+import com.ftn.drumigo.security.CustomUserDetails;
 import com.ftn.drumigo.service.RideService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,9 +27,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -49,20 +50,22 @@ public class RideController {
 
 
     @PostMapping
+    @PreAuthorize("hasRole('PASSENGER')")
     public ResponseEntity<RideResponse> createRide(
-            @RequestParam Long orderingPassengerId,
+            @AuthenticationPrincipal CustomUserDetails passengerDetails,
             @Valid @RequestBody RideCreateRequest request) {
-        Ride ride = rideService.create(orderingPassengerId, request);
+        Ride ride = rideService.create(passengerDetails.getUserId(), request);
         List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
         return ResponseEntity.status(201).body(rideMapper.toResponse(ride, waypoints));
     }
 
     
     @PutMapping("/{id}/start")
+    @PreAuthorize("hasRole('DRIVER')")
     public ResponseEntity<RideResponse> startRide(
             @PathVariable Long id,
-            @RequestParam Long driverId) {
-        Ride ride = rideService.startRide(id, driverId);
+            @AuthenticationPrincipal CustomUserDetails driverDetails) {
+        Ride ride = rideService.startRide(id, driverDetails.getUserId());
         List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
         return ResponseEntity.ok(rideMapper.toResponse(ride, waypoints));
     }
@@ -90,9 +93,9 @@ public class RideController {
     @PreAuthorize("hasRole('PASSENGER')")
     public ResponseEntity<RideInconsistencyResponse> createInconsistency(
             @PathVariable Long id,
-            Principal principal,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody RideInconsistencyCreateRequest request) {
-        RideInconsistency inconsistency = rideService.createInconsistency(id, principal.getName(), request.note());
+        RideInconsistency inconsistency = rideService.createInconsistency(id, userDetails.getUserId(), request.note());
         return ResponseEntity.status(201).body(rideInconsistencyMapper.toResponse(inconsistency));
     }
     
@@ -107,8 +110,8 @@ public class RideController {
     
     @PutMapping("/{id}/end")
     @PreAuthorize("hasRole('DRIVER')")
-    public ResponseEntity<RideResponse> endRide(@PathVariable Long id, Principal principal) {
-        Ride ride = rideService.endRideByDriverEmail(id, principal.getName());
+    public ResponseEntity<RideResponse> endRide(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Ride ride = rideService.endRideByDriverId(id, userDetails.getUserId());
         List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
         return ResponseEntity.ok(rideMapper.toResponse(ride, waypoints));
     }
@@ -117,9 +120,9 @@ public class RideController {
     @PreAuthorize("hasRole('DRIVER')")
     public ResponseEntity<Void> cancelByDriver(
             @PathVariable Long id,
-            Principal principal,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody RideCancelByDriverRequest request) {
-        rideService.cancelByDriver(id, principal.getName(), request);
+        rideService.cancelByDriver(id, userDetails.getUserId(), request);
         return ResponseEntity.ok().build();
     }
     
@@ -127,17 +130,17 @@ public class RideController {
     @PreAuthorize("hasRole('PASSENGER')")
     public ResponseEntity<Void> cancelByPassenger(
             @PathVariable Long id,
-            Principal principal) {
-        rideService.cancelByPassenger(id, principal.getName());
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        rideService.cancelByPassenger(id, userDetails.getUserId());
         return ResponseEntity.ok().build();
     }
     
     @PutMapping("/{id}/stop")
     public ResponseEntity<RideResponse> stopRide(
             @PathVariable Long id,
-            Principal principal,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody RideStopRequest request) {
-        Ride ride = rideService.stopRide(id, principal.getName(), request);
+        Ride ride = rideService.stopRide(id, userDetails.getUserId(), request);
         List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
         return ResponseEntity.ok(rideMapper.toResponse(ride, waypoints));
     }
@@ -288,10 +291,11 @@ public class RideController {
     }
     
     @PostMapping("/{id}/reorder")
+    @PreAuthorize("hasRole('PASSENGER')")
     public ResponseEntity<RideResponse> reorderRide(
             @PathVariable Long id,
-            @RequestParam Long passengerId) {
-        Ride ride = rideService.reorderRide(id, passengerId);
+            @AuthenticationPrincipal CustomUserDetails passengerDetails) {
+        Ride ride = rideService.reorderRide(id, passengerDetails.getUserId());
         List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
         return ResponseEntity.status(201).body(rideMapper.toResponse(ride, waypoints));
     }
