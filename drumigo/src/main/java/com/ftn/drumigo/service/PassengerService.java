@@ -60,6 +60,7 @@ public class PassengerService {
         passenger.setRole(UserRole.PASSENGER);
 
         passenger.setBlocked(false);
+        passenger.setActive(false);
         passenger.setCreatedAt(Instant.now());
         passenger.setUpdatedAt(Instant.now());
         passenger.setPasswordHash(PasswordUtil.hashPassword(password)); // Hash password
@@ -89,6 +90,8 @@ public class PassengerService {
         // Fetch the Passenger entity directly to avoid proxy casting issues
         Passenger passenger = passengerRepository.findById(userToken.getUser().getId())
             .orElseThrow(() -> new BadRequestException("Passenger not found"));
+
+        passenger.setActive(true);
 
         // Update timestamp
         passenger.setUpdatedAt(Instant.now());
