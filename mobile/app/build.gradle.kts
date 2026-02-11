@@ -26,12 +26,6 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        val secretsFile = rootProject.file("secrets.properties")
-        val secretsProps = Properties()
-        if (secretsFile.exists()) {
-            secretsFile.inputStream().use { secretsProps.load(it) }
-        }
-        val apiBaseUrl = secretsProps.getProperty("API_BASE_URL", "").trim()
 
         val secretsFile = rootProject.file("secrets.properties")
         val secretsProps = Properties()
@@ -71,7 +65,7 @@ dependencies {
     implementation(libs.material)
     implementation("androidx.activity:activity:1.9.3")
     implementation("androidx.constraintlayout:constraintlayout:2.2.0")
-    
+
     // Navigation Component
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
@@ -81,19 +75,9 @@ dependencies {
     implementation(libs.retrofit.gson)
     implementation(libs.okhttp.logging)
 
-
     // Maps (Mapbox)
     implementation(libs.mapbox.maps)
     implementation(libs.mapbox.annotation)
-
-    // Networking
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.converter.gson)
-
-    // Retrofit
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.gson)
-    implementation(libs.okhttp.logging)
 
     // Testing
     testImplementation(libs.junit)
