@@ -5,12 +5,14 @@ import com.ftn.drumigo.domain.UserNote;
 import com.ftn.drumigo.dto.*;
 import com.ftn.drumigo.mapper.UserMapper;
 import com.ftn.drumigo.mapper.UserNoteMapper;
+import com.ftn.drumigo.security.CustomUserDetails;
 import com.ftn.drumigo.service.AuthService;
 import com.ftn.drumigo.service.UserNoteService;
 import com.ftn.drumigo.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -56,9 +58,9 @@ public class UserController {
     @PostMapping("/{id}/notes")
     public ResponseEntity<UserNoteResponse> createNote(
             @PathVariable Long id,
-            @RequestParam Long adminId,
+            @AuthenticationPrincipal CustomUserDetails adminDetails,
             @Valid @RequestBody UserNoteCreateRequest request) {
-        UserNote note = userNoteService.create(id, adminId, request);
+        UserNote note = userNoteService.create(id, adminDetails.getUserId(), request);
         return ResponseEntity.status(201).body(userNoteMapper.toResponse(note));
     }
     

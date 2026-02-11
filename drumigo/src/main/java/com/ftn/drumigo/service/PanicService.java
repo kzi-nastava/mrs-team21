@@ -34,7 +34,7 @@ public class PanicService {
     private final AdminRepository adminRepository;
     private final NotificationRepository notificationRepository;
     
-    public void create(Long rideId, String email) {
+    public void create(Long rideId, Long userId) {
         Ride ride = rideRepository.findById(rideId)
             .orElseThrow(() -> new ResourceNotFoundException("Ride not found with id: " + rideId));
         
@@ -43,9 +43,9 @@ public class PanicService {
             throw new BadRequestException("Panic can only be triggered for ACTIVE rides. Current status: " + ride.getStatus());
         }
         
-        User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
-        
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
         // Create panic event
         PanicEvent panicEvent = new PanicEvent();
         panicEvent.setRide(ride);

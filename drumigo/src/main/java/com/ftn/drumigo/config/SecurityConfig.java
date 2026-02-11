@@ -1,5 +1,6 @@
 package com.ftn.drumigo.config;
 
+import com.ftn.drumigo.security.JwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

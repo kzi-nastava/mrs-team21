@@ -72,21 +72,18 @@ public class RideService {
      * Security: Only passengers who are part of the ride can report inconsistencies.
      * 
      * @param rideId the ride ID
-     * @param email the email of the authenticated passenger
+     * @param passengerId the ID of the authenticated passenger
      * @param note the inconsistency description
      * @return the created RideInconsistency
      * @throws ResourceNotFoundException if ride or passenger not found
      * @throws BadRequestException if passenger is not part of the ride
      */
-    public RideInconsistency createInconsistency(Long rideId, String email, String note) {
+    public RideInconsistency createInconsistency(Long rideId, Long passengerId, String note) {
         Ride ride = getById(rideId);
         
-        // Find passenger by email
-        Passenger passenger = passengerRepository.findByEmail(email)
-            .filter(p -> p instanceof Passenger)
-            .map(p -> (Passenger) p)
-            .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with email: " + email));
-        
+        Passenger passenger = passengerRepository.findById(passengerId)
+            .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with ID: " + passengerId));
+
         // Validate passenger is part of the ride (ordering passenger or linked passenger)
         boolean isOrderingPassenger = ride.getOrderingPassenger() != null 
             && ride.getOrderingPassenger().getId().equals(passenger.getId());
@@ -137,9 +134,9 @@ public class RideService {
      * End a ride as the authenticated driver.
      * Security: only the driver assigned to the ride can end it.
      */
-    public Ride endRideByDriverEmail(Long rideId, String driverEmail) {
-        Driver driver = driverRepository.findByEmail(driverEmail)
-            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with email: " + driverEmail));
+    public Ride endRideByDriverId(Long rideId, Long driverId) {
+        Driver driver = driverRepository.findById(driverId)
+            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with ID: " + driverId));
 
         Ride ride = getById(rideId);
         if (ride.getDriver() == null || !ride.getDriver().getId().equals(driver.getId())) {
@@ -527,17 +524,13 @@ public class RideService {
         }
     }
     
-    public void cancelByDriver(Long rideId, String email, RideCancelByDriverRequest request) {
+    public void cancelByDriver(Long rideId, Long driverId, RideCancelByDriverRequest request) {
         Ride ride = getById(rideId);
-        Object driverObj = driverRepository.findByEmail(email)
-            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with email: " + email));
-        if (!(driverObj instanceof Driver)) {
-            throw new ResourceNotFoundException("Driver not found with email: " + email);
-        }
-        Driver driver = (Driver) driverObj;
+        Driver driver = driverRepository.findById(driverId)
+            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with ID: " + driverId));
 
         // Cannot cancel if driver is not assigned to this ride
-        if (ride.getDriver() == null || !ride.getDriver().getEmail().equals(email)) {
+        if (ride.getDriver() == null || !ride.getDriver().getId().equals(driverId)) {
             throw new BadRequestException("Driver is not assigned to this ride");
         }
         
@@ -548,16 +541,13 @@ public class RideService {
         cancelRide(ride, request.cancelReasonType(), request.reason(), driver);
     }
     
-    public void cancelByPassenger(Long rideId, String email) {
+    public void cancelByPassenger(Long rideId, Long passengerId) {
         Ride ride = getById(rideId);
-        Object passengerObject = passengerRepository.findByEmail(email)
-            .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with email: " + email));
-        if (!(passengerObject instanceof Passenger)) {
-            throw new BadRequestException("User with email " + email + " is not a passenger");
-        }
-        Passenger passenger = (Passenger) passengerObject;
+        Passenger passenger = passengerRepository.findById(passengerId)
+            .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with ID: " + passengerId));
+
         // Check if passenger is the ordering passenger
-        if (ride.getOrderingPassenger() == null || !ride.getOrderingPassenger().getEmail().equals(email)) {
+        if (ride.getOrderingPassenger() == null || !ride.getOrderingPassenger().getId().equals(passengerId)) {
             throw new BadRequestException("Only the ordering passenger can cancel a ride");
         }
 
@@ -592,10 +582,10 @@ public class RideService {
         // TODO: create cancellation notifications
     }
     
-    public Ride stopRide(Long rideId, String email, RideStopRequest request) {
+    public Ride stopRide(Long rideId, Long driverId, RideStopRequest request) {
         Ride ride = getById(rideId);
 
-        if (ride.getDriver() == null || !ride.getDriver().getEmail().equals(email)) {
+        if (ride.getDriver() == null || !ride.getDriver().getId().equals(driverId)) {
             throw new BadRequestException("Driver is not assigned to this ride");
         }
 

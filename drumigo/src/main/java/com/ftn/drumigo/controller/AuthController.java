@@ -3,10 +3,12 @@ package com.ftn.drumigo.controller;
 import com.ftn.drumigo.dto.*;
 import com.ftn.drumigo.dto.auth.request.LoginRequest;
 import com.ftn.drumigo.dto.auth.response.LoginResponse;
+import com.ftn.drumigo.security.CustomUserDetails;
 import com.ftn.drumigo.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,8 +25,8 @@ public class AuthController {
     }
     
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestParam Long userId) {
-        authService.logout(userId);
+    public ResponseEntity<Void> logout(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        authService.logout(userDetails.getUserId());
         return ResponseEntity.ok().build();
     }
     

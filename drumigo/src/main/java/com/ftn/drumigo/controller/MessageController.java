@@ -4,11 +4,13 @@ import com.ftn.drumigo.domain.Message;
 import com.ftn.drumigo.dto.SupportMessageCreateRequest;
 import com.ftn.drumigo.dto.SupportMessageResponse;
 import com.ftn.drumigo.mapper.MessageMapper;
+import com.ftn.drumigo.security.CustomUserDetails;
 import com.ftn.drumigo.service.MessageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,16 +26,17 @@ public class MessageController {
     
     @PostMapping("/messages")
     public ResponseEntity<SupportMessageResponse> createSupportMessage(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody SupportMessageCreateRequest request) {
-        Message message = messageService.createSupportMessage(request);
+        Message message = messageService.createSupportMessage(userDetails.getUserId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(messageMapper.toResponse(message));
     }
     
-    @GetMapping("/chats/{userId}")
+    @GetMapping("/chats/{otherUserId}")
     public ResponseEntity<List<SupportMessageResponse>> getChatHistory(
-            @PathVariable Long userId,
-            @RequestParam Long otherUserId) {
-        List<Message> messages = messageService.getChatHistory(userId, otherUserId);
+            @PathVariable Long otherUserId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<Message> messages = messageService.getChatHistory(userDetails.getUserId(), otherUserId);
         List<SupportMessageResponse> responses = messages.stream()
             .map(messageMapper::toResponse)
             .collect(Collectors.toList());
