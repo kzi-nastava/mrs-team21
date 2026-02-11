@@ -44,6 +44,9 @@ public abstract class User {
     
     @Column(nullable = false)
     private Boolean blocked = false;
+
+    @Column(nullable = false)
+    private Boolean active;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -47,6 +47,11 @@ public class AuthService {
         if (user.getBlocked()) {
             throw new BadRequestException("Account is blocked");
         }
+
+        // Check if account is activated
+        if (!user.getActive()) {
+            throw new BadRequestException("Account is not activated");
+        }
         
         // Verify password (CRUD-first: simple hash comparison)
         String passwordHash = PasswordUtil.hashPassword(request.password());
