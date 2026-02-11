@@ -21,10 +21,19 @@ public class MessageService {
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
     
-    public Message createSupportMessage(SupportMessageCreateRequest request) {
-        User sender = userRepository.findById(request.senderId())
-            .orElseThrow(() -> new ResourceNotFoundException("Sender not found with id: " + request.senderId()));
-        
+    /**
+     * Create a support message.
+     * Security: Sender ID is derived from authentication, not from client input.
+     *
+     * @param senderId the authenticated sender's ID (from JWT token)
+     * @param request the request containing receiverId and content
+     * @return the created message
+     * @throws ResourceNotFoundException if sender or receiver not found
+     */
+    public Message createSupportMessage(Long senderId, SupportMessageCreateRequest request) {
+        User sender = userRepository.findById(senderId)
+            .orElseThrow(() -> new ResourceNotFoundException("Sender not found with id: " + senderId));
+
         User receiver = userRepository.findById(request.receiverId())
             .orElseThrow(() -> new ResourceNotFoundException("Receiver not found with id: " + request.receiverId()));
         

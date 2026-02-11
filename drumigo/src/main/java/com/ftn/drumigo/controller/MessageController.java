@@ -26,8 +26,9 @@ public class MessageController {
     
     @PostMapping("/messages")
     public ResponseEntity<SupportMessageResponse> createSupportMessage(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody SupportMessageCreateRequest request) {
-        Message message = messageService.createSupportMessage(request);
+        Message message = messageService.createSupportMessage(userDetails.getUserId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(messageMapper.toResponse(message));
     }
     
