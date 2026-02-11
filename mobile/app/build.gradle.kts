@@ -26,7 +26,6 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
         val secretsFile = rootProject.file("secrets.properties")
         val secretsProps = Properties()
         if (secretsFile.exists()) {
@@ -69,6 +68,12 @@ dependencies {
     // Navigation Component
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
+
+    // Retrofit
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp.logging)
+
 
     // Maps (Mapbox)
     implementation(libs.mapbox.maps)
