@@ -58,6 +58,7 @@ public class DriverService {
         driver.setRole(UserRole.DRIVER);
         driver.setActiveDriver(false);
         driver.setBlocked(false);
+        driver.setActive(true);
         driver.setCreatedAt(Instant.now());
         driver.setUpdatedAt(Instant.now());
         
