@@ -177,7 +177,7 @@ public class LoginFragment extends Fragment {
             case 504:
                 return "The server is having trouble right now. Please try again in a moment.";
             default:
-                return "Sign-in failed (" + httpCode + "). Please try again.";
+                return "Sign-in failed (" + httpMessage + "). Please try again.";
         }
     }
 
