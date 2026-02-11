@@ -134,18 +134,6 @@
     <string name="login_failed">Login failed. Please try again.</string>
     <string name="login_error_invalid_credentials">Invalid email or password</string>
 
-    <!-- Registration Messages -->
-    <string name="register_success">Registration successful. Please check your email.</string>
-    <string name="register_failed">Registration failed. Please try again.</string>
-    <string name="register_error_network">Network error. Check your connection.</string>
-    <string name="register_error_validation">Please check your input and try again.</string>
-    <string name="register_error_email_exists">This email is already registered.</string>
-    <string name="register_error_server">Server error. Please try again later.</string>
-
-    <!-- Login Messages -->
-    <string name="login_success">Login successful!</string>
-    <string name="login_failed">Login failed. Please try again.</string>
-    <string name="login_error_invalid_credentials">Invalid email or password</string>
 
     <!-- Validation Messages -->
     <string name="error_email_required">Email is required</string>
