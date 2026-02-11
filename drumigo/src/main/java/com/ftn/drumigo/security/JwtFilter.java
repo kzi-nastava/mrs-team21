@@ -1,4 +1,4 @@
-package com.ftn.drumigo.config;
+package com.ftn.drumigo.security;
 
 import com.ftn.drumigo.util.JwtUtil;
 import jakarta.servlet.FilterChain;
@@ -8,14 +8,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -34,15 +32,18 @@ public class JwtFilter extends OncePerRequestFilter {
 
             try {
                 if (jwtUtil.validateToken(token)) {
+                    Long userId = jwtUtil.getUserIdFromToken(token);
                     String email = jwtUtil.getEmailFromToken(token);
                     String role = jwtUtil.getRoleFromToken(token);
 
                     if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                        CustomUserDetails userDetails = new CustomUserDetails(userId, email, role);
+
                         UsernamePasswordAuthenticationToken authToken =
                                 new UsernamePasswordAuthenticationToken(
-                                        email,
+                                        userDetails,
                                         null,
-                                        List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                                        userDetails.getAuthorities()
                                 );
 
                         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
