@@ -1,8 +1,8 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
 }
-
-import java.util.Properties
 
 val secretsPropertiesFile = rootProject.file("secrets.properties")
 val secretsProperties = Properties().apply {
@@ -26,6 +26,13 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val secretsFile = rootProject.file("secrets.properties")
+        val secretsProps = Properties()
+        if (secretsFile.exists()) {
+            secretsFile.inputStream().use { secretsProps.load(it) }
+        }
+        val apiBaseUrl = secretsProps.getProperty("API_BASE_URL", "").trim()
 
         buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxAccessToken}\"")
         buildConfigField("String", "API_BASE_URL", "\"${apiBaseUrl}\"")
@@ -58,19 +65,20 @@ dependencies {
     implementation(libs.material)
     implementation("androidx.activity:activity:1.9.3")
     implementation("androidx.constraintlayout:constraintlayout:2.2.0")
-    
+
     // Navigation Component
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
+
+    // Retrofit
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp.logging)
 
     // Maps (Mapbox)
     implementation(libs.mapbox.maps)
     implementation(libs.mapbox.annotation)
 
-    // Networking
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.converter.gson)
-    
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

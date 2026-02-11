@@ -81,7 +81,7 @@
     <string name="confirm_new_password_placeholder">Confirm new password</string>
     <string name="reset_password">Reset password</string>
     <string name="password_requirements_title">Password requirements</string>
-    <string name="requirement_length">At least 8 characters</string>
+    <string name="requirement_length">At least 6 characters</string>
     <string name="requirement_uppercase">One uppercase letter</string>
     <string name="requirement_lowercase">One lowercase letter</string>
     <string name="requirement_special">One number or special character</string>
@@ -120,6 +120,20 @@
     <string name="ride_tracking_completed">Ride completed</string>
     <string name="ride_tracking_load_failed">Unable to load ride tracking</string>
     <string name="ride_tracking_not_implemented">This action is not implemented yet</string>
+
+    <!-- Registration Messages -->
+    <string name="register_success">Registration successful. Please check your email.</string>
+    <string name="register_failed">Registration failed. Please try again.</string>
+    <string name="register_error_network">Network error. Check your connection.</string>
+    <string name="register_error_validation">Please check your input and try again.</string>
+    <string name="register_error_email_exists">This email is already registered.</string>
+    <string name="register_error_server">Server error. Please try again later.</string>
+
+    <!-- Login Messages -->
+    <string name="login_success">Login successful!</string>
+    <string name="login_failed">Login failed. Please try again.</string>
+    <string name="login_error_invalid_credentials">Invalid email or password</string>
+
 
     <!-- Validation Messages -->
     <string name="error_email_required">Email is required</string>
