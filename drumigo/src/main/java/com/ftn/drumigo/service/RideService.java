@@ -81,10 +81,7 @@ public class RideService {
     public RideInconsistency createInconsistency(Long rideId, Long passengerId, String note) {
         Ride ride = getById(rideId);
         
-        // Find passenger by ID
         Passenger passenger = passengerRepository.findById(passengerId)
-            .filter(p -> p instanceof Passenger)
-            .map(p -> (Passenger) p)
             .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with ID: " + passengerId));
 
         // Validate passenger is part of the ride (ordering passenger or linked passenger)
@@ -550,12 +547,9 @@ public class RideService {
     
     public void cancelByPassenger(Long rideId, Long passengerId) {
         Ride ride = getById(rideId);
-        Object passengerObject = passengerRepository.findById(passengerId)
+        Passenger passenger = passengerRepository.findById(passengerId)
             .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with ID: " + passengerId));
-        if (!(passengerObject instanceof Passenger)) {
-            throw new BadRequestException("User with ID " + passengerId + " is not a passenger");
-        }
-        Passenger passenger = (Passenger) passengerObject;
+
         // Check if passenger is the ordering passenger
         if (ride.getOrderingPassenger() == null || !ride.getOrderingPassenger().getId().equals(passengerId)) {
             throw new BadRequestException("Only the ordering passenger can cancel a ride");
