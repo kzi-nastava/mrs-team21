@@ -18,20 +18,20 @@ ON DUPLICATE KEY UPDATE
 -- =====================================================================
 -- PROFILE TEST DATA
 -- =====================================================================
-INSERT INTO users (dtype, name, surname, email, password_hash, address, phone, profile_picture_url, blocked, role, created_at, updated_at)
+INSERT INTO users (dtype, name, surname, email, password_hash, address, phone, profile_picture_url, blocked, active, role, created_at, updated_at)
 VALUES
     ('Passenger', 'Ana', 'Petrović', 'ana.petrovic@example.com', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Bulevar Oslobođenja 10, Novi Sad', '+381641234567', NULL, FALSE, 'PASSENGER', NOW(), NOW()),
+     'Bulevar Oslobođenja 10, Novi Sad', '+381641234567', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW()),
     ('Driver', 'Marko', 'Jovanović', 'marko.jovanovic@example.com', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Narodnih Heroja 25, Beograd', '+381652345678', NULL, FALSE, 'DRIVER', NOW(), NOW()),
+     'Narodnih Heroja 25, Beograd', '+381652345678', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW()),
     ('Admin', 'Stefan', 'Nikolić', 'stefan.nikolic@drumigo.com', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Trg Republike 1, Beograd', '+381663456789', NULL, FALSE, 'ADMIN', NOW(), NOW()),
+     'Trg Republike 1, Beograd', '+381663456789', NULL, FALSE, TRUE, 'ADMIN', NOW(), NOW()),
     ('Driver', 'Jelena', 'Milošević', 'jelena.milosevic@example.com', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Knez Mihailova 30, Beograd', '+381641112222', NULL, FALSE, 'DRIVER', NOW(), NOW()),
+     'Knez Mihailova 30, Beograd', '+381641112222', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW()),
     ('Driver', 'Nikola', 'Đorđević', 'nikola.djordjevic@example.com', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Cara Dušana 15, Niš', '+381652223333', NULL, FALSE, 'DRIVER', NOW(), NOW()),
+     'Cara Dušana 15, Niš', '+381652223333', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW()),
     ('Passenger', 'Milica', 'Stojanović', 'milica.stojanovic@example.com', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Kraljevića Marka 5, Kragujevac', '+381663334444', NULL, FALSE, 'PASSENGER', NOW(), NOW())
+     'Kraljevića Marka 5, Kragujevac', '+381663334444', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW())
 ON DUPLICATE KEY UPDATE
     dtype = VALUES(dtype),
     name = VALUES(name),
@@ -87,18 +87,18 @@ ON DUPLICATE KEY UPDATE
 -- =====================================================================
 INSERT INTO users (
     id, name, surname, email, password_hash, address, phone,
-    profile_picture_url, blocked, role, created_at, updated_at, dtype
+    profile_picture_url, blocked, active, role, created_at, updated_at, dtype
 ) VALUES
     (6001, 'Tracking', 'TestDriver', 'tracking.driver@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Driver Test Address 1', '+381 64 600 0001', NULL, FALSE, 'DRIVER', NOW(), NOW(), 'Driver'),
+     'Driver Test Address 1', '+381 64 600 0001', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
     (6002, 'Main', 'Passenger', 'main.passenger@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Passenger Test Address 1', '+381 64 600 0002', NULL, FALSE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
+     'Passenger Test Address 1', '+381 64 600 0002', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
     (6003, 'Linked', 'Passenger', 'linked.passenger@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Passenger Test Address 2', '+381 64 600 0003', NULL, FALSE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
+     'Passenger Test Address 2', '+381 64 600 0003', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
     (6004, 'Another', 'LinkedPassenger', 'another.linked@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Passenger Test Address 3', '+381 64 600 0004', NULL, FALSE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
+     'Passenger Test Address 3', '+381 64 600 0004', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
     (6005, 'Unauthorized', 'Passenger', 'unauthorized.passenger@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Passenger Test Address 4', '+381 64 600 0005', NULL, FALSE, 'PASSENGER', NOW(), NOW(), 'Passenger')
+     'Passenger Test Address 4', '+381 64 600 0005', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger')
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
     surname = VALUES(surname),
@@ -173,10 +173,10 @@ INSERT INTO ride_waypoints (id, ride_id, location_id, waypoint_order) VALUES
     (6001, 6001, 6001, 0),
     (6002, 6001, 6002, 1);
 
-INSERT INTO ride_passengers (ride_id, passenger_id) VALUES
-    (6001, 6002),
-    (6001, 6003),
-    (6001, 6004);
+INSERT INTO ride_passengers (ride_id, passenger_email) VALUES
+    (6001, 'linked.passenger@test.local'),
+    (6001, 'another.linked@test.local'),
+    (6001, 'unauthorized.passenger@test.local');
 
 INSERT INTO ride_inconsistencies (id, ride_id, passenger_id, note, created_at) VALUES
     (6001, 6001, 6002, 'Driver took a longer route through Liman instead of going directly to Trg Slobode.', DATE_SUB(NOW(), INTERVAL 3 MINUTE)),
@@ -200,18 +200,18 @@ DELETE FROM users WHERE id IN (7001, 7002, 7003, 7004, 7005);
 
 INSERT INTO users (
     id, name, surname, email, password_hash, address, phone,
-    profile_picture_url, blocked, role, created_at, updated_at, dtype
+    profile_picture_url, blocked, active, role, created_at, updated_at, dtype
 ) VALUES
     (7001, 'History', 'TestDriver', 'history.driver@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Driver Test Address 1', '+381 64 700 0001', NULL, FALSE, 'DRIVER', NOW(), NOW(), 'Driver'),
+     'Driver Test Address 1', '+381 64 700 0001', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
     (7002, 'Marko', 'Petrovic', 'marko.petrovic@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Passenger Test Address 1', '+381 64 700 0002', NULL, FALSE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
+     'Passenger Test Address 1', '+381 64 700 0002', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
     (7003, 'Ana', 'Jovanovic', 'ana.jovanovic@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Passenger Test Address 2', '+381 64 700 0003', NULL, FALSE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
+     'Passenger Test Address 2', '+381 64 700 0003', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
     (7004, 'Nikola', 'Stojanovic', 'nikola.stojanovic@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Passenger Test Address 3', '+381 64 700 0004', NULL, FALSE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
+     'Passenger Test Address 3', '+381 64 700 0004', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
     (7005, 'Jovana', 'Nikolic', 'jovana.nikolic@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Passenger Test Address 4', '+381 64 700 0005', NULL, FALSE, 'PASSENGER', NOW(), NOW(), 'Passenger')
+     'Passenger Test Address 4', '+381 64 700 0005', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger')
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
     surname = VALUES(surname),
@@ -380,17 +380,17 @@ INSERT INTO ride_waypoints (id, ride_id, location_id, waypoint_order) VALUES
     (7015, 7008, 7015, 0),
     (7016, 7008, 7016, 1);
 
-INSERT INTO ride_passengers (ride_id, passenger_id) VALUES
-    (7001, 7002),
-    (7001, 7003),
-    (7001, 7004),
-    (7002, 7003),
-    (7003, 7004),
-    (7004, 7005),
-    (7005, 7002),
-    (7006, 7003),
-    (7007, 7004),
-    (7008, 7002);
+INSERT INTO ride_passengers (ride_id, passenger_email) VALUES
+    (7001, 'marko.petrovic@test.local'),
+    (7001, 'ana.jovanovic@test.local'),
+    (7001, 'nikola.stojanovic@test.local'),
+    (7002, 'ana.jovanovic@test.local'),
+    (7003, 'nikola.stojanovic@test.local'),
+    (7004, 'jovana.nikolic@test.local'),
+    (7005, 'marko.petrovic@test.local'),
+    (7006, 'ana.jovanovic@test.local'),
+    (7007, 'nikola.stojanovic@test.local'),
+    (7008, 'marko.petrovic@test.local');
 
 INSERT INTO reviews (ride_id, passenger_id, rating_driver, rating_vehicle, comment, created_at) VALUES
     (7001, 7002, 5, 5, 'Excellent ride! Driver was very professional.', DATE_SUB(NOW(), INTERVAL 2 DAY)),
@@ -410,28 +410,28 @@ DELETE FROM users WHERE id BETWEEN 8001 AND 8012;
 
 INSERT INTO users (
     id, name, surname, email, password_hash, address, phone,
-    profile_picture_url, blocked, role, created_at, updated_at, dtype
+    profile_picture_url, blocked, active, role, created_at, updated_at, dtype
 ) VALUES
     (8001, 'Marko', 'Petrovic', 'marko.driver@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Bulevar Oslobodjenja 50', '+381 64 800 0001', NULL, FALSE, 'DRIVER', NOW(), NOW(), 'Driver'),
+     'Bulevar Oslobodjenja 50', '+381 64 800 0001', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
     (8002, 'Ana', 'Jovanovic', 'ana.driver@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Liman 4', '+381 64 800 0002', NULL, FALSE, 'DRIVER', NOW(), NOW(), 'Driver'),
+     'Liman 4', '+381 64 800 0002', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
     (8003, 'Milica', 'Stojanovic', 'milica.driver@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Detelinara 15', '+381 64 800 0003', NULL, FALSE, 'DRIVER', NOW(), NOW(), 'Driver'),
+     'Detelinara 15', '+381 64 800 0003', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
     (8004, 'Luka', 'Djordjevic', 'luka.driver@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Telep 22', '+381 64 800 0004', NULL, FALSE, 'DRIVER', NOW(), NOW(), 'Driver'),
+     'Telep 22', '+381 64 800 0004', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
     (8005, 'Stefan', 'Nikolic', 'stefan.driver@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Petrovaradin', '+381 64 800 0005', NULL, FALSE, 'DRIVER', NOW(), NOW(), 'Driver'),
+     'Petrovaradin', '+381 64 800 0005', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
     (8006, 'Sara', 'Popovic', 'sara.driver@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Grbavica', '+381 64 800 0006', NULL, FALSE, 'DRIVER', NOW(), NOW(), 'Driver'),
+     'Grbavica', '+381 64 800 0006', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
     (8007, 'Nikola', 'Radovic', 'nikola.driver@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Kej, Novi Sad', '+381 64 800 0007', NULL, FALSE, 'DRIVER', NOW(), NOW(), 'Driver'),
+     'Kej, Novi Sad', '+381 64 800 0007', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
     (8008, 'Jovana', 'Ilic', 'jovana.driver@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Rotkvarija', '+381 64 800 0008', NULL, FALSE, 'DRIVER', NOW(), NOW(), 'Driver'),
+     'Rotkvarija', '+381 64 800 0008', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
     (8009, 'Jovan', 'Markovic', 'jovan.driver@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Sremska Kamenica', '+381 64 800 0009', NULL, FALSE, 'DRIVER', NOW(), NOW(), 'Driver'),
+     'Sremska Kamenica', '+381 64 800 0009', NULL, FALSE,  TRUE,'DRIVER', NOW(), NOW(), 'Driver'),
     (8010, 'Marija', 'Tomic', 'marija.driver@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Centar', '+381 64 800 0010', NULL, FALSE, 'DRIVER', NOW(), NOW(), 'Driver')
+     'Centar', '+381 64 800 0010', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver')
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
     surname = VALUES(surname),
@@ -505,14 +505,14 @@ DELETE FROM users WHERE id IN (8501, 8502, 8503);
 
 INSERT INTO users (
     id, name, surname, email, password_hash, address, phone,
-    profile_picture_url, blocked, role, created_at, updated_at, dtype
+    profile_picture_url, blocked, active, role, created_at, updated_at, dtype
 ) VALUES
     (8501, 'Rating', 'TestDriver', 'rating.driver@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Test Driver Address', '+381 64 111 0001', NULL, FALSE, 'DRIVER', NOW(), NOW(), 'Driver'),
+     'Test Driver Address', '+381 64 111 0001', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
     (8502, 'Rating', 'TestPassenger', 'rating.passenger@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Test Passenger Address', '+381 64 222 0002', NULL, FALSE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
+     'Test Passenger Address', '+381 64 222 0002', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
     (8503, 'Linked', 'Passenger', 'linked.passenger@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Linked Passenger Address', '+381 64 333 0003', NULL, FALSE, 'PASSENGER', NOW(), NOW(), 'Passenger')
+     'Linked Passenger Address', '+381 64 333 0003', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger')
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
     surname = VALUES(surname),
@@ -655,13 +655,13 @@ INSERT INTO ride_waypoints (id, ride_id, location_id, waypoint_order) VALUES
     (8511, 8506, 8511, 1),
     (8512, 8506, 8512, 2);
 
-INSERT INTO ride_passengers (ride_id, passenger_id) VALUES
-    (8501, 8502),
-    (8502, 8502),
-    (8503, 8502),
-    (8504, 8502),
-    (8505, 8502),
-    (8506, 8502);
+INSERT INTO ride_passengers (ride_id, passenger_email) VALUES
+    (8501, 'rating.passenger@test.local'),
+    (8502, 'rating.passenger@test.local'),
+    (8503, 'rating.passenger@test.local'),
+    (8504, 'rating.passenger@test.local'),
+    (8505, 'rating.passenger@test.local'),
+    (8506, 'rating.passenger@test.local');
 
 INSERT INTO reviews (ride_id, passenger_id, rating_driver, rating_vehicle, comment, created_at) VALUES
     (8501, 8502, 5, 4, 'Great driver, very professional! Vehicle was clean.', DATE_SUB(NOW(), INTERVAL 1 DAY));
@@ -678,12 +678,12 @@ DELETE FROM ride_passengers WHERE ride_id = 9001;
 
 INSERT INTO users (
     id, name, surname, email, password_hash, address, phone,
-    profile_picture_url, blocked, role, created_at, updated_at, dtype
+    profile_picture_url, blocked, active, role, created_at, updated_at, dtype
 ) VALUES
     (9001, 'Test', 'Driver', 'driver9001@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Driver Address', '000-000', NULL, FALSE, 'DRIVER', NOW(), NOW(), 'Driver'),
+     'Driver Address', '000-000', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
     (9002, 'Test', 'Passenger', 'passenger9002@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Passenger Address', '111-111', NULL, FALSE, 'PASSENGER', NOW(), NOW(), 'Passenger')
+     'Passenger Address', '111-111', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger')
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
     surname = VALUES(surname),
@@ -753,7 +753,7 @@ INSERT INTO ride_waypoints (id, ride_id, location_id, waypoint_order) VALUES
     (9001, 9001, 9001, 1),
     (9002, 9001, 9002, 2);
 
-INSERT INTO ride_passengers (ride_id, passenger_id) VALUES (9001, 9002);
+INSERT INTO ride_passengers (ride_id, passenger_email) VALUES (9001, 'passenger9002@test.local');
 
 -- =====================================================================
 -- SAMPLE RIDES (IDs 9501-9508)
@@ -773,14 +773,14 @@ DELETE FROM users WHERE id IN (9501, 9502, 9503);
 
 INSERT INTO users (
     id, name, surname, email, password_hash, address, phone,
-    profile_picture_url, blocked, role, created_at, updated_at, dtype
+    profile_picture_url, blocked, active, role, created_at, updated_at, dtype
 ) VALUES
     (9501, 'Sample', 'Driver', 'sample.driver@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Sample Driver Address', '+381 64 950 0001', NULL, FALSE, 'DRIVER', NOW(), NOW(), 'Driver'),
+     'Sample Driver Address', '+381 64 950 0001', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
     (9502, 'Sample', 'Passenger1', 'sample.passenger1@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Sample Passenger Address 1', '+381 64 950 0002', NULL, FALSE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
+     'Sample Passenger Address 1', '+381 64 950 0002', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
     (9503, 'Sample', 'Passenger2', 'sample.passenger2@test.local', 'b46ea4ca5b6cb70b2965d8483a1ba85b92644fe9f9e04a860c891d92589a1cf4',
-     'Sample Passenger Address 2', '+381 64 950 0003', NULL, FALSE, 'PASSENGER', NOW(), NOW(), 'Passenger')
+     'Sample Passenger Address 2', '+381 64 950 0003', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger')
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
     surname = VALUES(surname),
@@ -883,11 +883,9 @@ INSERT INTO ride_waypoints (id, ride_id, location_id, waypoint_order) VALUES
     (9507, 9504, 9507, 1),
     (9508, 9504, 9508, 2);
 
-INSERT INTO ride_passengers (ride_id, passenger_id) VALUES
-    (9501, 9502),
-    (9502, 9502),
-    (9503, 9502),
-    (9503, 9503),
-    (9504, 9502);
-
-SET FOREIGN_KEY_CHECKS = 1;
+INSERT INTO ride_passengers (ride_id, passenger_email) VALUES
+    (9501, 'sample.passenger1@test.local'),
+    (9502, 'sample.passenger1@test.local'),
+    (9503, 'sample.passenger1@test.local'),
+    (9503, 'sample.passenger2@test.local'),
+    (9504, 'sample.passenger1@test.local');
