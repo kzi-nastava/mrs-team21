@@ -46,7 +46,7 @@ public class PassengerController {
     @GetMapping("/{passengerId}/rides/history")
     public ResponseEntity<Page<PassengerRideHistoryItemResponse>> getPassengerRideHistory(
             @PathVariable Long passengerId,
-            @ModelAttribute RideHistoryRequest request) {
+            @Valid @ModelAttribute RideHistoryRequest request) {
 
         Pageable pageable = request.toPageable();
         List<RideStatus> statuses = request.parseStatuses();

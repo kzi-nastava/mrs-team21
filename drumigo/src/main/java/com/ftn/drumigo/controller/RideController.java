@@ -152,7 +152,7 @@ public class RideController {
     
     @GetMapping("/admin/rides/history")
     public ResponseEntity<Page<RideResponse>> getAdminRideHistory(
-            @ModelAttribute RideHistoryRequest request) {
+            @Valid @ModelAttribute RideHistoryRequest request) {
 
         Pageable pageable = request.toPageable();
         List<RideStatus> statuses = request.parseStatuses();

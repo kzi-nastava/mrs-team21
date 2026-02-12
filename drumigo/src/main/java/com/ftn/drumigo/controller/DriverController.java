@@ -100,7 +100,7 @@ public class DriverController {
     @GetMapping("/{driverId}/rides/history")
     public ResponseEntity<Page<DriverRideHistoryItemResponse>> getDriverRideHistory(
             @PathVariable Long driverId,
-            @ModelAttribute RideHistoryRequest request) {
+            @Valid @ModelAttribute RideHistoryRequest request) {
 
         Pageable pageable = request.toPageable();
 
