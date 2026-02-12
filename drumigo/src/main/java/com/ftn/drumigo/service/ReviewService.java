@@ -57,11 +57,6 @@ public class ReviewService {
         Passenger passenger = passengerRepository.findById(passengerId)
             .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with id: " + passengerId));
         
-        // Validate that passenger is part of this ride
-        if (!ridePassengerRepository.existsByRideAndPassenger(ride, passenger)) {
-            throw new BadRequestException("Passenger is not part of this ride");
-        }
-        
         // Validate that passenger is the ordering passenger (only ordering passenger can review)
         if (ride.getOrderingPassenger() == null) {
             throw new BadRequestException("Ride has no ordering passenger set");
@@ -139,7 +134,7 @@ public class ReviewService {
             .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with id: " + passengerId));
         
         // Security: verify passenger is part of this ride (prevent info leakage)
-        if (!ridePassengerRepository.existsByRideAndPassenger(ride, passenger)) {
+        if (!ridePassengerRepository.existsByRideAndPassengerEmail(ride, passenger.getEmail())) {
             throw new BadRequestException("Passenger is not part of this ride");
         }
         
