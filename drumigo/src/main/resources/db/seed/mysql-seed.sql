@@ -889,3 +889,5 @@ INSERT INTO ride_passengers (ride_id, passenger_email) VALUES
     (9503, 'sample.passenger1@test.local'),
     (9503, 'sample.passenger2@test.local'),
     (9504, 'sample.passenger1@test.local');
+
+SET FOREIGN_KEY_CHECKS = 1;
