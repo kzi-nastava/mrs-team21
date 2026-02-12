@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, inject } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { NAVIGATION_CONFIG, SECTION_LABELS, NavItem } from '../../config/navbar.config';
@@ -21,7 +21,7 @@ export interface UserProfile {
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss'],
 })
-export class NavbarComponent implements OnInit {
+export class NavbarComponent implements OnInit, OnChanges {
   @Input() user!: UserProfile;
 
   private readonly authService = inject(AuthService);
@@ -32,11 +32,20 @@ export class NavbarComponent implements OnInit {
   sectionLabels = SECTION_LABELS;
 
   ngOnInit(): void {
+    this.applyUserType();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['user'] && !changes['user'].firstChange) {
+      this.applyUserType();
+    }
+  }
+
+  private applyUserType(): void {
     if (!this.user?.type) {
       console.error('User type is required for navbar');
       return;
     }
-
     this.navItems = NAVIGATION_CONFIG[this.user.type] || [];
     this.groupNavItems();
   }
