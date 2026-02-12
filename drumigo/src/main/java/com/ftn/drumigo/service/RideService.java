@@ -20,9 +20,7 @@ import com.ftn.drumigo.dto.ride.response.EstimateResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +28,6 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -679,16 +676,6 @@ public class RideService {
                 notificationRepository.save(notification);
             }
         }
-    }
-    
-    @SuppressWarnings("rawtypes")
-    private Comparable getSortValue(Ride ride, String property) {
-        return switch (property) {
-            case "startTime" -> ride.getStartTime() != null ? ride.getStartTime() : Instant.ofEpochMilli(0);
-            case "endTime" -> ride.getEndTime() != null ? ride.getEndTime() : Instant.ofEpochMilli(0);
-            case "totalCost" -> ride.getTotalCost() != null ? ride.getTotalCost() : BigDecimal.ZERO;
-            default -> ride.getRequestedAt();
-        };
     }
     
     public Page<Ride> getAdminRideHistory(Instant from, Instant to, List<RideStatus> statuses, 
