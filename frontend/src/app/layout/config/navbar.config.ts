@@ -16,7 +16,7 @@ export const NAVIGATION_CONFIG: NavigationConfig = {
     // Main Section
     { label: 'Order a Ride', icon: 'clock', path: '/order-ride', section: 'main' },
     { label: 'Ride Tracking', icon: 'map-pin', path: '/ride-tracking/1', section: 'main' },
-    { label: 'Ride History', icon: 'file-text', path: '/driver-history', section: 'main' },
+    { label: 'Ride History', icon: 'file-text', path: '/ride-history', section: 'main' },
     { label: 'Favorite Routes', icon: 'bookmark', path: '#', section: 'main' },
 
     // Account Section
@@ -28,7 +28,7 @@ export const NAVIGATION_CONFIG: NavigationConfig = {
   driver: [
     // Main Section
     { label: 'Ride Tracking', icon: 'map-pin', path: '/ride-tracking/1', section: 'main' },
-    { label: 'Ride History', icon: 'file-text', path: '/driver-history', section: 'main' },
+    { label: 'Ride History', icon: 'file-text', path: '/driver/ride-history', section: 'main' },
 
     // Account Section
     { label: 'Profile', icon: 'user', path: '/profile', section: 'account' },
@@ -42,11 +42,12 @@ export const NAVIGATION_CONFIG: NavigationConfig = {
 
     // Monitoring Section
     { label: 'Active Rides', icon: 'map-pin', path: '#', section: 'monitoring' },
-    { label: 'Ride History', icon: 'file-text', path: '/driver-history', section: 'monitoring' },
+    { label: 'Ride History', icon: 'file-text', path: '/admin/ride-history', section: 'monitoring' },
     { label: 'Panic Notifications', icon: 'alert-triangle', path: '#', section: 'monitoring' },
     { label: 'Live Support / Chat', icon: 'message-circle', path: '#', section: 'monitoring' },
 
     // Management Section
+    { label: 'Register Driver', icon: 'truck', path: '/register-driver', section: 'management' },
     { label: 'Drivers', icon: 'truck', path: '#', section: 'management' },
     { label: 'Passengers', icon: 'users', path: '#', section: 'management' },
     { label: 'Reports', icon: 'bar-chart', path: '#', section: 'management' },

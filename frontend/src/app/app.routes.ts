@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 import { LayoutComponent } from './layout/layout.component';
+import { authGuard } from './shared/guards/auth.guard';
+import { roleGuard } from './shared/guards/role.guard';
 
 export const routes: Routes = [
   // Landing page (root - no layout)
@@ -44,20 +46,23 @@ export const routes: Routes = [
       ),
   },
 
-  // Non-auth routes under layout
+  // Authenticated routes under layout
   {
     path: '',
     component: LayoutComponent,
+    canActivate: [authGuard],
     children: [
-      // Admin
+      // Admin only
       {
         path: 'register-driver',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
         loadComponent: () =>
           import('./features/admin/driver-registration/driver-registration.component').then(
             (m) => m.DriverRegistrationComponent,
           ),
       },
-      // User
+      // All roles
       {
         path: 'profile',
         loadComponent: () =>
@@ -66,32 +71,34 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'ride-history',
-        loadComponent: () =>
-          import(
-            './features/ride-history/pages/passenger-history-page/passenger-history-page.component'
-          ).then((m) => m.PassengerHistoryPageComponent),
-      },
-
-      // Ride Tracking
-      {
         path: 'ride-tracking/:rideId',
         loadComponent: () =>
           import('./features/ride-tracking/ride-tracking.component').then(
             (m) => m.RideTrackingComponent,
           ),
       },
-
-      // Order Ride
+      // Passenger only
+      {
+        path: 'ride-history',
+        canActivate: [roleGuard],
+        data: { roles: ['PASSENGER'] },
+        loadComponent: () =>
+          import(
+            './features/ride-history/pages/passenger-history-page/passenger-history-page.component'
+          ).then((m) => m.PassengerHistoryPageComponent),
+      },
       {
         path: 'order-ride',
+        canActivate: [roleGuard],
+        data: { roles: ['PASSENGER'] },
         loadComponent: () =>
           import('./features/order-ride/order-ride.component').then((m) => m.OrderRideComponent),
       },
-
-      // Driver Routes
+      // Driver only
       {
         path: 'driver',
+        canActivate: [roleGuard],
+        data: { roles: ['DRIVER'] },
         children: [
           {
             path: 'ride-history',
@@ -102,10 +109,11 @@ export const routes: Routes = [
           },
         ],
       },
-
-      // Admin Routes
+      // Admin only
       {
         path: 'admin',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
         children: [
           {
             path: 'ride-history',

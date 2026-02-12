@@ -1,7 +1,8 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { NAVIGATION_CONFIG, SECTION_LABELS, NavItem } from '../../config/navbar.config';
+import { AuthService } from '../../../shared/services/auth.service';
 
 export type UserType = 'passenger' | 'driver' | 'admin';
 
@@ -22,6 +23,9 @@ export interface UserProfile {
 })
 export class NavbarComponent implements OnInit {
   @Input() user!: UserProfile;
+
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
   navItems: NavItem[] = [];
   groupedNavItems: Map<string, NavItem[]> = new Map();
@@ -78,5 +82,10 @@ export class NavbarComponent implements OnInit {
 
   getSectionKeys(): string[] {
     return Array.from(this.groupedNavItems.keys());
+  }
+
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/']);
   }
 }
