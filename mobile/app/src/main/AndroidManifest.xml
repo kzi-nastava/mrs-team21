@@ -5,6 +5,10 @@
     <!-- Permissions -->
     <!-- Internet permission for API calls -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Location permissions for driver location pinging -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     
     <!-- Camera permission for profile photo -->
     <uses-permission android:name="android.permission.CAMERA" />

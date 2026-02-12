@@ -10,6 +10,7 @@ navigationUi = "2.9.6"
 retrofit = "2.11.0"
 okhttp = "4.12.0"
 mapboxMaps = "11.18.1"
+playServicesLocation = "21.3.0"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -24,6 +25,7 @@ retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", ver
 okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
 mapbox-maps = { group = "com.mapbox.maps", name = "android", version.ref = "mapboxMaps" }
 mapbox-annotation = { group = "com.mapbox.maps", name = "plugin-annotation", version.ref = "mapboxMaps" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
