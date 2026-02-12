@@ -1,5 +1,9 @@
 package com.ftn.drumigo.service;
 
+import com.ftn.drumigo.domain.PanicEvent;
+import com.ftn.drumigo.domain.Ride;
+import com.ftn.drumigo.domain.RidePassenger;
+import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.UserToken;
 import com.ftn.drumigo.domain.enums.TokenType;
@@ -7,17 +11,23 @@ import com.ftn.drumigo.domain.enums.UserRole;
 import com.ftn.drumigo.dto.auth.request.PassengerRegisterRequest;
 import com.ftn.drumigo.exception.BadRequestException;
 import com.ftn.drumigo.exception.ConflictException;
-import com.ftn.drumigo.repository.PassengerRepository;
-import com.ftn.drumigo.repository.UserRepository;
-import com.ftn.drumigo.repository.UserTokenRepository;
+import com.ftn.drumigo.exception.ResourceNotFoundException;
+import com.ftn.drumigo.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ftn.drumigo.util.TokenUtil;
 import com.ftn.drumigo.util.PasswordUtil;
 import java.time.Instant;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +37,10 @@ public class PassengerService {
     private final PassengerRepository passengerRepository;
     private final UserRepository userRepository;
     private final UserTokenRepository userTokenRepository;
+    private final RidePassengerRepository ridePassengerRepository;
+    private final RideRepository rideRepository;
+    private final PanicEventRepository panicEventRepository;
+
     private final EmailService emailService;
     
     public Passenger register(PassengerRegisterRequest request) {
@@ -119,5 +133,26 @@ public class PassengerService {
     private boolean isValidPassword(String password) {
         if (password == null) return false;
         return password.matches("(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9\\W]).{6,64}");
+    }
+
+    public Page<Ride> getPassengerRideHistory(Long passengerId, Instant from, Instant to,
+                                              List<RideStatus> statuses, Boolean hasPanic, Pageable pageable) {
+        final Instant fromFinal = from == null ? Instant.ofEpochMilli(0) : from;
+        final Instant toFinal = to == null ? Instant.now() : to;
+
+        Passenger passenger = passengerRepository.findById(passengerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with id: " + passengerId));
+
+        List<RideStatus> statusFilter = (statuses == null || statuses.isEmpty()) ? null : statuses;
+
+        return rideRepository.findPassengerHistory(
+                passengerId,
+                passenger.getEmail(),
+                fromFinal,
+                toFinal,
+                statusFilter,
+                hasPanic,
+                pageable
+        );
     }
 }
