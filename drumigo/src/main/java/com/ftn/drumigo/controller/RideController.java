@@ -3,14 +3,12 @@ package com.ftn.drumigo.controller;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RideInconsistency;
 import com.ftn.drumigo.domain.RideWaypoint;
-import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.dto.PanicEventResponse;
 import com.ftn.drumigo.dto.PassengerResponse;
 import com.ftn.drumigo.dto.ReviewResponse;
 import com.ftn.drumigo.dto.RideCreateRequest;
 import com.ftn.drumigo.dto.RideDetailsResponse;
-import com.ftn.drumigo.dto.history.request.RideHistoryRequest;
 import com.ftn.drumigo.dto.RideInconsistencyCreateRequest;
 import com.ftn.drumigo.dto.RideInconsistencyResponse;
 import com.ftn.drumigo.dto.RideTrackingResponse;
@@ -29,8 +27,6 @@ import com.ftn.drumigo.security.CustomUserDetails;
 import com.ftn.drumigo.service.RideService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -148,22 +144,6 @@ public class RideController {
         Ride ride = rideService.stopRide(id, userDetails.getUserId(), request);
         List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
         return ResponseEntity.ok(rideMapper.toResponse(ride, waypoints));
-    }
-    
-    @GetMapping("/admin/rides/history")
-    public ResponseEntity<Page<RideResponse>> getAdminRideHistory(
-            @Valid @ModelAttribute RideHistoryRequest request) {
-
-        Pageable pageable = request.toPageable();
-        List<RideStatus> statuses = request.parseStatuses();
-
-        Page<Ride> rides = rideService.getAdminRideHistory(request.getFrom(), request.getTo(), statuses, request.getHasPanic(), pageable);
-        Page<RideResponse> responses = rides.map(ride -> {
-            List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
-            return rideMapper.toResponse(ride, waypoints);
-        });
-        
-        return ResponseEntity.ok(responses);
     }
     
     @GetMapping("/admin/rides/search")
