@@ -2,7 +2,7 @@ package com.ftn.drumigo.mapper;
 
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RideWaypoint;
-import com.ftn.drumigo.dto.PassengerRideHistoryItemResponse;
+import com.ftn.drumigo.dto.history.response.PassengerRideHistoryItemResponse;
 import com.ftn.drumigo.dto.ride.response.RideResponse;
 import com.ftn.drumigo.dto.RideTrackingResponse;
 import org.springframework.stereotype.Component;
