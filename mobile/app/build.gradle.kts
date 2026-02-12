@@ -78,6 +78,7 @@ dependencies {
     // Maps (Mapbox)
     implementation(libs.mapbox.maps)
     implementation(libs.mapbox.annotation)
+    implementation(libs.play.services.location)
 
     // Testing
     testImplementation(libs.junit)

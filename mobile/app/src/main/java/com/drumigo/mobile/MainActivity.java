@@ -1,16 +1,26 @@
 package com.drumigo.mobile;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
@@ -22,9 +32,14 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.drumigo.mobile.databinding.ActivityMainBinding;
 import com.drumigo.mobile.data.api.ApiClient;
+import com.drumigo.mobile.data.api.DriverApiService;
 import com.drumigo.mobile.data.api.RideApiService;
+import com.drumigo.mobile.data.model.DriverLocationUpdateRequest;
 import com.drumigo.mobile.data.model.ride.RideResponse;
 import com.drumigo.mobile.ui.ride.RideTrackingConfig;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.navigation.NavigationView;
 
@@ -34,12 +49,18 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+    private static final String TAG = "MainActivity";
+    private static final String AUTH_PREFS = "auth";
+    private static final String ROLE_DRIVER = "DRIVER";
+    private static final long DRIVER_LOCATION_PING_INTERVAL_MS = 5_000L;
 
     private ActivityMainBinding binding;
     private NavController navController;
     private DrawerLayout drawerLayout;
     private MaterialToolbar toolbar;
     private RideApiService rideApiService;
+    private DriverApiService driverApiService;
+    private FusedLocationProviderClient fusedLocationClient;
     private final Handler ridePollingHandler = new Handler(Looper.getMainLooper());
     private final Runnable ridePollingRunnable = new Runnable() {
         @Override
@@ -48,6 +69,24 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             ridePollingHandler.postDelayed(this, 10_000L);
         }
     };
+    private final Handler driverLocationPingHandler = new Handler(Looper.getMainLooper());
+    private final Runnable driverLocationPingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            pingDriverLocationOnce();
+            driverLocationPingHandler.postDelayed(this, DRIVER_LOCATION_PING_INTERVAL_MS);
+        }
+    };
+    private final ActivityResultLauncher<String[]> locationPermissionLauncher =
+        registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
+            boolean fineGranted = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION));
+            boolean coarseGranted = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_COARSE_LOCATION));
+            if (fineGranted || coarseGranted) {
+                startDriverLocationPings();
+            } else {
+                Log.w(TAG, "Location permission denied. Driver location pings are disabled.");
+            }
+        });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,17 +106,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setupBackPressedHandler();
 
         rideApiService = ApiClient.getRideApiService();
+        driverApiService = ApiClient.getDriverApiService();
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
         startRideAutoTracking();
+        startDriverLocationPingsIfNeeded();
     }
 
     @Override
     protected void onStop() {
         stopRideAutoTracking();
+        stopDriverLocationPings();
         super.onStop();
     }
 
@@ -176,6 +219,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             navController.navigate(R.id.resetPasswordFragment);
         } else if (itemId == R.id.nav_logout) {
             // Handle logout - for now just go to login
+            clearAuthState();
+            stopDriverLocationPings();
             navController.navigate(R.id.loginFragment);
         } else if (itemId == R.id.nav_ride_history) {
             // Launch RideHistoryActivity
@@ -238,6 +283,136 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void stopRideAutoTracking() {
         ridePollingHandler.removeCallbacks(ridePollingRunnable);
+    }
+
+    private void startDriverLocationPingsIfNeeded() {
+        if (!isLoggedInDriver()) {
+            stopDriverLocationPings();
+            return;
+        }
+        if (!hasLocationPermission()) {
+            requestLocationPermission();
+            return;
+        }
+        startDriverLocationPings();
+    }
+
+    private void startDriverLocationPings() {
+        if (!isLoggedInDriver() || !hasLocationPermission()) {
+            return;
+        }
+        driverLocationPingHandler.removeCallbacks(driverLocationPingRunnable);
+        driverLocationPingHandler.post(driverLocationPingRunnable);
+    }
+
+    private void stopDriverLocationPings() {
+        driverLocationPingHandler.removeCallbacks(driverLocationPingRunnable);
+    }
+
+    private boolean isLoggedInDriver() {
+        SharedPreferences prefs = getAuthPrefs();
+        String token = prefs.getString("token", "");
+        String role = prefs.getString("role", "");
+        return token != null && !token.isBlank() && ROLE_DRIVER.equalsIgnoreCase(role);
+    }
+
+    private SharedPreferences getAuthPrefs() {
+        return getSharedPreferences(AUTH_PREFS, Context.MODE_PRIVATE);
+    }
+
+    private String getAuthToken() {
+        String token = getAuthPrefs().getString("token", "");
+        if (token == null || token.isBlank()) {
+            return null;
+        }
+        return token;
+    }
+
+    private boolean hasLocationPermission() {
+        return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED
+            || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestLocationPermission() {
+        locationPermissionLauncher.launch(new String[] {
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        });
+    }
+
+    @SuppressLint("MissingPermission")
+    private void pingDriverLocationOnce() {
+        if (!isLoggedInDriver() || !hasLocationPermission() || fusedLocationClient == null) {
+            return;
+        }
+
+        String token = getAuthToken();
+        if (token == null) {
+            return;
+        }
+
+        fusedLocationClient.getLastLocation()
+            .addOnSuccessListener(location -> {
+                if (location != null) {
+                    sendDriverLocationPing(token, location);
+                } else {
+                    requestCurrentLocationAndPing(token);
+                }
+            })
+            .addOnFailureListener(error ->
+                Log.w(TAG, "Failed to read last known location for driver ping.", error)
+            );
+    }
+
+    @SuppressLint("MissingPermission")
+    private void requestCurrentLocationAndPing(String token) {
+        if (fusedLocationClient == null) {
+            return;
+        }
+
+        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+            .addOnSuccessListener(location -> {
+                if (location != null) {
+                    sendDriverLocationPing(token, location);
+                }
+            })
+            .addOnFailureListener(error ->
+                Log.w(TAG, "Failed to fetch current location for driver ping.", error)
+            );
+    }
+
+    private void sendDriverLocationPing(String token, Location location) {
+        if (driverApiService == null) {
+            return;
+        }
+
+        DriverLocationUpdateRequest request =
+            new DriverLocationUpdateRequest(location.getLatitude(), location.getLongitude());
+
+        driverApiService.updateMyLocation("Bearer " + token, request).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+                if (!response.isSuccessful()) {
+                    Log.w(TAG, "Driver location ping failed with HTTP " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                Log.w(TAG, "Driver location ping request failed.", t);
+            }
+        });
+    }
+
+    private void clearAuthState() {
+        getAuthPrefs().edit()
+            .remove("token")
+            .remove("userId")
+            .remove("email")
+            .remove("role")
+            .apply();
     }
 
     private void checkActiveRides() {

@@ -2,10 +2,14 @@ package com.drumigo.mobile.data.api;
 
 import com.drumigo.mobile.data.model.history.DriverRideHistoryItemResponse;
 import com.drumigo.mobile.data.model.history.PageResponse;
+import com.drumigo.mobile.data.model.DriverLocationUpdateRequest;
 
 import retrofit2.Call;
+import retrofit2.http.Body;
 import retrofit2.http.GET;
+import retrofit2.http.Header;
 import retrofit2.http.Path;
+import retrofit2.http.PUT;
 import retrofit2.http.Query;
 
 public interface DriverApiService {
@@ -18,5 +22,11 @@ public interface DriverApiService {
         @Query("page") int page,
         @Query("size") int size,
         @Query("sort") String sort
+    );
+
+    @PUT("drivers/me/location")
+    Call<Void> updateMyLocation(
+        @Header("Authorization") String authorizationHeader,
+        @Body DriverLocationUpdateRequest request
     );
 }
