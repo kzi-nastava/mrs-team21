@@ -50,11 +50,32 @@ public class PanicService {
         PanicEvent panicEvent = new PanicEvent();
         panicEvent.setRide(ride);
         panicEvent.setUser(user);
-        panicEvent.setCreatedAt(Instant.now());
+
+        panicEventRepository.save(panicEvent);
         
-        panicEvent = panicEventRepository.save(panicEvent);
-        
-        //TODO: Send admin notifications
+        // Send notifications to all admins
+        sendAdminPanicNotifications(ride, user);
+    }
+
+    private void sendAdminPanicNotifications(Ride ride, User user) {
+        // Get all admins
+        List<Admin> admins = adminRepository.findAll();
+
+        // Send notification to each admin
+        for (Admin admin : admins) {
+            Notification notification = new Notification();
+            notification.setUser(admin);
+            notification.setRide(ride);
+            notification.setType(NotificationType.PANIC_ALERT);
+            notification.setMessage(String.format(
+                "PANIC EVENT: Ride #%d - User: %s %s (%s)",
+                ride.getId(),
+                user.getName(),
+                user.getSurname(),
+                user.getEmail()
+            ));
+            notificationRepository.save(notification);
+        }
     }
     
     public Page<PanicEvent> getAll(Pageable pageable) {
