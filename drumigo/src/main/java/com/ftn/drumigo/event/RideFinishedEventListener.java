@@ -1,7 +1,6 @@
 package com.ftn.drumigo.event;
 
 import com.ftn.drumigo.domain.Notification;
-import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RidePassenger;
 import com.ftn.drumigo.domain.RideWaypoint;
