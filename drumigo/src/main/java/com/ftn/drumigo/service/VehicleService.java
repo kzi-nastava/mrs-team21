@@ -13,8 +13,10 @@ import com.ftn.drumigo.repository.DriverRepository;
 import com.ftn.drumigo.repository.VehicleRepository;
 import com.ftn.drumigo.repository.VehicleTypeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -105,8 +107,32 @@ public class VehicleService {
         return vehicleRepository.save(vehicle);
     }
     
-    public Vehicle updateLocation(Long id, VehicleLocationUpdateRequest request) {
+    public Vehicle updateLocation(Long id, VehicleLocationUpdateRequest request, Long requesterUserId, String requesterRole) {
         Vehicle vehicle = getById(id);
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(requesterRole);
+        boolean isVehicleOwnerDriver =
+            vehicle.getDriver() != null &&
+            vehicle.getDriver().getId() != null &&
+            vehicle.getDriver().getId().equals(requesterUserId);
+
+        if (!isAdmin && !isVehicleOwnerDriver) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only update your own vehicle location");
+        }
+
+        return persistLocation(vehicle, request);
+    }
+
+    public Vehicle updateCurrentDriverLocation(Long driverUserId, VehicleLocationUpdateRequest request) {
+        Driver driver = driverRepository.findById(driverUserId)
+            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + driverUserId));
+
+        Vehicle vehicle = vehicleRepository.findByDriver(driver)
+            .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found for driver id: " + driverUserId));
+
+        return persistLocation(vehicle, request);
+    }
+
+    private Vehicle persistLocation(Vehicle vehicle, VehicleLocationUpdateRequest request) {
         vehicle.setCurrentLat(request.lat());
         vehicle.setCurrentLng(request.lng());
         return vehicleRepository.save(vehicle);
