@@ -94,6 +94,24 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/order-ride/order-ride.component').then((m) => m.OrderRideComponent),
       },
+      // Passenger: placeholder routes (spec required, not yet implemented)
+      {
+        path: 'favorite-routes',
+        canActivate: [roleGuard],
+        data: { roles: ['PASSENGER'], featureName: 'Favorite Routes', specRef: '2.4.3' },
+        loadComponent: () =>
+          import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+            (m) => m.PlaceholderFeatureComponent,
+          ),
+      },
+      {
+        path: 'support',
+        loadComponent: () =>
+          import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+            (m) => m.PlaceholderFeatureComponent,
+          ),
+        data: { featureName: 'Support', specRef: '2.11' },
+      },
       // Driver only
       {
         path: 'driver',
@@ -116,10 +134,75 @@ export const routes: Routes = [
         data: { roles: ['ADMIN'] },
         children: [
           {
+            path: '',
+            pathMatch: 'full',
+            loadComponent: () =>
+              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+                (m) => m.PlaceholderFeatureComponent,
+              ),
+            data: { featureName: 'Dashboard', specRef: '2.13' },
+          },
+          {
             path: 'ride-history',
             loadComponent: () =>
               import('./features/ride-history/pages/admin-history-page/admin-history-page.component')
                 .then((m) => m.AdminHistoryPageComponent),
+          },
+          {
+            path: 'active-rides',
+            loadComponent: () =>
+              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+                (m) => m.PlaceholderFeatureComponent,
+              ),
+            data: { featureName: 'Active Rides', specRef: '2.13' },
+          },
+          {
+            path: 'panic',
+            loadComponent: () =>
+              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+                (m) => m.PlaceholderFeatureComponent,
+              ),
+            data: { featureName: 'Panic Notifications', specRef: '2.6.3' },
+          },
+          {
+            path: 'support',
+            loadComponent: () =>
+              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+                (m) => m.PlaceholderFeatureComponent,
+              ),
+            data: { featureName: 'Live Support / Chat', specRef: '2.11' },
+          },
+          {
+            path: 'drivers',
+            loadComponent: () =>
+              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+                (m) => m.PlaceholderFeatureComponent,
+              ),
+            data: { featureName: 'Drivers', specRef: '2.12' },
+          },
+          {
+            path: 'passengers',
+            loadComponent: () =>
+              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+                (m) => m.PlaceholderFeatureComponent,
+              ),
+            data: { featureName: 'Passengers', specRef: '2.12' },
+          },
+          {
+            path: 'reports',
+            loadComponent: () =>
+              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+                (m) => m.PlaceholderFeatureComponent,
+              ),
+            data: { featureName: 'Reports', specRef: '2.10' },
+          },
+          {
+            path: 'notifications',
+            loadComponent: () =>
+              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+                (m) => m.PlaceholderFeatureComponent,
+              ),
+            data: { featureName: 'All Notifications' },
           },
         ],
       },

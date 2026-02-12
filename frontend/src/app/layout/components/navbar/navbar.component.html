@@ -13,7 +13,7 @@
       <div class="nav-label">{{ sectionLabels[sectionKey] }}</div>
       <div class="nav-items">
         @for (item of groupedNavItems.get(sectionKey); track $index) {
-          @if (item.path !== '#') {
+          @if (!item.disabled && item.path !== '#') {
             <a [routerLink]="item.path" routerLinkActive="active" class="nav-item">
               <svg
                 viewBox="0 0 24 24"
@@ -27,7 +27,10 @@
               {{ item.label }}
             </a>
           } @else {
-            <span class="nav-item nav-item--disabled">
+            <span
+              class="nav-item nav-item--disabled"
+              [title]="item.disabled ? 'Not yet implemented – route reserved' : ''"
+            >
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
