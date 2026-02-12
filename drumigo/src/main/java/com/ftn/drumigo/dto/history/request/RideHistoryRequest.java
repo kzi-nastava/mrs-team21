@@ -2,6 +2,8 @@ package com.ftn.drumigo.dto.history.request;
 
 import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.exception.BadRequestException;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,6 +11,7 @@ import lombok.Setter;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -21,12 +24,21 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class RideHistoryRequest {
 
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private Instant from;
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private Instant to;
     private String status;
     private Boolean hasPanic;
+
+    @Min(value = 0, message = "Page number cannot be negative")
     private int page = 0;
+
+    @Min(value = 1, message = "Page size must be at least 1")
+    @Max(value = 100, message = "Page size cannot exceed 100")
     private int size = 10;
+
     private String sort = "requestedAt,desc";
 
 
