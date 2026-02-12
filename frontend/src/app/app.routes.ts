@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 import { LayoutComponent } from './layout/layout.component';
+import { authGuard } from './shared/guards/auth.guard';
+import { roleGuard } from './shared/guards/role.guard';
 
 export const routes: Routes = [
   // Landing page (root - no layout)
@@ -44,20 +46,23 @@ export const routes: Routes = [
       ),
   },
 
-  // Non-auth routes under layout
+  // Authenticated routes under layout
   {
     path: '',
     component: LayoutComponent,
+    canActivate: [authGuard],
     children: [
-      // Admin
+      // Admin only
       {
         path: 'register-driver',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
         loadComponent: () =>
           import('./features/admin/driver-registration/driver-registration.component').then(
             (m) => m.DriverRegistrationComponent,
           ),
       },
-      // User
+      // All roles
       {
         path: 'profile',
         loadComponent: () =>
@@ -66,32 +71,52 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'ride-history',
-        loadComponent: () =>
-          import(
-            './features/ride-history/pages/passenger-history-page/passenger-history-page.component'
-          ).then((m) => m.PassengerHistoryPageComponent),
-      },
-
-      // Ride Tracking
-      {
         path: 'ride-tracking/:rideId',
         loadComponent: () =>
           import('./features/ride-tracking/ride-tracking.component').then(
             (m) => m.RideTrackingComponent,
           ),
       },
-
-      // Order Ride
+      // Passenger only
+      {
+        path: 'ride-history',
+        canActivate: [roleGuard],
+        data: { roles: ['PASSENGER'] },
+        loadComponent: () =>
+          import(
+            './features/ride-history/pages/passenger-history-page/passenger-history-page.component'
+          ).then((m) => m.PassengerHistoryPageComponent),
+      },
       {
         path: 'order-ride',
+        canActivate: [roleGuard],
+        data: { roles: ['PASSENGER'] },
         loadComponent: () =>
           import('./features/order-ride/order-ride.component').then((m) => m.OrderRideComponent),
       },
-
-      // Driver Routes
+      // Passenger: placeholder routes (spec required, not yet implemented)
+      {
+        path: 'favorite-routes',
+        canActivate: [roleGuard],
+        data: { roles: ['PASSENGER'], featureName: 'Favorite Routes', specRef: '2.4.3' },
+        loadComponent: () =>
+          import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+            (m) => m.PlaceholderFeatureComponent,
+          ),
+      },
+      {
+        path: 'support',
+        loadComponent: () =>
+          import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+            (m) => m.PlaceholderFeatureComponent,
+          ),
+        data: { featureName: 'Support', specRef: '2.11' },
+      },
+      // Driver only
       {
         path: 'driver',
+        canActivate: [roleGuard],
+        data: { roles: ['DRIVER'] },
         children: [
           {
             path: 'ride-history',
@@ -102,16 +127,82 @@ export const routes: Routes = [
           },
         ],
       },
-
-      // Admin Routes
+      // Admin only
       {
         path: 'admin',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
         children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            loadComponent: () =>
+              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+                (m) => m.PlaceholderFeatureComponent,
+              ),
+            data: { featureName: 'Dashboard', specRef: '2.13' },
+          },
           {
             path: 'ride-history',
             loadComponent: () =>
               import('./features/ride-history/pages/admin-history-page/admin-history-page.component')
                 .then((m) => m.AdminHistoryPageComponent),
+          },
+          {
+            path: 'active-rides',
+            loadComponent: () =>
+              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+                (m) => m.PlaceholderFeatureComponent,
+              ),
+            data: { featureName: 'Active Rides', specRef: '2.13' },
+          },
+          {
+            path: 'panic',
+            loadComponent: () =>
+              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+                (m) => m.PlaceholderFeatureComponent,
+              ),
+            data: { featureName: 'Panic Notifications', specRef: '2.6.3' },
+          },
+          {
+            path: 'support',
+            loadComponent: () =>
+              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+                (m) => m.PlaceholderFeatureComponent,
+              ),
+            data: { featureName: 'Live Support / Chat', specRef: '2.11' },
+          },
+          {
+            path: 'drivers',
+            loadComponent: () =>
+              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+                (m) => m.PlaceholderFeatureComponent,
+              ),
+            data: { featureName: 'Drivers', specRef: '2.12' },
+          },
+          {
+            path: 'passengers',
+            loadComponent: () =>
+              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+                (m) => m.PlaceholderFeatureComponent,
+              ),
+            data: { featureName: 'Passengers', specRef: '2.12' },
+          },
+          {
+            path: 'reports',
+            loadComponent: () =>
+              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+                (m) => m.PlaceholderFeatureComponent,
+              ),
+            data: { featureName: 'Reports', specRef: '2.10' },
+          },
+          {
+            path: 'notifications',
+            loadComponent: () =>
+              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
+                (m) => m.PlaceholderFeatureComponent,
+              ),
+            data: { featureName: 'All Notifications' },
           },
         ],
       },

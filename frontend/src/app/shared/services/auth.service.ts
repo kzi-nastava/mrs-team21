@@ -74,6 +74,13 @@ export class AuthService {
   }
 
   /**
+   * Log out the current user by removing the token.
+   */
+  logout(): void {
+    sessionStorage.removeItem(this.TOKEN_KEY);
+  }
+
+  /**
    * Get the raw JWT token.
    */
   getToken(): string | null {

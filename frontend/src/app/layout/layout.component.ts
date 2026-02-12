@@ -41,30 +41,32 @@ export class LayoutComponent implements OnInit, OnDestroy {
     const role = this.authService.getRole();
 
     if (userId && role) {
+      const roleData = this.mapRole(role);
+      // Set role/type immediately from token so navbar shows correct items (driver vs passenger) before profile loads
+      this.user = {
+        ...this.user,
+        role: roleData.label,
+        type: roleData.type,
+      };
       this.profileService.getProfile(userId).subscribe({
         next: (profile) => {
-          const roleData = this.mapRole(role);
           const fullName = `${profile.firstName} ${profile.lastName}`;
           this.user = {
+            ...this.user,
             name: fullName,
             initials: this.getInitials(fullName),
-            role: roleData.label,
-            type: roleData.type,
             avatarUrl: profile.avatarUrl,
           };
         },
         error: (err) => {
           console.error('Failed to load profile:', err);
-          if (!email) {
-            return;
+          if (email) {
+            this.user = {
+              ...this.user,
+              name: email,
+              initials: this.getInitials(email),
+            };
           }
-          const roleData = this.mapRole(role);
-          this.user = {
-            name: email,
-            initials: this.getInitials(email),
-            role: roleData.label,
-            type: roleData.type,
-          };
         },
       });
       return;
@@ -82,10 +84,11 @@ export class LayoutComponent implements OnInit, OnDestroy {
   }
 
   private mapRole(role: 'DRIVER' | 'PASSENGER' | 'ADMIN'): { label: string; type: UserProfile['type'] } {
-    if (role === 'DRIVER') {
+    const r = (role ?? '').toUpperCase();
+    if (r === 'DRIVER') {
       return { label: 'Driver', type: 'driver' };
     }
-    if (role === 'ADMIN') {
+    if (r === 'ADMIN') {
       return { label: 'Admin', type: 'admin' };
     }
     return { label: 'Passenger', type: 'passenger' };

@@ -87,6 +87,16 @@
     color: var(--primary);
   }
 
+  &--disabled {
+    cursor: default;
+    opacity: 0.6;
+
+    &:hover {
+      background: transparent;
+      color: var(--text-medium);
+    }
+  }
+
   svg {
     width: 20px;
     height: 20px;
@@ -100,6 +110,7 @@
 
 .user-profile {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   padding: 12px;
@@ -150,4 +161,23 @@
   font-size: 12px;
   color: var(--text-light);
   text-transform: capitalize;
+}
+
+.logout-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-medium);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-dark);
+  }
 }
