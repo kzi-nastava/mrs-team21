@@ -1,7 +1,5 @@
 package com.ftn.drumigo.domain;
 
-import com.ftn.drumigo.domain.users.Passenger;
-import com.ftn.drumigo.domain.users.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -25,17 +23,16 @@ public class RidePassenger {
     private Ride ride;
     
     @Id
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "passenger_id", nullable = false)
-    private User passenger;
-    
+    @Column(name = "passenger_email", nullable = false)
+    private String passengerEmail;
+
     @Getter
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
     public static class RidePassengerId implements Serializable {
         private Long ride;
-        private Long passenger;
+        private String passengerEmail;
 
         @Override
         public boolean equals(Object o) {
@@ -43,12 +40,12 @@ public class RidePassenger {
             if (o == null || getClass() != o.getClass()) return false;
             RidePassengerId that = (RidePassengerId) o;
             return java.util.Objects.equals(ride, that.ride) &&
-                   java.util.Objects.equals(passenger, that.passenger);
+                   java.util.Objects.equals(passengerEmail, that.passengerEmail);
         }
 
         @Override
         public int hashCode() {
-            return java.util.Objects.hash(ride, passenger);
+            return java.util.Objects.hash(ride, passengerEmail);
         }
     }
 }
