@@ -61,7 +61,11 @@ export class LoginComponent implements OnInit {
         if (response.role === 'PASSENGER') {
           this.router.navigate(['/order-ride']);
         } else if (response.role === 'DRIVER') {
-          this.router.navigate(['/active-ride']);
+          this.router.navigate(['/driver/ride-history']);
+        } else if (response.role === 'ADMIN') {
+          this.router.navigate(['/admin/ride-history']);
+        } else {
+          this.router.navigate(['/']);
         }
       },
       error: (error) => {

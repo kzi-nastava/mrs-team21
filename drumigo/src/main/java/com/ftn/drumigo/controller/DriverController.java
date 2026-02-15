@@ -4,6 +4,7 @@ import com.ftn.drumigo.domain.users.Driver;
 import com.ftn.drumigo.domain.Review;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RideWaypoint;
+import com.ftn.drumigo.domain.Vehicle;
 import com.ftn.drumigo.dto.*;
 import com.ftn.drumigo.dto.history.request.RideHistoryRequest;
 import com.ftn.drumigo.dto.history.response.DriverRideHistoryItemResponse;
@@ -12,9 +13,12 @@ import com.ftn.drumigo.mapper.DriverMapper;
 import com.ftn.drumigo.mapper.DriverRideHistoryMapper;
 import com.ftn.drumigo.mapper.ReviewMapper;
 import com.ftn.drumigo.mapper.RideMapper;
+import com.ftn.drumigo.mapper.VehicleMapper;
+import com.ftn.drumigo.security.CustomUserDetails;
 import com.ftn.drumigo.service.DriverService;
 import com.ftn.drumigo.service.ReviewService;
 import com.ftn.drumigo.service.RideService;
+import com.ftn.drumigo.service.VehicleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,7 +26,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -41,6 +48,8 @@ public class DriverController {
     private final RideService rideService;
     private final DriverRideHistoryMapper driverRideHistoryMapper;
     private final RideMapper rideMapper;
+    private final VehicleService vehicleService;
+    private final VehicleMapper vehicleMapper;
     
     @PostMapping
     public ResponseEntity<DriverResponse> createDriver(@Valid @RequestBody DriverCreateRequest request) {
@@ -139,6 +148,22 @@ public class DriverController {
             @Valid @RequestBody DriverStateUpdateRequest request) {
         Driver driver = driverService.updateDriverState(id, request.activeDriver());
         return ResponseEntity.ok(driverMapper.toResponse(driver));
+    }
+
+    @PutMapping("/me/location")
+    public ResponseEntity<VehicleResponse> updateMyLocation(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody VehicleLocationUpdateRequest request) {
+        if (userDetails == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required");
+        }
+
+        if (!"DRIVER".equalsIgnoreCase(userDetails.getRole())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only drivers can update location");
+        }
+
+        Vehicle vehicle = vehicleService.updateCurrentDriverLocation(userDetails.getUserId(), request);
+        return ResponseEntity.ok(vehicleMapper.toResponse(vehicle));
     }
 }
 

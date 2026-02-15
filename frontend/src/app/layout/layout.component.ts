@@ -1,9 +1,10 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { NavbarComponent, UserProfile } from './components/navbar/navbar.component';
 import { ProfileApiService } from '../features/profile/services/profile-api.service';
 import { AuthService } from '../shared/services/auth.service';
+import { DriverLocationPingService } from '../shared/services/driver-location-ping.service';
 
 @Component({
   selector: 'app-layout',
@@ -12,10 +13,11 @@ import { AuthService } from '../shared/services/auth.service';
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.scss'],
 })
-export class LayoutComponent implements OnInit {
+export class LayoutComponent implements OnInit, OnDestroy {
 
   private profileService = inject(ProfileApiService);
   private readonly authService = inject(AuthService);
+  private readonly driverLocationPingService = inject(DriverLocationPingService);
 
   user: UserProfile = {
     name: 'User',
@@ -26,74 +28,70 @@ export class LayoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadUserFromToken();
+    this.driverLocationPingService.start();
+  }
+
+  ngOnDestroy(): void {
+    this.driverLocationPingService.stop();
   }
 
   private loadUserFromToken(): void {
-
-    const token = sessionStorage.getItem('token');
-    if (token) {
-      try {
-        const payload = this.decodeJwtPayload(token);
-        const userIdRaw = payload.userId || payload.sub;
-        const userId = typeof userIdRaw === 'string' ? parseInt(userIdRaw, 10) : userIdRaw;
-        const role = payload.role;
-
-        // Fetch full profile including avatar
-        if (userId && !isNaN(userId)) {
-          this.profileService.getProfile(userId).subscribe({
-            next: (profile) => {
-              this.user = {
-                name: `${profile.firstName} ${profile.lastName}`,
-                initials: this.getInitials(`${profile.firstName} ${profile.lastName}`),
-                role: role === 'PASSENGER' ? 'Passenger' : role === 'DRIVER' ? 'Driver' : 'Admin',
-                type: role === 'PASSENGER' ? 'passenger' : role === 'DRIVER' ? 'driver' : 'admin',
-                avatarUrl: profile.avatarUrl,
-              };
-            },
-            error: (err) => {
-              console.error('Failed to load profile:', err);
-              // Fallback to basic info from token
-              this.user = {
-                name: payload.sub || 'User',
-                initials: this.getInitials(payload.sub || 'User'),
-                role: role === 'PASSENGER' ? 'Passenger' : role === 'DRIVER' ? 'Driver' : 'Admin',
-                type: role === 'PASSENGER' ? 'passenger' : role === 'DRIVER' ? 'driver' : 'admin',
-              };
-            },
-          });
-        }
-      } catch (error) {
-        console.error('Error decoding token:', error);
-      }
-    }
-    
-    // Fallback: use email and role from AuthService if token parsing fails
+    const userId = this.authService.getUserId();
     const email = this.authService.getEmail();
     const role = this.authService.getRole();
+
+    if (userId && role) {
+      const roleData = this.mapRole(role);
+      // Set role/type immediately from token so navbar shows correct items (driver vs passenger) before profile loads
+      this.user = {
+        ...this.user,
+        role: roleData.label,
+        type: roleData.type,
+      };
+      this.profileService.getProfile(userId).subscribe({
+        next: (profile) => {
+          const fullName = `${profile.firstName} ${profile.lastName}`;
+          this.user = {
+            ...this.user,
+            name: fullName,
+            initials: this.getInitials(fullName),
+            avatarUrl: profile.avatarUrl,
+          };
+        },
+        error: (err) => {
+          console.error('Failed to load profile:', err);
+          if (email) {
+            this.user = {
+              ...this.user,
+              name: email,
+              initials: this.getInitials(email),
+            };
+          }
+        },
+      });
+      return;
+    }
+
     if (email && role && this.user.name === 'User') {
+      const roleData = this.mapRole(role);
       this.user = {
         name: email,
         initials: this.getInitials(email),
-        role: role === 'PASSENGER' ? 'Passenger' : role === 'DRIVER' ? 'Driver' : 'Admin',
-        type: role === 'PASSENGER' ? 'passenger' : role === 'DRIVER' ? 'driver' : 'admin',
+        role: roleData.label,
+        type: roleData.type,
       };
     }
   }
 
-  private decodeJwtPayload(token: string): { userId?: number; sub?: string; role?: string } {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-      return JSON.parse(jsonPayload);
-    } catch {
-      return {};
+  private mapRole(role: 'DRIVER' | 'PASSENGER' | 'ADMIN'): { label: string; type: UserProfile['type'] } {
+    const r = (role ?? '').toUpperCase();
+    if (r === 'DRIVER') {
+      return { label: 'Driver', type: 'driver' };
     }
+    if (r === 'ADMIN') {
+      return { label: 'Admin', type: 'admin' };
+    }
+    return { label: 'Passenger', type: 'passenger' };
   }
 
   private getInitials(name: string): string {

@@ -22,4 +22,11 @@ export class VehicleApiService {
       `${environment.apiBaseUrl}/vehicles/active`
     );
   }
+
+  updateMyLocation(lat: number, lng: number): Observable<VehicleResponse> {
+    return this.http.put<VehicleResponse>(`${environment.apiBaseUrl}/drivers/me/location`, {
+      lat,
+      lng,
+    });
+  }
 }
