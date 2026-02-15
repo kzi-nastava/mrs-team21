@@ -6,6 +6,8 @@ import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RideWaypoint;
 import com.ftn.drumigo.domain.Vehicle;
 import com.ftn.drumigo.dto.*;
+import com.ftn.drumigo.dto.history.request.RideHistoryRequest;
+import com.ftn.drumigo.dto.history.response.DriverRideHistoryItemResponse;
 import com.ftn.drumigo.dto.ride.response.RideResponse;
 import com.ftn.drumigo.mapper.DriverMapper;
 import com.ftn.drumigo.mapper.DriverRideHistoryMapper;
@@ -107,19 +109,11 @@ public class DriverController {
     @GetMapping("/{driverId}/rides/history")
     public ResponseEntity<Page<DriverRideHistoryItemResponse>> getDriverRideHistory(
             @PathVariable Long driverId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "requestedAt,desc") String sort) {
-        
-        String[] sortParams = sort.split(",");
-        Sort.Direction direction = sortParams.length > 1 && sortParams[1].equalsIgnoreCase("asc") 
-            ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Sort sortObj = Sort.by(direction, sortParams[0]);
-        
-        Pageable pageable = PageRequest.of(page, size, sortObj);
-        Page<Ride> rides = rideService.getDriverRideHistory(driverId, from, to, pageable);
+            @Valid @ModelAttribute RideHistoryRequest request) {
+
+        Pageable pageable = request.toPageable();
+
+        Page<Ride> rides = rideService.getDriverRideHistory(driverId, request.getFrom(), request.getTo(), pageable);
         Page<DriverRideHistoryItemResponse> responses = rides.map(driverRideHistoryMapper::toResponse);
         
         return ResponseEntity.ok(responses);

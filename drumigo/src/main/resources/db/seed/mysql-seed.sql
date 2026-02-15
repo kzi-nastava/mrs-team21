@@ -175,10 +175,10 @@ INSERT INTO ride_waypoints (id, ride_id, location_id, waypoint_order) VALUES
     (6001, 6001, 6001, 0),
     (6002, 6001, 6002, 1);
 
-INSERT INTO ride_passengers (ride_id, passenger_id) VALUES
-    (6001, 6002),
-    (6001, 6003),
-    (6001, 6004);
+INSERT INTO ride_passengers (ride_id, passenger_email) VALUES
+    (6001, 'linked.passenger@test.local'),
+    (6001, 'another.linked@test.local'),
+    (6001, 'unauthorized.passenger@test.local');
 
 INSERT INTO ride_inconsistencies (id, ride_id, passenger_id, note, created_at) VALUES
     (6001, 6001, 6002, 'Driver took a longer route through Liman instead of going directly to Trg Slobode.', DATE_SUB(NOW(), INTERVAL 3 MINUTE)),
@@ -383,17 +383,17 @@ INSERT INTO ride_waypoints (id, ride_id, location_id, waypoint_order) VALUES
     (7015, 7008, 7015, 0),
     (7016, 7008, 7016, 1);
 
-INSERT INTO ride_passengers (ride_id, passenger_id) VALUES
-    (7001, 7002),
-    (7001, 7003),
-    (7001, 7004),
-    (7002, 7003),
-    (7003, 7004),
-    (7004, 7005),
-    (7005, 7002),
-    (7006, 7003),
-    (7007, 7004),
-    (7008, 7002);
+INSERT INTO ride_passengers (ride_id, passenger_email) VALUES
+    (7001, 'marko.petrovic@test.local'),
+    (7001, 'ana.jovanovic@test.local'),
+    (7001, 'nikola.stojanovic@test.local'),
+    (7002, 'ana.jovanovic@test.local'),
+    (7003, 'nikola.stojanovic@test.local'),
+    (7004, 'jovana.nikolic@test.local'),
+    (7005, 'marko.petrovic@test.local'),
+    (7006, 'ana.jovanovic@test.local'),
+    (7007, 'nikola.stojanovic@test.local'),
+    (7008, 'marko.petrovic@test.local');
 
 INSERT INTO reviews (ride_id, passenger_id, rating_driver, rating_vehicle, comment, created_at) VALUES
     (7001, 7002, 5, 5, 'Excellent ride! Driver was very professional.', DATE_SUB(NOW(), INTERVAL 2 DAY)),
@@ -660,13 +660,13 @@ INSERT INTO ride_waypoints (id, ride_id, location_id, waypoint_order) VALUES
     (8511, 8506, 8511, 1),
     (8512, 8506, 8512, 2);
 
-INSERT INTO ride_passengers (ride_id, passenger_id) VALUES
-    (8501, 8502),
-    (8502, 8502),
-    (8503, 8502),
-    (8504, 8502),
-    (8505, 8502),
-    (8506, 8502);
+INSERT INTO ride_passengers (ride_id, passenger_email) VALUES
+    (8501, 'rating.passenger@test.local'),
+    (8502, 'rating.passenger@test.local'),
+    (8503, 'rating.passenger@test.local'),
+    (8504, 'rating.passenger@test.local'),
+    (8505, 'rating.passenger@test.local'),
+    (8506, 'rating.passenger@test.local');
 
 INSERT INTO reviews (ride_id, passenger_id, rating_driver, rating_vehicle, comment, created_at) VALUES
     (8501, 8502, 5, 4, 'Great driver, very professional! Vehicle was clean.', DATE_SUB(NOW(), INTERVAL 1 DAY));
@@ -759,7 +759,7 @@ INSERT INTO ride_waypoints (id, ride_id, location_id, waypoint_order) VALUES
     (9001, 9001, 9001, 1),
     (9002, 9001, 9002, 2);
 
-INSERT INTO ride_passengers (ride_id, passenger_id) VALUES (9001, 9002);
+INSERT INTO ride_passengers (ride_id, passenger_email) VALUES (9001, 'passenger9002@test.local');
 
 -- =====================================================================
 -- SAMPLE RIDES (IDs 9501-9508)
@@ -890,11 +890,11 @@ INSERT INTO ride_waypoints (id, ride_id, location_id, waypoint_order) VALUES
     (9507, 9504, 9507, 1),
     (9508, 9504, 9508, 2);
 
-INSERT INTO ride_passengers (ride_id, passenger_id) VALUES
-    (9501, 9502),
-    (9502, 9502),
-    (9503, 9502),
-    (9503, 9503),
-    (9504, 9502);
+INSERT INTO ride_passengers (ride_id, passenger_email) VALUES
+    (9501, 'sample.passenger1@test.local'),
+    (9502, 'sample.passenger1@test.local'),
+    (9503, 'sample.passenger1@test.local'),
+    (9503, 'sample.passenger2@test.local'),
+    (9504, 'sample.passenger1@test.local');
 
 SET FOREIGN_KEY_CHECKS = 1;

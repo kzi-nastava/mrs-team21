@@ -35,10 +35,30 @@ public interface RideRepository extends JpaRepository<Ride, Long> {
     
     @Query("SELECT r FROM Ride r WHERE r.status = :status AND r.requestedAt >= :from AND r.requestedAt <= :to " +
            "AND (r.orderingPassenger.id = :userId OR EXISTS " +
-           "(SELECT rp FROM RidePassenger rp WHERE rp.ride = r AND rp.passenger.id = :userId))")
+           "(SELECT rp FROM RidePassenger rp WHERE rp.ride = r AND rp.passengerEmail = :passengerEmail))")
     List<Ride> findByStatusAndUserAndRequestedAtBetween(@Param("status") RideStatus status,
                                                           @Param("userId") Long userId,
+                                                          @Param("passengerEmail") String passengerEmail,
                                                           @Param("from") Instant from,
                                                           @Param("to") Instant to);
-}
 
+    @Query("""
+           SELECT DISTINCT r
+           FROM Ride r
+           WHERE r.requestedAt >= :from AND r.requestedAt <= :to
+             AND (r.orderingPassenger.id = :passengerId OR EXISTS
+                 (SELECT rp FROM RidePassenger rp WHERE rp.ride = r AND rp.passengerEmail = :passengerEmail))
+             AND (:statuses IS NULL OR r.status IN :statuses)
+             AND (:hasPanic IS NULL OR
+                  (:hasPanic = TRUE AND EXISTS (SELECT pe FROM PanicEvent pe WHERE pe.ride = r)) OR
+                  (:hasPanic = FALSE AND NOT EXISTS (SELECT pe FROM PanicEvent pe WHERE pe.ride = r))
+             )
+           """)
+    Page<Ride> findPassengerHistory(@Param("passengerId") Long passengerId,
+                                   @Param("passengerEmail") String passengerEmail,
+                                   @Param("from") Instant from,
+                                   @Param("to") Instant to,
+                                   @Param("statuses") List<RideStatus> statuses,
+                                   @Param("hasPanic") Boolean hasPanic,
+                                   Pageable pageable);
+}
