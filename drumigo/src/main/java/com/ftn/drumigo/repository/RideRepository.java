@@ -61,4 +61,20 @@ public interface RideRepository extends JpaRepository<Ride, Long> {
                                    @Param("statuses") List<RideStatus> statuses,
                                    @Param("hasPanic") Boolean hasPanic,
                                    Pageable pageable);
+
+    @Query("""
+           SELECT DISTINCT r
+           FROM Ride r
+           WHERE r.requestedAt >= :from AND r.requestedAt <= :to
+             AND (:statuses IS NULL OR r.status IN :statuses)
+             AND (:hasPanic IS NULL OR
+                  (:hasPanic = TRUE AND EXISTS (SELECT pe FROM PanicEvent pe WHERE pe.ride = r)) OR
+                  (:hasPanic = FALSE AND NOT EXISTS (SELECT pe FROM PanicEvent pe WHERE pe.ride = r))
+             )
+           """)
+    Page<Ride> findAdminRideHistory(@Param("from") Instant from,
+                                    @Param("to") Instant to,
+                                    @Param("statuses") List<RideStatus> statuses,
+                                    @Param("hasPanic") Boolean hasPanic,
+                                    Pageable pageable);
 }

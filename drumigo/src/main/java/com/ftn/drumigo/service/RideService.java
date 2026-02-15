@@ -20,9 +20,7 @@ import com.ftn.drumigo.dto.ride.response.EstimateResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +28,6 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -681,84 +678,12 @@ public class RideService {
         }
     }
     
-    @SuppressWarnings("rawtypes")
-    private Comparable getSortValue(Ride ride, String property) {
-        return switch (property) {
-            case "startTime" -> ride.getStartTime() != null ? ride.getStartTime() : Instant.ofEpochMilli(0);
-            case "endTime" -> ride.getEndTime() != null ? ride.getEndTime() : Instant.ofEpochMilli(0);
-            case "totalCost" -> ride.getTotalCost() != null ? ride.getTotalCost() : BigDecimal.ZERO;
-            default -> ride.getRequestedAt();
-        };
-    }
-    
     public Page<Ride> getAdminRideHistory(Instant from, Instant to, List<RideStatus> statuses, 
                                          Boolean hasPanic, Pageable pageable) {
         final Instant fromFinal = from == null ? Instant.ofEpochMilli(0) : from;
         final Instant toFinal = to == null ? Instant.now() : to;
         
-        // Use inclusive boundaries
-        List<Ride> allRides = rideRepository.findAll().stream()
-            .filter(r -> !r.getRequestedAt().isBefore(fromFinal) && !r.getRequestedAt().isAfter(toFinal))
-            .collect(Collectors.toList());
-        
-        // Filter by status if provided
-        List<Ride> filteredByStatus;
-        if (statuses != null && !statuses.isEmpty()) {
-            filteredByStatus = allRides.stream()
-                .filter(r -> statuses.contains(r.getStatus()))
-                .collect(Collectors.toList());
-        } else {
-            filteredByStatus = allRides;
-        }
-        
-        // Filter by panic if provided (optimize with repository query)
-        List<Ride> finalRides;
-        if (hasPanic != null && !filteredByStatus.isEmpty()) {
-            List<PanicEvent> panicEvents = panicEventRepository.findByRideIn(filteredByStatus);
-            Set<Long> ridesWithPanic = panicEvents.stream()
-                .map(pe -> pe.getRide().getId())
-                .collect(Collectors.toSet());
-            
-            if (hasPanic) {
-                finalRides = filteredByStatus.stream()
-                    .filter(r -> ridesWithPanic.contains(r.getId()))
-                    .collect(Collectors.toList());
-            } else {
-                finalRides = filteredByStatus.stream()
-                    .filter(r -> !ridesWithPanic.contains(r.getId()))
-                    .collect(Collectors.toList());
-            }
-        } else {
-            finalRides = filteredByStatus;
-        }
-        
-        // Sort using pageable.sort instead of hardcoding
-        Sort sort = pageable.getSort();
-        if (sort.isSorted()) {
-            Sort.Order order = sort.iterator().next();
-            String property = order.getProperty();
-            boolean ascending = order.getDirection().isAscending();
-            
-            finalRides.sort((r1, r2) -> {
-                @SuppressWarnings("rawtypes")
-                Comparable val1 = getSortValue(r1, property);
-                @SuppressWarnings("rawtypes")
-                Comparable val2 = getSortValue(r2, property);
-                @SuppressWarnings({"unchecked"})
-                int result = val1.compareTo(val2);
-                return ascending ? result : -result;
-            });
-        } else {
-            // Default sort by requestedAt descending
-            finalRides.sort((r1, r2) -> r2.getRequestedAt().compareTo(r1.getRequestedAt()));
-        }
-        
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), finalRides.size());
-        List<Ride> pagedRides = finalRides.subList(start, end);
-        
-        return new PageImpl<>(
-            pagedRides, pageable, finalRides.size());
+        return rideRepository.findAdminRideHistory(fromFinal, toFinal, statuses, hasPanic, pageable);
     }
     
     public Ride reorderRide(Long rideId, Long passengerId) {
