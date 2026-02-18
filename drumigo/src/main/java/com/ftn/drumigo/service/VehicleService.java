@@ -70,6 +70,8 @@ public class VehicleService {
         Vehicle vehicle = new Vehicle();
         vehicle.setDriver(driver);
         vehicle.setVehicleType(vehicleType);
+        vehicle.setModel(request.model());
+        vehicle.setLicensePlate(request.licensePlate());
         vehicle.setNumSeats(request.numSeats());
         vehicle.setBabyFriendly(request.babyFriendly());
         vehicle.setPetFriendly(request.petFriendly());
@@ -87,7 +89,12 @@ public class VehicleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle type not found with id: " + request.vehicleTypeId()));
             vehicle.setVehicleType(vehicleType);
         }
-        
+        if (request.model() != null) {
+            vehicle.setModel(request.model());
+        }
+        if (request.licensePlate() != null) {
+            vehicle.setLicensePlate(request.licensePlate());
+        }
         if (request.numSeats() != null) {
             vehicle.setNumSeats(request.numSeats());
         }

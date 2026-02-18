@@ -9,6 +9,7 @@ public record NotificationResponse(
     String type,
     String message,
     Instant createdAt,
-    Instant readAt
+    Instant readAt,
+    Integer reminderMinutesBefore
 ) {}
 

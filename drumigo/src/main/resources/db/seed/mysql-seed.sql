@@ -66,17 +66,18 @@ INSERT INTO admins (user_id)
 VALUES ((SELECT id FROM users WHERE email = 'stefan.nikolic@drumigo.com'))
 ON DUPLICATE KEY UPDATE user_id = VALUES(user_id);
 
-INSERT INTO vehicles (driver_id, license_plate, vehicle_type_id, num_seats, baby_friendly, pet_friendly, current_lat, current_lng)
+INSERT INTO vehicles (driver_id, license_plate, vehicle_type_id, model, num_seats, baby_friendly, pet_friendly, current_lat, current_lng)
 VALUES
     ((SELECT id FROM users WHERE email = 'marko.jovanovic@example.com'), 'NS-001-AB',
-     (SELECT id FROM vehicle_types WHERE name = 'STANDARD'), 4, TRUE, FALSE, 45.2671, 19.8335),
+     (SELECT id FROM vehicle_types WHERE name = 'STANDARD'), 'Toyota Corolla', 4, TRUE, FALSE, 45.2671, 19.8335),
     ((SELECT id FROM users WHERE email = 'jelena.milosevic@example.com'), 'BG-123-CD',
-     (SELECT id FROM vehicle_types WHERE name = 'LUXURY'), 4, FALSE, TRUE, 44.7866, 20.4489),
+     (SELECT id FROM vehicle_types WHERE name = 'LUXURY'), 'Mercedes E-Class', 4, FALSE, TRUE, 44.7866, 20.4489),
     ((SELECT id FROM users WHERE email = 'nikola.djordjevic@example.com'), 'NI-456-EF',
-     (SELECT id FROM vehicle_types WHERE name = 'VAN'), 7, TRUE, TRUE, 43.3209, 21.8954)
+     (SELECT id FROM vehicle_types WHERE name = 'VAN'), 'VW Transporter', 7, TRUE, TRUE, 43.3209, 21.8954)
 ON DUPLICATE KEY UPDATE
     driver_id = VALUES(driver_id),
     vehicle_type_id = VALUES(vehicle_type_id),
+    model = VALUES(model),
     num_seats = VALUES(num_seats),
     baby_friendly = VALUES(baby_friendly),
     pet_friendly = VALUES(pet_friendly),
@@ -126,15 +127,16 @@ INSERT INTO passengers (user_id) VALUES (6002), (6003), (6004), (6005)
 ON DUPLICATE KEY UPDATE user_id = VALUES(user_id);
 
 INSERT INTO vehicles (
-    id, driver_id, vehicle_type_id, license_plate, num_seats,
+    id, driver_id, vehicle_type_id, model, license_plate, num_seats,
     baby_friendly, pet_friendly, current_lat, current_lng
 ) VALUES (
     6001, 6001, (SELECT id FROM vehicle_types WHERE name = 'STANDARD'),
-    'NS-6001-AA', 4, TRUE, FALSE, 45.2550, 19.8350
+    'Toyota Corolla', 'NS-6001-AA', 4, TRUE, FALSE, 45.2550, 19.8350
 )
 ON DUPLICATE KEY UPDATE
     driver_id = VALUES(driver_id),
     vehicle_type_id = VALUES(vehicle_type_id),
+    model = VALUES(model),
     license_plate = VALUES(license_plate),
     num_seats = VALUES(num_seats),
     baby_friendly = VALUES(baby_friendly),
@@ -240,15 +242,16 @@ INSERT INTO passengers (user_id) VALUES (7002), (7003), (7004), (7005)
 ON DUPLICATE KEY UPDATE user_id = VALUES(user_id);
 
 INSERT INTO vehicles (
-    id, driver_id, vehicle_type_id, license_plate, num_seats,
+    id, driver_id, vehicle_type_id, model, license_plate, num_seats,
     baby_friendly, pet_friendly, current_lat, current_lng
 ) VALUES (
     7001, 7001, (SELECT id FROM vehicle_types WHERE name = 'STANDARD'),
-    'NS-7001-AA', 4, TRUE, FALSE, 45.2550, 19.8350
+    'Toyota Corolla', 'NS-7001-AA', 4, TRUE, FALSE, 45.2550, 19.8350
 )
 ON DUPLICATE KEY UPDATE
     driver_id = VALUES(driver_id),
     vehicle_type_id = VALUES(vehicle_type_id),
+    model = VALUES(model),
     license_plate = VALUES(license_plate),
     num_seats = VALUES(num_seats),
     baby_friendly = VALUES(baby_friendly),
@@ -468,22 +471,23 @@ ON DUPLICATE KEY UPDATE
     last_state_change_at = VALUES(last_state_change_at);
 
 INSERT INTO vehicles (
-    id, driver_id, vehicle_type_id, license_plate, num_seats,
+    id, driver_id, vehicle_type_id, model, license_plate, num_seats,
     baby_friendly, pet_friendly, current_lat, current_lng
 ) VALUES
-    (8001, 8001, (SELECT id FROM vehicle_types WHERE name = 'STANDARD'), 'NS-800-AA', 4, FALSE, TRUE, 45.2671, 19.8335),
-    (8002, 8002, (SELECT id FROM vehicle_types WHERE name = 'LUXURY'), 'NS-800-BB', 4, TRUE, TRUE, 45.2556, 19.8447),
-    (8003, 8003, (SELECT id FROM vehicle_types WHERE name = 'VAN'), 'NS-800-CC', 8, TRUE, TRUE, 45.2805, 19.8203),
-    (8004, 8004, (SELECT id FROM vehicle_types WHERE name = 'STANDARD'), 'NS-800-DD', 4, FALSE, FALSE, 45.2598, 19.8124),
-    (8005, 8005, (SELECT id FROM vehicle_types WHERE name = 'STANDARD'), 'NS-800-EE', 4, FALSE, FALSE, 45.2517, 19.8369),
-    (8006, 8006, (SELECT id FROM vehicle_types WHERE name = 'LUXURY'), 'NS-800-FF', 4, TRUE, FALSE, 45.2734, 19.8578),
-    (8007, 8007, (SELECT id FROM vehicle_types WHERE name = 'STANDARD'), 'NS-800-GG', 4, FALSE, TRUE, 45.2487, 19.8291),
-    (8008, 8008, (SELECT id FROM vehicle_types WHERE name = 'VAN'), 'NS-800-HH', 8, TRUE, TRUE, 45.2645, 19.8489),
-    (8009, 8009, (SELECT id FROM vehicle_types WHERE name = 'STANDARD'), 'NS-800-II', 4, FALSE, TRUE, 45.2432, 19.8015),
-    (8010, 8010, (SELECT id FROM vehicle_types WHERE name = 'LUXURY'), 'NS-800-JJ', 4, TRUE, TRUE, 45.2712, 19.8415)
+    (8001, 8001, (SELECT id FROM vehicle_types WHERE name = 'STANDARD'), 'Toyota Corolla', 'NS-800-AA', 4, FALSE, TRUE, 45.2671, 19.8335),
+    (8002, 8002, (SELECT id FROM vehicle_types WHERE name = 'LUXURY'), 'Mercedes E-Class', 'NS-800-BB', 4, TRUE, TRUE, 45.2556, 19.8447),
+    (8003, 8003, (SELECT id FROM vehicle_types WHERE name = 'VAN'), 'VW Transporter', 'NS-800-CC', 8, TRUE, TRUE, 45.2805, 19.8203),
+    (8004, 8004, (SELECT id FROM vehicle_types WHERE name = 'STANDARD'), 'Toyota Corolla', 'NS-800-DD', 4, FALSE, FALSE, 45.2598, 19.8124),
+    (8005, 8005, (SELECT id FROM vehicle_types WHERE name = 'STANDARD'), 'Toyota Corolla', 'NS-800-EE', 4, FALSE, FALSE, 45.2517, 19.8369),
+    (8006, 8006, (SELECT id FROM vehicle_types WHERE name = 'LUXURY'), 'Mercedes E-Class', 'NS-800-FF', 4, TRUE, FALSE, 45.2734, 19.8578),
+    (8007, 8007, (SELECT id FROM vehicle_types WHERE name = 'STANDARD'), 'Toyota Corolla', 'NS-800-GG', 4, FALSE, TRUE, 45.2487, 19.8291),
+    (8008, 8008, (SELECT id FROM vehicle_types WHERE name = 'VAN'), 'VW Transporter', 'NS-800-HH', 8, TRUE, TRUE, 45.2645, 19.8489),
+    (8009, 8009, (SELECT id FROM vehicle_types WHERE name = 'STANDARD'), 'Toyota Corolla', 'NS-800-II', 4, FALSE, TRUE, 45.2432, 19.8015),
+    (8010, 8010, (SELECT id FROM vehicle_types WHERE name = 'LUXURY'), 'Mercedes E-Class', 'NS-800-JJ', 4, TRUE, TRUE, 45.2712, 19.8415)
 ON DUPLICATE KEY UPDATE
     driver_id = VALUES(driver_id),
     vehicle_type_id = VALUES(vehicle_type_id),
+    model = VALUES(model),
     license_plate = VALUES(license_plate),
     num_seats = VALUES(num_seats),
     baby_friendly = VALUES(baby_friendly),
@@ -543,15 +547,16 @@ INSERT INTO passengers (user_id) VALUES (8502), (8503)
 ON DUPLICATE KEY UPDATE user_id = VALUES(user_id);
 
 INSERT INTO vehicles (
-    id, driver_id, vehicle_type_id, license_plate, num_seats,
+    id, driver_id, vehicle_type_id, model, license_plate, num_seats,
     baby_friendly, pet_friendly, current_lat, current_lng
 ) VALUES (
     8501, 8501, (SELECT id FROM vehicle_types WHERE name = 'STANDARD'),
-    'RT-8501', 4, FALSE, FALSE, 45.2600, 19.8300
+    'Toyota Corolla', 'RT-8501', 4, FALSE, FALSE, 45.2600, 19.8300
 )
 ON DUPLICATE KEY UPDATE
     driver_id = VALUES(driver_id),
     vehicle_type_id = VALUES(vehicle_type_id),
+    model = VALUES(model),
     license_plate = VALUES(license_plate),
     num_seats = VALUES(num_seats),
     baby_friendly = VALUES(baby_friendly),
@@ -715,15 +720,16 @@ INSERT INTO passengers (user_id) VALUES (9002)
 ON DUPLICATE KEY UPDATE user_id = VALUES(user_id);
 
 INSERT INTO vehicles (
-    id, driver_id, vehicle_type_id, license_plate, num_seats,
+    id, driver_id, vehicle_type_id, model, license_plate, num_seats,
     baby_friendly, pet_friendly, current_lat, current_lng
 ) VALUES (
     9001, 9001, (SELECT id FROM vehicle_types WHERE name = 'STANDARD'),
-    'TEST-9001', 4, FALSE, FALSE, NULL, NULL
+    'Toyota Corolla', 'TEST-9001', 4, FALSE, FALSE, NULL, NULL
 )
 ON DUPLICATE KEY UPDATE
     driver_id = VALUES(driver_id),
     vehicle_type_id = VALUES(vehicle_type_id),
+    model = VALUES(model),
     license_plate = VALUES(license_plate),
     num_seats = VALUES(num_seats),
     baby_friendly = VALUES(baby_friendly),
@@ -813,15 +819,16 @@ INSERT INTO passengers (user_id) VALUES (9502), (9503)
 ON DUPLICATE KEY UPDATE user_id = VALUES(user_id);
 
 INSERT INTO vehicles (
-    id, driver_id, vehicle_type_id, license_plate, num_seats,
+    id, driver_id, vehicle_type_id, model, license_plate, num_seats,
     baby_friendly, pet_friendly, current_lat, current_lng
 ) VALUES (
     9501, 9501, (SELECT id FROM vehicle_types WHERE name = 'STANDARD'),
-    'SMP-9501', 4, FALSE, FALSE, 45.26, 19.84
+    'Toyota Corolla', 'SMP-9501', 4, FALSE, FALSE, 45.26, 19.84
 )
 ON DUPLICATE KEY UPDATE
     driver_id = VALUES(driver_id),
     vehicle_type_id = VALUES(vehicle_type_id),
+    model = VALUES(model),
     license_plate = VALUES(license_plate),
     num_seats = VALUES(num_seats),
     baby_friendly = VALUES(baby_friendly),

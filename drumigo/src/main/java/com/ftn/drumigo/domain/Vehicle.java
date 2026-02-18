@@ -25,6 +25,9 @@ public class Vehicle {
     @JoinColumn(name = "driver_id", nullable = false, unique = true)
     private Driver driver;
     
+    @Column(name = "model", length = 100)
+    private String model;
+    
     @Column(name = "license_plate", nullable = false, unique = true, length = 20)
     private String licensePlate;
 

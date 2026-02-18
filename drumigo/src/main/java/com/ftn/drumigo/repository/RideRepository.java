@@ -17,7 +17,21 @@ import java.util.List;
 public interface RideRepository extends JpaRepository<Ride, Long> {
     List<Ride> findByStatus(RideStatus status);
     List<Ride> findByDriverAndStatus(Driver driver, RideStatus status);
+    List<Ride> findByDriverAndStatusIn(Driver driver, List<RideStatus> statuses);
     Page<Ride> findByDriverAndStatusAndScheduledForAfter(Driver driver, RideStatus status, Instant scheduledFor, Pageable pageable);
+    
+    @Query("""
+           SELECT r
+           FROM Ride r
+           WHERE r.driver = :driver
+             AND r.startTime IS NOT NULL
+             AND (
+                 r.startTime >= :since
+                 OR r.endTime >= :since
+                 OR r.endTime IS NULL
+             )
+           """)
+    List<Ride> findDriverRidesWithActivitySince(@Param("driver") Driver driver, @Param("since") Instant since);
     
     @Query("SELECT r FROM Ride r WHERE r.driver = :driver AND r.requestedAt BETWEEN :from AND :to")
     Page<Ride> findByDriverAndRequestedAtBetween(@Param("driver") Driver driver, 
@@ -77,4 +91,35 @@ public interface RideRepository extends JpaRepository<Ride, Long> {
                                     @Param("statuses") List<RideStatus> statuses,
                                     @Param("hasPanic") Boolean hasPanic,
                                     Pageable pageable);
+
+    /**
+     * Checks if a passenger has any ride in the given statuses (e.g. PENDING, ACCEPTED, ACTIVE).
+     * Passenger is matched as ordering passenger or linked passenger (spec 2.6.1).
+     */
+    @Query("""
+           SELECT COUNT(r) > 0 FROM Ride r
+           WHERE r.status IN :statuses
+             AND (r.orderingPassenger.id = :passengerId OR EXISTS
+             (SELECT rp FROM RidePassenger rp WHERE rp.ride = r AND rp.passengerEmail = :passengerEmail))
+           """)
+    boolean existsActiveRideForPassenger(
+            @Param("passengerId") Long passengerId,
+            @Param("passengerEmail") String passengerEmail,
+            @Param("statuses") List<RideStatus> statuses);
+
+    /**
+     * Rides that are accepted, scheduled, and start within the next 15 minutes (for reminder notifications).
+     */
+    @Query("""
+           SELECT r FROM Ride r
+           WHERE r.status = :status
+             AND r.scheduledFor IS NOT NULL
+             AND r.scheduledFor > :after
+             AND r.scheduledFor <= :before
+           """)
+    List<Ride> findAcceptedScheduledRidesInReminderWindow(
+        @Param("status") RideStatus status,
+        @Param("after") Instant after,
+        @Param("before") Instant before
+    );
 }

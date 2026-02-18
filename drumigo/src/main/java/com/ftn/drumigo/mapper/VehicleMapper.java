@@ -22,6 +22,8 @@ public class VehicleMapper {
             vehicle.getDriver() != null ? vehicle.getDriver().getSurname() : null,
             vehicle.getVehicleType() != null ? vehicle.getVehicleType().getId() : null,
             vehicle.getVehicleType() != null ? vehicle.getVehicleType().getName().name() : null,
+            vehicle.getModel(),
+            vehicle.getLicensePlate(),
             vehicle.getNumSeats(),
             vehicle.getBabyFriendly(),
             vehicle.getPetFriendly(),
