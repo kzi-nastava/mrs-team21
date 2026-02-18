@@ -19,7 +19,7 @@ public class NotificationMapper {
             notification.getMessage(),
             notification.getCreatedAt(),
             notification.getReadAt(),
-            notification.getReminderMinutesBefore()
+            notification.getReminderMinutes()
         );
     }
 }

@@ -59,6 +59,8 @@ export class DriverRegistrationComponent implements OnInit {
   isSubmitting = false;
 
   selectedPhotoFile: File | null = null;
+  /** Base64 data URL of selected profile picture, set when user selects a photo */
+  selectedPhotoDataUrl: string | null = null;
 
   vehicleCategories: VehicleCategory[] = ['Standard', 'Luxury', 'Van'];
 
@@ -100,8 +102,11 @@ export class DriverRegistrationComponent implements OnInit {
   onPhotoSelected(file: File): void {
     this.selectedPhotoFile = file;
     console.log('Driver photo selected (auto-cropped to 1:1):', file.name, file.size, 'bytes');
-    // TODO: Upload to backend storage and get URL
-    // this.uploadService.uploadProfilePhoto(file).subscribe(url => ...);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.selectedPhotoDataUrl = (e.target?.result as string) ?? null;
+    };
+    reader.readAsDataURL(file);
   }
 
   nextStep(): void {
@@ -165,6 +170,7 @@ export class DriverRegistrationComponent implements OnInit {
       email: driverData.email,
       phone: driverData.countryCode + driverData.phone,
       address: driverData.address,
+      profilePictureUrl: this.selectedPhotoDataUrl ?? null,
       vehicleTypeId: this.driverRegistrationService.mapCategoryToTypeId(vehicleData.category),
       vehicleModel: vehicleData.model,
       vehicleLicensePlate: vehicleData.licensePlate.toUpperCase(),
@@ -203,6 +209,7 @@ export class DriverRegistrationComponent implements OnInit {
     this.driverSubmitted = false;
     this.vehicleSubmitted = false;
     this.selectedPhotoFile = null;
+    this.selectedPhotoDataUrl = null;
     this.driverForm.reset({
       countryCode: '+381',
     });

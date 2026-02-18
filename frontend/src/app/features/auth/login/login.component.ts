@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { LoginService, LoginRequest } from '../services/login.service';
+import { AuthService } from '../../../shared/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -18,6 +19,7 @@ export class LoginComponent implements OnInit {
 
   private fb = inject(FormBuilder);
   private loginService = inject(LoginService);
+  private authService = inject(AuthService);
   private router = inject(Router);
 
   ngOnInit(): void {
@@ -55,8 +57,7 @@ export class LoginComponent implements OnInit {
     this.loginService.login(payload).subscribe({
       next: (response) => {
         console.log('Login successful:', response);
-        // Store token
-        sessionStorage.setItem('token', response.token);
+        this.authService.setToken(response.token);
         // Navigate based on role
         if (response.role === 'PASSENGER') {
           this.router.navigate(['/order-ride']);
