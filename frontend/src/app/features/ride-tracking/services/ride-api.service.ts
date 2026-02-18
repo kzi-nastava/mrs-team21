@@ -27,9 +27,46 @@ export interface RideStopRequest {
   stopLng: number;
 }
 
+/** Response from GET /rides/:id (tracking). Maps to RideTrackingResponse.java */
+export interface RideTrackingResponseDto {
+  id: number;
+  status: string;
+  requestedAt: string;
+  startTime: string | null;
+  driverId: number | null;
+  driverName: string | null;
+  driverSurname: string | null;
+  vehicleId: number | null;
+  vehicleModel: string | null;
+  vehicleLicensePlate: string | null;
+  vehicleCurrentLat: number | null;
+  vehicleCurrentLng: number | null;
+  waypoints: { locationId: number; address: string; lat: number; lng: number; order: number }[];
+  estimatedArrivalAt: string | null;
+  estimatedDurationSec: number | null;
+  totalDistanceKm: number | null;
+  babyTransport: boolean | null;
+  petTransport: boolean | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RideApiService {
   private readonly http = inject(HttpClient);
+
+  /** Get ride with tracking data (driver position, waypoints). Used by ride-tracking page. */
+  getRideForTracking(rideId: number): Observable<RideTrackingResponseDto> {
+    return this.http.get<RideTrackingResponseDto>(`${environment.apiBaseUrl}/rides/${rideId}`);
+  }
+
+  /** Start backend simulation of vehicle movement for demo (ride must be ACTIVE). */
+  startTrackingDemo(rideId: number): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/rides/${rideId}/tracking-demo/start`, {});
+  }
+
+  /** Stop backend simulation for this ride. */
+  stopTrackingDemo(rideId: number): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/rides/${rideId}/tracking-demo/stop`, {});
+  }
 
   endRide(rideId: number): Observable<RideResponseDto> {
     return this.http.put<RideResponseDto>(`${environment.apiBaseUrl}/rides/${rideId}/end`, null);

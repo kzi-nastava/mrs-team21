@@ -15,7 +15,7 @@ import { CommonModule } from '@angular/common';
 import { finalize } from 'rxjs';
 import { MapComponent, MapConfig } from '../map/map.component';
 import { MapMarker } from '../map/models/vehicle.model';
-import { RideTrackingMockService } from './services/ride-tracking-mock.service';
+import { RideTrackingApiService } from './services/ride-tracking-api.service';
 import { MapboxDirectionsService } from './services/mapbox-directions.service';
 import { ActiveRide, LocationUpdate } from './models/active-ride.model';
 import { PanicComponent, PanicRideInfo } from './components/shared/panic/panic.component';
@@ -48,7 +48,7 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
-  private rideTrackingService = inject(RideTrackingMockService);
+  private rideTrackingService = inject(RideTrackingApiService);
   private directionsService = inject(MapboxDirectionsService);
   private rideApiService = inject(RideApiService);
 

@@ -25,6 +25,7 @@ import com.ftn.drumigo.mapper.VehicleMapper;
 import com.ftn.drumigo.repository.UserRepository;
 import com.ftn.drumigo.security.CustomUserDetails;
 import com.ftn.drumigo.service.RideService;
+import com.ftn.drumigo.service.RideTrackingSimulationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +49,7 @@ public class RideController {
     private final DriverMapper driverMapper;
     private final VehicleMapper vehicleMapper;
     private final UserRepository userRepository;
+    private final RideTrackingSimulationService rideTrackingSimulationService;
 
 
     @PostMapping
@@ -88,6 +90,27 @@ public class RideController {
         Ride ride = rideService.getById(id);
         List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
         return ResponseEntity.ok(rideMapper.toTrackingResponse(ride, waypoints));
+    }
+
+    /**
+     * Start simulated vehicle movement for this ride (demo/E2E).
+     * Ride must be ACTIVE with driver and at least 2 waypoints.
+     */
+    @PostMapping("/{id}/tracking-demo/start")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> startTrackingDemo(@PathVariable Long id) {
+        rideTrackingSimulationService.startSimulation(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Stop simulated vehicle movement for this ride.
+     */
+    @PostMapping("/{id}/tracking-demo/stop")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> stopTrackingDemo(@PathVariable Long id) {
+        rideTrackingSimulationService.stopSimulation(id);
+        return ResponseEntity.noContent().build();
     }
     
     @PostMapping("/{id}/inconsistencies")

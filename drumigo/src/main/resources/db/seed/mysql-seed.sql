@@ -20,17 +20,17 @@ ON DUPLICATE KEY UPDATE
 -- =====================================================================
 INSERT INTO users (dtype, name, surname, email, password_hash, address, phone, profile_picture_url, blocked, active, role, created_at, updated_at)
 VALUES
-    ('Passenger', 'Ana', 'Petrović', 'ana.petrovic@example.com', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    ('Passenger', 'Ana', 'Petrović', 'ana.petrovic@example.com', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Bulevar Oslobođenja 10, Novi Sad', '+381641234567', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW()),
-    ('Driver', 'Marko', 'Jovanović', 'marko.jovanovic@example.com', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    ('Driver', 'Marko', 'Jovanović', 'marko.jovanovic@example.com', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Narodnih Heroja 25, Beograd', '+381652345678', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW()),
-    ('Admin', 'Stefan', 'Nikolić', 'stefan.nikolic@drumigo.com', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    ('Admin', 'Stefan', 'Nikolić', 'stefan.nikolic@drumigo.com', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Trg Republike 1, Beograd', '+381663456789', NULL, FALSE, TRUE, 'ADMIN', NOW(), NOW()),
-    ('Driver', 'Jelena', 'Milošević', 'jelena.milosevic@example.com', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    ('Driver', 'Jelena', 'Milošević', 'jelena.milosevic@example.com', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Knez Mihailova 30, Beograd', '+381641112222', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW()),
-    ('Driver', 'Nikola', 'Đorđević', 'nikola.djordjevic@example.com', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    ('Driver', 'Nikola', 'Đorđević', 'nikola.djordjevic@example.com', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Cara Dušana 15, Niš', '+381652223333', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW()),
-    ('Passenger', 'Milica', 'Stojanović', 'milica.stojanovic@example.com', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    ('Passenger', 'Milica', 'Stojanović', 'milica.stojanovic@example.com', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Kraljevića Marka 5, Kragujevac', '+381663334444', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW())
 ON DUPLICATE KEY UPDATE
     dtype = VALUES(dtype),
@@ -91,15 +91,15 @@ INSERT INTO users (
     id, name, surname, email, password_hash, address, phone,
     profile_picture_url, blocked, active, role, created_at, updated_at, dtype
 ) VALUES
-    (6001, 'Tracking', 'TestDriver', 'tracking.driver@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (6001, 'Tracking', 'TestDriver', 'tracking.driver@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Driver Test Address 1', '+381 64 600 0001', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
-    (6002, 'Main', 'Passenger', 'main.passenger@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (6002, 'Main', 'Passenger', 'main.passenger@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Passenger Test Address 1', '+381 64 600 0002', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
-    (6003, 'Linked', 'Passenger', 'linked.passenger@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (6003, 'Linked', 'Passenger', 'linked.passenger@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Passenger Test Address 2', '+381 64 600 0003', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
-    (6004, 'Another', 'LinkedPassenger', 'another.linked@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (6004, 'Another', 'LinkedPassenger', 'another.linked@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Passenger Test Address 3', '+381 64 600 0004', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
-    (6005, 'Unauthorized', 'Passenger', 'unauthorized.passenger@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (6005, 'Unauthorized', 'Passenger', 'unauthorized.passenger@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Passenger Test Address 4', '+381 64 600 0005', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger')
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
@@ -206,15 +206,15 @@ INSERT INTO users (
     id, name, surname, email, password_hash, address, phone,
     profile_picture_url, blocked, active, role, created_at, updated_at, dtype
 ) VALUES
-    (7001, 'History', 'TestDriver', 'history.driver@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (7001, 'History', 'TestDriver', 'history.driver@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Driver Test Address 1', '+381 64 700 0001', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
-    (7002, 'Marko', 'Petrovic', 'marko.petrovic@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (7002, 'Marko', 'Petrovic', 'marko.petrovic@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Passenger Test Address 1', '+381 64 700 0002', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
-    (7003, 'Ana', 'Jovanovic', 'ana.jovanovic@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (7003, 'Ana', 'Jovanovic', 'ana.jovanovic@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Passenger Test Address 2', '+381 64 700 0003', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
-    (7004, 'Nikola', 'Stojanovic', 'nikola.stojanovic@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (7004, 'Nikola', 'Stojanovic', 'nikola.stojanovic@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Passenger Test Address 3', '+381 64 700 0004', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
-    (7005, 'Jovana', 'Nikolic', 'jovana.nikolic@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (7005, 'Jovana', 'Nikolic', 'jovana.nikolic@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Passenger Test Address 4', '+381 64 700 0005', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger')
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
@@ -418,25 +418,25 @@ INSERT INTO users (
     id, name, surname, email, password_hash, address, phone,
     profile_picture_url, blocked, active, role, created_at, updated_at, dtype
 ) VALUES
-    (8001, 'Marko', 'Petrovic', 'marko.driver@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (8001, 'Marko', 'Petrovic', 'marko.driver@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Bulevar Oslobodjenja 50', '+381 64 800 0001', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
-    (8002, 'Ana', 'Jovanovic', 'ana.driver@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (8002, 'Ana', 'Jovanovic', 'ana.driver@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Liman 4', '+381 64 800 0002', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
-    (8003, 'Milica', 'Stojanovic', 'milica.driver@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (8003, 'Milica', 'Stojanovic', 'milica.driver@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Detelinara 15', '+381 64 800 0003', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
-    (8004, 'Luka', 'Djordjevic', 'luka.driver@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (8004, 'Luka', 'Djordjevic', 'luka.driver@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Telep 22', '+381 64 800 0004', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
-    (8005, 'Stefan', 'Nikolic', 'stefan.driver@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (8005, 'Stefan', 'Nikolic', 'stefan.driver@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Petrovaradin', '+381 64 800 0005', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
-    (8006, 'Sara', 'Popovic', 'sara.driver@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (8006, 'Sara', 'Popovic', 'sara.driver@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Grbavica', '+381 64 800 0006', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
-    (8007, 'Nikola', 'Radovic', 'nikola.driver@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (8007, 'Nikola', 'Radovic', 'nikola.driver@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Kej, Novi Sad', '+381 64 800 0007', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
-    (8008, 'Jovana', 'Ilic', 'jovana.driver@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (8008, 'Jovana', 'Ilic', 'jovana.driver@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Rotkvarija', '+381 64 800 0008', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
-    (8009, 'Jovan', 'Markovic', 'jovan.driver@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (8009, 'Jovan', 'Markovic', 'jovan.driver@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Sremska Kamenica', '+381 64 800 0009', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
-    (8010, 'Marija', 'Tomic', 'marija.driver@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (8010, 'Marija', 'Tomic', 'marija.driver@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Centar', '+381 64 800 0010', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver')
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
@@ -515,11 +515,11 @@ INSERT INTO users (
     id, name, surname, email, password_hash, address, phone,
     profile_picture_url, blocked, active, role, created_at, updated_at, dtype
 ) VALUES
-    (8501, 'Rating', 'TestDriver', 'rating.driver@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (8501, 'Rating', 'TestDriver', 'rating.driver@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Test Driver Address', '+381 64 111 0001', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
-    (8502, 'Rating', 'TestPassenger', 'rating.passenger@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (8502, 'Rating', 'TestPassenger', 'rating.passenger@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Test Passenger Address', '+381 64 222 0002', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
-    (8503, 'Linked', 'Passenger', 'linked.passenger@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (8503, 'Linked', 'Passenger', 'linked.passenger@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Linked Passenger Address', '+381 64 333 0003', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger')
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
@@ -690,9 +690,9 @@ INSERT INTO users (
     id, name, surname, email, password_hash, address, phone,
     profile_picture_url, blocked, active, role, created_at, updated_at, dtype
 ) VALUES
-    (9001, 'Test', 'Driver', 'driver9001@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (9001, 'Test', 'Driver', 'driver9001@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Driver Address', '000-000', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
-    (9002, 'Test', 'Passenger', 'passenger9002@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (9002, 'Test', 'Passenger', 'passenger9002@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Passenger Address', '111-111', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger')
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
@@ -787,11 +787,11 @@ INSERT INTO users (
     id, name, surname, email, password_hash, address, phone,
     profile_picture_url, blocked, active, role, created_at, updated_at, dtype
 ) VALUES
-    (9501, 'Sample', 'Driver', 'sample.driver@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (9501, 'Sample', 'Driver', 'sample.driver@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Sample Driver Address', '+381 64 950 0001', NULL, FALSE, TRUE, 'DRIVER', NOW(), NOW(), 'Driver'),
-    (9502, 'Sample', 'Passenger1', 'sample.passenger1@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (9502, 'Sample', 'Passenger1', 'sample.passenger1@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Sample Passenger Address 1', '+381 64 950 0002', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger'),
-    (9503, 'Sample', 'Passenger2', 'sample.passenger2@test.local', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    (9503, 'Sample', 'Passenger2', 'sample.passenger2@test.local', '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4',
      'Sample Passenger Address 2', '+381 64 950 0003', NULL, FALSE, TRUE, 'PASSENGER', NOW(), NOW(), 'Passenger')
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
@@ -907,8 +907,9 @@ INSERT INTO ride_passengers (ride_id, passenger_email) VALUES
 -- =====================================================================
 -- UNIFIED PASSWORD FOR TESTING
 -- =====================================================================
--- Force all seeded users to share the same password hash for easier testing.
--- NOTE: This is intentionally a hash, not plaintext.
+-- Force all seeded users to share the same password for easier testing.
+-- Login password for ALL seeded users: Password12345
+-- (Hash below is SHA-256 of "Password12345", matching PasswordUtil in the app.)
 UPDATE users
 SET password_hash = '7bcf94a22f44edd39838d05ee1811869f19eca8797a0e9699fe149ba0c1066b4';
 
