@@ -65,7 +65,7 @@ public class ScheduledRideReminderService {
     }
 
     private void sendReminderIfNotSent(Ride ride, int minutesBefore) {
-        if (notificationRepository.existsByRideAndTypeAndReminderMinutes(
+        if (notificationRepository.existsByRideAndTypeAndReminderMinutesBefore(
             ride, NotificationType.SCHEDULED_RIDE_REMINDER, minutesBefore)) {
             return;
         }
