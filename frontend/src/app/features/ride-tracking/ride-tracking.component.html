@@ -132,7 +132,7 @@
               </svg>
               Stop Ride
             </button>
-            @if (!canStopRide() && activeRide() && !canStartRide()) {
+            @if (activeRide()?.status === 'ACCEPTED' && !canStopRide()) {
               <div class="stop-hint">Ride can be stopped only when status is ACTIVE.</div>
             }
           }

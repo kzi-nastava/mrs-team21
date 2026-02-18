@@ -69,17 +69,21 @@ export class RideTrackingApiService {
     const waypoints = (dto.waypoints ?? []).slice().sort((a, b) => a.order - b.order);
     const start = waypoints[0];
     const dest = waypoints[waypoints.length - 1];
-    const startLocation = start ? { lat: start.lat, lng: start.lng } : { lat: 0, lng: 0 };
-    const destinationLocation = dest ? { lat: dest.lat, lng: dest.lng } : { lat: 0, lng: 0 };
-    const currentLat = dto.vehicleCurrentLat ?? start?.lat ?? startLocation.lat;
-    const currentLng = dto.vehicleCurrentLng ?? start?.lng ?? startLocation.lng;
+    const fallbackLat = dto.vehicleCurrentLat ?? start?.lat ?? 0;
+    const fallbackLng = dto.vehicleCurrentLng ?? start?.lng ?? 0;
+    const startLocation = start ? { lat: start.lat, lng: start.lng } : { lat: fallbackLat, lng: fallbackLng };
+    const destinationLocation = dest
+      ? { lat: dest.lat, lng: dest.lng }
+      : { lat: fallbackLat, lng: fallbackLng };
+    const currentLat = dto.vehicleCurrentLat ?? startLocation.lat;
+    const currentLng = dto.vehicleCurrentLng ?? startLocation.lng;
     const etaSec = dto.estimatedDurationSec ?? 0;
 
     return {
       id: String(dto.id),
       status: dto.status,
-      startAddress: start?.address ?? 'Pickup',
-      destinationAddress: dest?.address ?? 'Destination',
+      startAddress: start?.address ?? 'Current location',
+      destinationAddress: dest?.address ?? (dto.status === 'FINISHED' ? 'Ride finished' : 'Destination'),
       startLocation,
       destinationLocation,
       currentLocation: { lat: currentLat, lng: currentLng },

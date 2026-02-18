@@ -190,6 +190,10 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
             console.error('Received null ride data');
             return;
           }
+          if (!this.isTrackableStatus(ride.status)) {
+            this.router.navigate(['/ride-tracking'], { replaceUrl: true });
+            return;
+          }
           this.activeRide.set(ride);
           this.currentLocation.set(ride.currentLocation);
           this.etaSeconds.set(ride.estimatedArrivalTime);
@@ -438,6 +442,14 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
     }).format(date);
   }
 
+  private isTrackableStatus(status: string | null | undefined): boolean {
+    return (
+      status === this.STATUS_PENDING ||
+      status === this.STATUS_ACCEPTED ||
+      status === this.STATUS_ACTIVE
+    );
+  }
+
   openInconsistencyForm(): void {
     this.inconsistencyReportComponent?.openModal();
   }
@@ -630,17 +642,53 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
       .subscribe({
         next: (response) => {
           console.log('Ride stopped successfully', response);
-          // Update active ride state with backend response and show post-ride UI
-          this.activeRide.set(response as unknown as ActiveRide);
-          this.rideCompleted.set(true);
+          // Normalize API response to ActiveRide shape (RideResponseDto is not ActiveRide-compatible).
+          const nextLat = loc.lat;
+          const nextLng = loc.lng;
+          const current = this.activeRide();
+          const normalizedRide: ActiveRide = current
+            ? {
+                ...current,
+                id: String(response.id),
+                status: response.status,
+                currentLocation: { lat: nextLat, lng: nextLng },
+                destinationLocation: { lat: nextLat, lng: nextLng },
+                destinationAddress: stopAddress,
+                estimatedArrivalTime: 0,
+                route: [],
+              }
+            : {
+                id: String(response.id),
+                status: response.status,
+                startAddress: stopAddress,
+                destinationAddress: stopAddress,
+                startLocation: { lat: nextLat, lng: nextLng },
+                destinationLocation: { lat: nextLat, lng: nextLng },
+                currentLocation: { lat: nextLat, lng: nextLng },
+                driver: {
+                  id: response.driverId ?? 0,
+                  firstName: response.driverName ?? 'Driver',
+                  lastName: response.driverSurname ?? '',
+                  phone: '',
+                },
+                vehicle: {
+                  id: response.vehicleId ?? 0,
+                  model: '',
+                  licensePlate: '',
+                  vehicleType: 'STANDARD',
+                },
+                estimatedArrivalTime: 0,
+                startTime: response.startTime ? new Date(response.startTime) : new Date(),
+                route: [],
+              };
+          this.activeRide.set(normalizedRide);
+          this.currentLocation.set({ lat: nextLat, lng: nextLng });
+          this.etaSeconds.set(0);
+          this.routeCoordinates.set(undefined);
+          this.carBearing.set(undefined);
           this.closeStopModal();
-          const driverId = this.activeRide()?.driver.id;
-          if (driverId) {
-            this.loadUpcomingRides(driverId);
-          }
-          // Refresh markers/view to reflect final location
-          this.updateMarkers();
-          this.updateMapView();
+          this.toastService.success('Ride stopped successfully.');
+          this.router.navigate(['/driver/ride-history'], { replaceUrl: true });
         },
         error: (error) => {
           console.error('Failed to stop ride', error);
