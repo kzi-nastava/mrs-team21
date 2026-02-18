@@ -15,7 +15,7 @@ import org.springframework.stereotype.Repository;
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
     Page<Notification> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
 
-    @Query("SELECT COUNT(n) > 0 FROM Notification n WHERE n.ride = :ride AND n.type = :type AND n.reminderMinutesBefore = :reminderMinutesBefore")
+    @Query("SELECT COUNT(n) > 0 FROM Notification n WHERE n.ride = :ride AND n.type = :type AND n.reminderMinutes = :reminderMinutesBefore")
     boolean existsByRideAndTypeAndReminderMinutesBefore(
         @Param("ride") Ride ride,
         @Param("type") NotificationType type,

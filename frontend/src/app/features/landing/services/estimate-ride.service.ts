@@ -28,7 +28,7 @@ export class EstimateService {
     this.geocodingClient = new GeocodingCore({ accessToken: environment.mapboxToken });
     this.searchBox = new SearchBoxCore({
       accessToken: environment.mapboxToken,
-      proximity: { longitude: 19.82, latitude: 45.25 }, // Novi Sad
+      proximity: { lng: 19.82, lat: 45.25 }, // Novi Sad
       limit: 5,
     });
   }
