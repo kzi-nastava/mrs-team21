@@ -80,19 +80,38 @@
           <h2 class="step-title">Where are you going?</h2>
 
           @if (favoriteRoutes().length > 0) {
-            <div class="form-group">
-              <label for="favorite-select">Choose from favorites</label>
-              <select
-                id="favorite-select"
-                class="form-input"
-                [value]="selectedFavoriteId() ?? ''"
-                (change)="onFavoriteSelected($any($event.target).value)"
-              >
-                <option value="">None – enter address manually</option>
+            <div class="favorite-routes-picker" role="group" aria-label="Quick pick from favorites">
+              <h3 class="favorite-routes-picker__title">
+                <svg class="favorite-routes-picker__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" fill="none"/>
+                </svg>
+                Quick pick from favorites
+              </h3>
+              <div class="favorite-routes-cards">
+                <button
+                  type="button"
+                  class="favorite-route-card favorite-route-card--manual"
+                  [class.active]="selectedFavoriteId() === null"
+                  [attr.aria-pressed]="selectedFavoriteId() === null"
+                  (click)="selectManualEntry()"
+                >
+                  <span class="favorite-route-card__label">Enter address manually</span>
+                </button>
                 @for (fav of favoriteRoutes(); track fav.id) {
-                  <option [value]="fav.id">{{ getFavoriteLabel(fav) }}</option>
+                  <button
+                    type="button"
+                    class="favorite-route-card"
+                    [class.active]="selectedFavoriteId() === fav.id"
+                    [attr.aria-pressed]="selectedFavoriteId() === fav.id"
+                    (click)="onFavoriteSelected(fav.id + '')"
+                  >
+                    <svg class="favorite-route-card__icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                    <span class="favorite-route-card__label">{{ getFavoriteLabel(fav) }}</span>
+                  </button>
                 }
-              </select>
+              </div>
             </div>
           }
 

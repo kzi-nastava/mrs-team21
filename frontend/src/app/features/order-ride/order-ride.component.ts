@@ -472,6 +472,11 @@ export class OrderRideComponent implements OnInit {
     return `${first} → ${last}`;
   }
 
+  /** Switch to manual address entry (clears favorite selection and form route). */
+  selectManualEntry(): void {
+    this.onFavoriteSelected('');
+  }
+
   onFavoriteSelected(value: string): void {
     const id = value === '' || value === 'none' ? null : Number(value);
     if (Number.isNaN(id)) return;
