@@ -10,6 +10,12 @@ public record VehicleCreateRequest(
     @NotNull(message = "Vehicle type ID is required")
     Long vehicleTypeId,
     
+    @NotBlank(message = "Vehicle model is required")
+    String model,
+    
+    @NotBlank(message = "License plate is required")
+    String licensePlate,
+    
     @NotNull(message = "Number of seats is required")
     @Min(value = 1, message = "Number of seats must be at least 1")
     Integer numSeats,
