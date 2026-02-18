@@ -140,6 +140,11 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>androidx.annotation</groupId>
 			<artifactId>annotation</artifactId>
 			<version>1.0.0</version>
