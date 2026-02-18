@@ -42,6 +42,23 @@ public class FavoriteRouteController {
             .collect(Collectors.toList());
         return ResponseEntity.ok(responses);
     }
+
+    @PostMapping("/passengers/{passengerId}/favorite-routes/from-ride/{rideId}")
+    public ResponseEntity<FavoriteRouteResponse> createFavoriteRouteFromRide(
+            @PathVariable Long passengerId,
+            @PathVariable Long rideId) {
+        FavoriteRoute favoriteRoute = favoriteRouteService.createFromRide(passengerId, rideId);
+        List<FavoriteRouteWaypoint> waypoints = favoriteRouteService.getWaypoints(favoriteRoute);
+        return ResponseEntity.status(201).body(favoriteRouteMapper.toResponse(favoriteRoute, waypoints));
+    }
+
+    @DeleteMapping("/passengers/{passengerId}/favorite-routes/by-ride/{rideId}")
+    public ResponseEntity<Void> deleteFavoriteRouteByRide(
+            @PathVariable Long passengerId,
+            @PathVariable Long rideId) {
+        favoriteRouteService.deleteByPassengerAndSourceRideId(passengerId, rideId);
+        return ResponseEntity.noContent().build();
+    }
     
     @DeleteMapping("/favorite-routes/{id}")
     public ResponseEntity<Void> deleteFavoriteRoute(@PathVariable Long id) {
