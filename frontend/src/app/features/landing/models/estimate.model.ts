@@ -19,7 +19,14 @@ export enum VehicleTypeName {
 
 export interface EstimateResponse {
   routePolyline: string;
+  /** Route line as [lng, lat] pairs for map drawing. Mapbox order. */
+  routeCoordinates?: [number, number][];
   distanceInKm: number;
   durationInMinutes: number;
   estimatedPrice: number;
+}
+
+/** Result of getEstimate including geocoded waypoints in order [start, ...stops, destination] for ride create. */
+export interface EstimateResultWithWaypoints extends EstimateResponse {
+  geocodedWaypoints: LocationDTO[];
 }

@@ -22,6 +22,8 @@ const VEHICLE_POLLING_INTERVAL_MS = 10_000;
 export class LandingPageComponent implements OnInit {
   isPanelOpen = signal(false);
   vehicleMarkers = signal<MapMarker[]>([]);
+  routeCoordinates = signal<[number, number][] | undefined>(undefined);
+  showRoute = signal(false);
   mapConfig: MapConfig = {
     center: [19.8200, 45.2500], // Novi Sad [lng, lat] - Mapbox uses lng,lat order
     zoom: 12.5,
@@ -84,5 +86,10 @@ export class LandingPageComponent implements OnInit {
 
   closePanel(): void {
     this.isPanelOpen.set(false);
+  }
+
+  onRouteReady(coords: [number, number][] | undefined): void {
+    this.routeCoordinates.set(coords ?? undefined);
+    this.showRoute.set(Array.isArray(coords) && coords.length >= 2);
   }
 }
