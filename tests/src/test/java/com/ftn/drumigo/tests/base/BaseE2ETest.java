@@ -16,12 +16,16 @@ public abstract class BaseE2ETest {
     protected String frontendUrl;
     protected String adminEmail;
     protected String adminPassword;
+    protected String passengerEmail;
+    protected String passengerPassword;
 
     @BeforeEach
     void setUpDriver() {
         frontendUrl = getConfig("e2e.frontend.url", "E2E_FRONTEND_URL", "http://localhost:4200");
         adminEmail = getConfig("e2e.admin.email", "E2E_ADMIN_EMAIL", "stefan.nikolic@drumigo.com");
-        adminPassword = getConfig("e2e.admin.password", "E2E_ADMIN_PASSWORD", "Sifra123");
+        adminPassword = getConfig("e2e.admin.password", "E2E_ADMIN_PASSWORD", "Password12345");
+        passengerEmail = getConfig("e2e.passenger.email", "E2E_PASSENGER_EMAIL", "ana.petrovic@example.com");
+        passengerPassword = getConfig("e2e.passenger.password", "E2E_PASSENGER_PASSWORD", "Password12345");
         boolean headless = Boolean.parseBoolean(getConfig("e2e.headless", "E2E_HEADLESS", "true"));
 
         ChromeOptions options = new ChromeOptions();
