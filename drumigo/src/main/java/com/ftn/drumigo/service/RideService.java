@@ -52,6 +52,7 @@ public class RideService {
     private final ReviewRepository reviewRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final MapService mapService;
+    private final AssignmentNotificationService assignmentNotificationService;
     private static final String NO_ACTIVE_DRIVERS_MESSAGE = "There are currently no active drivers.";
     private static final long TEN_MINUTES_IN_SECONDS = Duration.ofMinutes(10).getSeconds();
     private static final long DEFAULT_RIDE_DURATION_SECONDS = Duration.ofMinutes(15).getSeconds();
@@ -290,32 +291,27 @@ public class RideService {
         
         ride = rideRepository.save(ride);
         
-        // Add linked passengers with validation
-        if (request.linkedPassengerEmails() != null && !request.linkedPassengerEmails().isEmpty()) {
-            for (String email : request.linkedPassengerEmails()) {
-                // Prevent linking the ordering passenger
-                User orderingUser = userRepository.findById(orderingPassengerId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Ordering passenger not found"));
-                if (email.equals(orderingUser.getEmail())) {
-                    throw new BadRequestException("Cannot link the ordering passenger to their own ride");
-                }
-                
+        // Process linked passengers: validate first, then handle based on assignment outcome
+        List<String> linkedEmails = request.linkedPassengerEmails() != null ? request.linkedPassengerEmails() : List.of();
+        for (String email : linkedEmails) {
+            if (email.equals(orderingPassenger.getEmail())) {
+                throw new BadRequestException("Cannot link the ordering passenger to their own ride");
+            }
+        }
+        
+        if (assignedDriver != null) {
+            // ACCEPTED: add RidePassenger records and notify linked passengers (notification + email)
+            for (String email : linkedEmails) {
                 RidePassenger ridePassenger = new RidePassenger();
                 ridePassenger.setRide(ride);
                 ridePassenger.setPassengerEmail(email);
                 ridePassengerRepository.save(ridePassenger);
-                
-                // Create notification for linked passenger if user exists
-                User linkedUser = userRepository.findByEmail(email).orElse(null);
-                if (linkedUser != null) {
-                    Notification notification = new Notification();
-                    notification.setUser(linkedUser);
-                    notification.setRide(ride);
-                    notification.setType(NotificationType.LINKED_TO_RIDE);
-                    notification.setMessage("You have been linked to a ride");
-                    notificationRepository.save(notification);
-                }
             }
+            assignmentNotificationService.notifyLinkedPassengersAccepted(ride, linkedEmails);
+        } else {
+            // REJECTED: notify linked passengers (no RidePassenger records)
+            assignmentNotificationService.notifyLinkedPassengersRejected(
+                    ride, assignmentResult.rejectionMessage(), linkedEmails);
         }
         
         return ride;
