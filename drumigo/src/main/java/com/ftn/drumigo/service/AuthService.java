@@ -98,9 +98,9 @@ public class AuthService {
         }
     }
     
-    public void requestPasswordReset(Long userId) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+    public void requestPasswordReset(String email) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
         
         // Generate reset token
         String token = UUID.randomUUID().toString();
@@ -117,10 +117,10 @@ public class AuthService {
         userTokenRepository.save(userToken);
 
         // Send email to user
-        emailService.sendPasswordResetEmail(user.getEmail(), token);
+        emailService.sendPasswordResetEmail(email, token);
     }
     
-    public void resetPassword(Long userId, String token, String newPassword) {
+    public void resetPassword(String token, String newPassword) {
         String tokenHash = TokenUtil.hashToken(token);
         Instant now = Instant.now();
 
@@ -128,11 +128,6 @@ public class AuthService {
             .findByTokenHashAndTypeAndUsedAtIsNullAndExpiresAtAfter(
                 tokenHash, TokenType.PASSWORD_RESET, now)
             .orElseThrow(() -> new BadRequestException("Invalid or expired reset token"));
-
-        // Verify that the authenticated user matches the token's user
-        if (!userId.equals(userToken.getUser().getId())) {
-            throw new BadRequestException("You can only reset your own password");
-        }
 
         // Validate new password
         if (!passwordUtil.isValid(newPassword)) {

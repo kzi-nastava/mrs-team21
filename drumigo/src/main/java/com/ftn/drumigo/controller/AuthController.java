@@ -30,17 +30,16 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password/request")
-    public ResponseEntity<Void> requestPasswordReset(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        authService.requestPasswordReset(userDetails.getUserId());
+    public ResponseEntity<Void> requestPasswordReset(@RequestBody String email) {
+        authService.requestPasswordReset(email);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/reset-password/{token}")
     public ResponseEntity<Void> resetPassword(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable String token,
             String newPassword) {
-        authService.resetPassword(userDetails.getUserId(), token, newPassword);
+        authService.resetPassword(token, newPassword);
         return ResponseEntity.ok().build();
     }
 }
