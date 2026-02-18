@@ -184,6 +184,12 @@ public class RideService {
         Passenger orderingPassenger = passengerRepository.findById(orderingPassengerId)
             .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with id: " + orderingPassengerId));
         
+        // Prevent creating new ride while having active ride (spec 2.6.1)
+        List<RideStatus> activeStatuses = List.of(RideStatus.PENDING, RideStatus.ACCEPTED, RideStatus.ACTIVE);
+        if (rideRepository.existsActiveRideForPassenger(orderingPassenger.getId(), orderingPassenger.getEmail(), activeStatuses)) {
+            throw new BadRequestException("Cannot create a new ride while you have an active ride. Please wait until your current ride is finished.");
+        }
+        
         // Validate minimum waypoints (at least start and destination)
         if (request.waypoints() == null || request.waypoints().size() < 2) {
             throw new BadRequestException("Ride must have at least 2 waypoints (start and destination)");
