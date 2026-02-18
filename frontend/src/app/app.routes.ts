@@ -45,6 +45,14 @@ export const routes: Routes = [
         (m) => m.ActivateAccountComponent,
       ),
   },
+  {
+    path: 'activate-driver/:token',
+    loadComponent: () =>
+      import('./features/auth/reset-password/reset-password.component').then(
+        (m) => m.ResetPasswordComponent,
+      ),
+    data: { flow: 'driver-activation' },
+  },
 
   // Authenticated routes under layout
   {

@@ -8,6 +8,9 @@ import {
   ValidationErrors,
 } from '@angular/forms';
 import { NgClass, CommonModule } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-reset-password',
@@ -21,10 +24,23 @@ export class ResetPasswordComponent implements OnInit {
   submitted = false;
   showPassword = false;
   showConfirmPassword = false;
+  isSubmitting = false;
+  successMessage: string | null = null;
+  errorMessage: string | null = null;
+  token: string | null = null;
+  flow: 'password-reset' | 'driver-activation' = 'password-reset';
 
-  constructor(private fb: FormBuilder) {}
+  constructor(
+    private fb: FormBuilder,
+    private route: ActivatedRoute,
+    private router: Router,
+    private http: HttpClient,
+  ) {}
 
   ngOnInit(): void {
+    this.token = this.route.snapshot.paramMap.get('token');
+    this.flow = this.route.snapshot.data['flow'] === 'driver-activation' ? 'driver-activation' : 'password-reset';
+
     this.resetPasswordForm = this.fb.group(
       {
         password: [
@@ -39,6 +55,10 @@ export class ResetPasswordComponent implements OnInit {
       },
       { validators: this.passwordMatchValidator }
     );
+
+    if (!this.token) {
+      this.errorMessage = 'Invalid password link.';
+    }
   }
 
   passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
@@ -86,12 +106,36 @@ export class ResetPasswordComponent implements OnInit {
 
   onSubmit(): void {
     this.submitted = true;
+    this.errorMessage = null;
+    this.successMessage = null;
 
-    if (this.resetPasswordForm.invalid) {
+    if (this.resetPasswordForm.invalid || !this.token) {
       return;
     }
 
-    // TODO: Implement password reset logic in KT2
-    console.log('Password reset submitted');
+    this.isSubmitting = true;
+    const password = this.resetPasswordForm.value.password as string;
+
+    const request$ =
+      this.flow === 'driver-activation'
+        ? this.http.put<void>(`${environment.apiBaseUrl}/activation/${this.token}/set-password`, { password })
+        : this.http.post<void>(`${environment.apiBaseUrl}/auth/reset-password/${this.token}`, password, {
+            headers: { 'Content-Type': 'text/plain' },
+          });
+
+    request$.subscribe({
+      next: () => {
+        this.isSubmitting = false;
+        this.successMessage =
+          this.flow === 'driver-activation'
+            ? 'Password set successfully. Redirecting to login...'
+            : 'Password reset successful. Redirecting to login...';
+        setTimeout(() => this.router.navigate(['/login']), 1500);
+      },
+      error: (error) => {
+        this.isSubmitting = false;
+        this.errorMessage = error?.error?.message || 'Failed to update password. Please try again.';
+      },
+    });
   }
 }

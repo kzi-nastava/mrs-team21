@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, timeout } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 
 export interface DriverRegistrationRequest {
@@ -26,8 +26,8 @@ export interface DriverRegistrationResponse {
   phone: string;
   profilePictureUrl: string | null;
   blocked: boolean;
-  active: boolean;
   activeDriver: boolean;
+  isBusy: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -41,7 +41,8 @@ export class DriverRegistrationService {
   constructor(private http: HttpClient) {}
 
   registerDriver(request: DriverRegistrationRequest): Observable<DriverRegistrationResponse> {
-    return this.http.post<DriverRegistrationResponse>(this.apiUrl, request);
+    // Guard against indefinite spinner if backend gets stuck.
+    return this.http.post<DriverRegistrationResponse>(this.apiUrl, request).pipe(timeout(15000));
   }
 
   /**

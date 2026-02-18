@@ -6,7 +6,9 @@ import { environment } from '../../../../environments/environment';
 
 interface VehicleInfoResponse {
   id: number;
+  model: string | null;
   vehicleTypeName: string;
+  licensePlate: string | null;
   numSeats: number;
   babyFriendly: boolean;
   petFriendly: boolean;
@@ -35,14 +37,11 @@ export class ProfileApiService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiBaseUrl}/profile`;
 
-  getProfile(userId: number): Observable<ProfileData> {
-    return this.http
-      .get<ProfileResponse>(`${this.apiUrl}?userId=${userId}`)
-      .pipe(map((response) => this.mapToProfileData(response)));
+  getProfile(): Observable<ProfileData> {
+    return this.http.get<ProfileResponse>(this.apiUrl).pipe(map((response) => this.mapToProfileData(response)));
   }
 
   updateProfile(
-    userId: number,
     updates: {
       name?: string;
       surname?: string;
@@ -52,9 +51,7 @@ export class ProfileApiService {
       profilePictureUrl?: string;
     },
   ): Observable<ProfileData> {
-    return this.http
-      .put<ProfileResponse>(`${this.apiUrl}?userId=${userId}`, updates)
-      .pipe(map((response) => this.mapToProfileData(response)));
+    return this.http.put<ProfileResponse>(this.apiUrl, updates).pipe(map((response) => this.mapToProfileData(response)));
   }
 
   private mapToProfileData(response: ProfileResponse): ProfileData {
@@ -72,9 +69,9 @@ export class ProfileApiService {
     // Add driver-specific data if available
     if (response.role === 'DRIVER' && response.vehicle) {
       const vehicleInfo: VehicleInfo = {
-        model: '', // Backend doesn't have model anymore
+        model: response.vehicle.model || 'Vehicle',
         category: this.mapVehicleType(response.vehicle.vehicleTypeName),
-        licensePlate: '', // Backend doesn't have license plate anymore
+        licensePlate: response.vehicle.licensePlate || '',
         seats: response.vehicle.numSeats,
         features: {
           babySeats: response.vehicle.babyFriendly,

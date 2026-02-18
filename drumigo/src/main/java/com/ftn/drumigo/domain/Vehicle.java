@@ -30,6 +30,9 @@ public class Vehicle {
     
     @Column(name = "license_plate", nullable = false, unique = true, length = 20)
     private String licensePlate;
+
+    @Column(name = "model", length = 100)
+    private String model;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vehicle_type_id", nullable = false)
