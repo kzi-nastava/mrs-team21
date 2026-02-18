@@ -78,6 +78,24 @@
       @if (currentStep() === 1) {
         <div class="step-content">
           <h2 class="step-title">Where are you going?</h2>
+
+          @if (favoriteRoutes().length > 0) {
+            <div class="form-group">
+              <label for="favorite-select">Choose from favorites</label>
+              <select
+                id="favorite-select"
+                class="form-input"
+                [value]="selectedFavoriteId() ?? ''"
+                (change)="onFavoriteSelected($any($event.target).value)"
+              >
+                <option value="">None – enter address manually</option>
+                @for (fav of favoriteRoutes(); track fav.id) {
+                  <option [value]="fav.id">{{ getFavoriteLabel(fav) }}</option>
+                }
+              </select>
+            </div>
+          }
+
           @if (estimateLoading()) {
             <p class="estimate-loading">Calculating route and price...</p>
           }

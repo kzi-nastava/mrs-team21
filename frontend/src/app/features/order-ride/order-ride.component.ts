@@ -12,6 +12,10 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { VehicleTypeName } from '../landing/models/estimate.model';
 import { LocationDTO } from '../landing/models/estimate.model';
+import {
+  FavoriteRoutesService,
+  FavoriteRouteDto,
+} from '../ride-history/services/favorite-routes.service';
 
 export interface Stop {
   id: string;
@@ -89,9 +93,14 @@ export class OrderRideComponent implements OnInit {
   addressSuggestions = signal<AddressSuggestion[]>([]);
   showSuggestionsFor = signal<'pickup' | 'destination' | string | null>(null);
 
+  /** Favorite routes for pre-fill (passenger only). */
+  favoriteRoutes = signal<FavoriteRouteDto[]>([]);
+  selectedFavoriteId = signal<number | null>(null);
+
   private estimateService = inject(EstimateService);
   private http = inject(HttpClient);
   private auth = inject(AuthService);
+  private favoriteRoutesService = inject(FavoriteRoutesService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
   private apiUrl = environment.apiBaseUrl;
@@ -163,6 +172,16 @@ export class OrderRideComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const userId = this.auth.getUserId();
+    if (userId != null) {
+      this.favoriteRoutesService
+        .getByPassenger(userId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (list) => this.favoriteRoutes.set(list),
+          error: () => this.favoriteRoutes.set([]),
+        });
+    }
     const order = this.rideOrder();
     if (order.pickup && order.destination) {
       this.calculatePrice();
@@ -441,5 +460,72 @@ export class OrderRideComponent implements OnInit {
     if (step === this.currentStep()) return 'active';
     if (step < this.currentStep()) return 'completed';
     return 'pending';
+  }
+
+  /** Label for a favorite in the dropdown (e.g. "Start address → End address"). */
+  getFavoriteLabel(fav: FavoriteRouteDto): string {
+    const waypoints = [...(fav.waypoints ?? [])].sort((a, b) => a.order - b.order);
+    if (waypoints.length === 0) return `Favorite #${fav.id}`;
+    if (waypoints.length === 1) return waypoints[0].address;
+    const first = waypoints[0].address;
+    const last = waypoints[waypoints.length - 1].address;
+    return `${first} → ${last}`;
+  }
+
+  onFavoriteSelected(value: string): void {
+    const id = value === '' || value === 'none' ? null : Number(value);
+    if (Number.isNaN(id)) return;
+    this.selectedFavoriteId.set(id);
+    if (id == null) {
+      // Clear form
+      this.rideOrder.set({
+        pickup: '',
+        destination: '',
+        stops: [],
+        passengers: this.rideOrder().passengers,
+        vehicleType: 'standard',
+        scheduleNow: this.rideOrder().scheduleNow,
+        specialRequests: this.rideOrder().specialRequests,
+        babySeat: false,
+        petTransport: false,
+        estimatedPrice: 0,
+        estimatedDistance: 0,
+        estimatedDuration: 0,
+      });
+      this.nextStopId.set(0);
+      this.routeCoordinates.set(undefined);
+      this.showRoute.set(false);
+      this.lastGeocodedWaypoints.set(null);
+      return;
+    }
+    const fav = this.favoriteRoutes().find((f) => f.id === id);
+    if (fav) this.applyFavoriteRoute(fav);
+  }
+
+  private applyFavoriteRoute(fav: FavoriteRouteDto): void {
+    const waypoints = [...(fav.waypoints ?? [])].sort((a, b) => a.order - b.order);
+    if (waypoints.length < 2) return;
+    const pickup = waypoints[0].address;
+    const destination = waypoints[waypoints.length - 1].address;
+    const stopWaypoints = waypoints.slice(1, waypoints.length - 1);
+    const nextId = this.nextStopId();
+    const stops: Stop[] = stopWaypoints.map((wp, i) => ({
+      id: `stop-${nextId + i}`,
+      address: wp.address,
+    }));
+    this.nextStopId.set(nextId + stopWaypoints.length);
+    const vt = (fav.vehicleTypeName ?? 'STANDARD').toLowerCase() as 'standard' | 'luxury' | 'van';
+    const vehicleType = vt === 'standard' || vt === 'luxury' || vt === 'van' ? vt : 'standard';
+    const order = this.rideOrder();
+    this.rideOrder.set({
+      ...order,
+      pickup,
+      destination,
+      stops,
+      vehicleType,
+      babySeat: fav.babyTransport ?? false,
+      petTransport: fav.petTransport ?? false,
+    });
+    this.calculatePrice();
   }
 }
