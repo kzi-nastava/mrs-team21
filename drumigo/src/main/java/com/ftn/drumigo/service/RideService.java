@@ -273,6 +273,9 @@ public class RideService {
                 ride.setVehicle(vehicle);
             }
             ride.setStatus(RideStatus.ACCEPTED);
+            if (shouldMarkDriverBusyOnAssignment(ride)) {
+                setDriverBusy(assignedDriver, true);
+            }
             
             // Create notifications
             createAcceptNotifications(ride);
@@ -419,6 +422,9 @@ public class RideService {
             double pickupDistanceKm = calculateDistanceToPickupKm(vehicle, pickupWaypoint);
             boolean hasFutureScheduledRide =
                 rideRepository.existsByDriverAndStatusAndScheduledForAfter(driver, RideStatus.ACCEPTED, now);
+            boolean hasImmediateAcceptedRide =
+                rideRepository.existsByDriverAndStatusAndScheduledForIsNull(driver, RideStatus.ACCEPTED);
+            boolean currentlyOccupied = driver.isBusy() || hasImmediateAcceptedRide;
 
             Ride activeRide = null;
             long remainingToFinishSec = Long.MAX_VALUE;
@@ -431,6 +437,7 @@ public class RideService {
                 driver,
                 pickupDistanceKm,
                 hasFutureScheduledRide,
+                currentlyOccupied,
                 remainingToFinishSec
             ));
         }
@@ -440,7 +447,7 @@ public class RideService {
         }
 
         List<DriverAssignmentCandidate> freeCandidates = eligibleCandidates.stream()
-            .filter(candidate -> !candidate.driver().isBusy())
+            .filter(candidate -> !candidate.currentlyOccupied())
             .toList();
 
         if (!freeCandidates.isEmpty()) {
@@ -459,6 +466,7 @@ public class RideService {
         }
 
         List<DriverAssignmentCandidate> fallbackCandidates = eligibleCandidates.stream()
+            .filter(DriverAssignmentCandidate::currentlyOccupied)
             .filter(candidate -> !candidate.hasFutureScheduledRide())
             .filter(candidate -> candidate.remainingToFinishSec() <= TEN_MINUTES_IN_SECONDS)
             .toList();
@@ -471,8 +479,8 @@ public class RideService {
 
         Driver fallbackDriver = fallbackCandidates.stream()
             .min(Comparator
-                .comparingDouble(DriverAssignmentCandidate::pickupDistanceKm)
-                .thenComparingLong(DriverAssignmentCandidate::remainingToFinishSec)
+                .comparingLong(DriverAssignmentCandidate::remainingToFinishSec)
+                .thenComparingDouble(DriverAssignmentCandidate::pickupDistanceKm)
                 .thenComparing(candidate -> candidate.driver().getId()))
             .orElseThrow()
             .driver();
@@ -545,22 +553,16 @@ public class RideService {
         driver.setBusy(busy);
         driverRepository.save(driver);
     }
+
+    private boolean shouldMarkDriverBusyOnAssignment(Ride ride) {
+        return ride.getScheduledFor() == null || !ride.getScheduledFor().isAfter(Instant.now());
+    }
     
     private boolean hasExceededWorkingHours(Driver driver) {
         Instant now = Instant.now();
         Instant twentyFourHoursAgo = now.minus(Duration.ofHours(24));
         
-        // Get all rides that started or ended within the last 24 hours (including CANCELLED)
-        List<Ride> allRecentRides = rideRepository.findAll().stream()
-            .filter(r -> r.getDriver() != null && r.getDriver().getId().equals(driver.getId()))
-            .filter(r -> {
-                boolean startedInWindow = r.getStartTime() != null && 
-                    !r.getStartTime().isBefore(twentyFourHoursAgo);
-                boolean endedInWindow = r.getEndTime() != null && 
-                    !r.getEndTime().isBefore(twentyFourHoursAgo);
-                return startedInWindow || endedInWindow;
-            })
-            .toList();
+        List<Ride> allRecentRides = rideRepository.findDriverRidesWithActivitySince(driver, twentyFourHoursAgo);
         
         long totalSeconds = 0;
         for (Ride ride : allRecentRides) {
@@ -601,6 +603,16 @@ public class RideService {
     }
     
     private void createAcceptNotifications(Ride ride) {
+        // Notification for assigned driver
+        if (ride.getDriver() != null) {
+            Notification notification = new Notification();
+            notification.setUser(ride.getDriver());
+            notification.setRide(ride);
+            notification.setType(NotificationType.RIDE_ACCEPTED);
+            notification.setMessage("You have been assigned a new ride");
+            notificationRepository.save(notification);
+        }
+
         // Notification for ordering passenger
         if (ride.getOrderingPassenger() != null) {
             Notification notification = new Notification();
@@ -654,6 +666,7 @@ public class RideService {
         Driver driver,
         double pickupDistanceKm,
         boolean hasFutureScheduledRide,
+        boolean currentlyOccupied,
         long remainingToFinishSec
     ) {
     }
@@ -722,8 +735,7 @@ public class RideService {
         ride.setCancelReason(reason);
         ride.setCanceledByUser(canceledBy);
         setDriverBusy(ride.getDriver(), false);
-
-        // TODO: create cancellation notifications
+        createCancellationNotifications(ride);
     }
     
     public Ride stopRide(Long rideId, Long driverId, RideStopRequest request) {
