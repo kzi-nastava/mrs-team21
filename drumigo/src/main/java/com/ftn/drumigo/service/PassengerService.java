@@ -34,6 +34,7 @@ public class PassengerService {
     private final RideRepository rideRepository;
 
     private final EmailService emailService;
+    private final PasswordUtil passwordUtil;
     
     public Passenger register(PassengerRegisterRequest request) {
         String password = request.password();
@@ -45,7 +46,7 @@ public class PassengerService {
         }
 
         // Validate password strength: 6-64 chars, at least one uppercase, one lowercase, and one digit or special char
-        if (!isValidPassword(password)) {
+        if (!passwordUtil.isValid(password)) {
             throw new BadRequestException(
                 "Password must be 6-64 characters and contain at least one uppercase letter, one lowercase letter, and one digit or special character"
             );
@@ -79,7 +80,7 @@ public class PassengerService {
 
         return passenger;
     }
-    
+
     public void activate(String token) {
         // Hash the token to find it in DB
         String tokenHash = TokenUtil.hashToken(token);
