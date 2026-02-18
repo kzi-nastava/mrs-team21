@@ -1,6 +1,5 @@
 package com.ftn.drumigo.controller;
 
-import com.ftn.drumigo.dto.*;
 import com.ftn.drumigo.dto.auth.request.LoginRequest;
 import com.ftn.drumigo.dto.auth.response.LoginResponse;
 import com.ftn.drumigo.security.CustomUserDetails;
@@ -29,16 +28,19 @@ public class AuthController {
         authService.logout(userDetails.getUserId());
         return ResponseEntity.ok().build();
     }
-    
+
     @PostMapping("/reset-password/request")
-    public ResponseEntity<Void> requestPasswordReset(@Valid @RequestBody ResetPasswordRequestRequest request) {
-        authService.requestPasswordReset(request);
+    public ResponseEntity<Void> requestPasswordReset(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        authService.requestPasswordReset(userDetails.getUserId());
         return ResponseEntity.ok().build();
     }
-    
-    @PostMapping("/reset-password/confirm")
-    public ResponseEntity<Void> confirmPasswordReset(@Valid @RequestBody ResetPasswordConfirmRequest request) {
-        authService.confirmPasswordReset(request);
+
+    @PostMapping("/reset-password/{token}")
+    public ResponseEntity<Void> resetPassword(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable String token,
+            String newPassword) {
+        authService.resetPassword(userDetails.getUserId(), token, newPassword);
         return ResponseEntity.ok().build();
     }
 }
