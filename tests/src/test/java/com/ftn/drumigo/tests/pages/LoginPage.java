@@ -48,24 +48,32 @@ public class LoginPage {
                 ExpectedConditions.alertIsPresent()
             ));
         } catch (TimeoutException e) {
-            Assertions.fail("Login did not redirect to expected route: " + expectedUrlFragment
-                + ". Current URL: " + driver.getCurrentUrl()
-                + ". Check admin credentials in E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD.");
+            try {
+                Alert alert = driver.switchTo().alert();
+                String alertMessage = alert.getText();
+                alert.accept();
+                Assertions.fail("Login did not redirect to expected route: " + expectedUrlFragment
+                    + ". Alert: " + alertMessage + ". Check credentials (E2E_ADMIN_* or E2E_PASSENGER_*).");
+            } catch (Exception ignored) {
+                Assertions.fail("Login did not redirect to expected route: " + expectedUrlFragment
+                    + ". Current URL: " + driver.getCurrentUrl() + ". Check credentials.");
+            }
+        }
+
+        // Dismiss alert first if present, so getCurrentUrl() does not throw UnhandledAlertException
+        try {
+            Alert alert = driver.switchTo().alert();
+            String alertMessage = alert.getText();
+            alert.accept();
+            Assertions.fail("Login failed. Expected URL containing '" + expectedUrlFragment
+                + "'. Alert: " + alertMessage + ". Check credentials (E2E_ADMIN_* or E2E_PASSENGER_*).");
+        } catch (Exception ignored) {
+            // no alert - continue
         }
 
         if (!driver.getCurrentUrl().contains(expectedUrlFragment)) {
-            String alertMessage = null;
-            try {
-                Alert alert = driver.switchTo().alert();
-                alertMessage = alert.getText();
-                alert.accept();
-            } catch (Exception ignored) {
-                // no-op
-            }
-
             Assertions.fail("Login failed. Expected URL containing '" + expectedUrlFragment
-                + "', current URL: " + driver.getCurrentUrl()
-                + (alertMessage == null ? "" : ". Alert: " + alertMessage));
+                + "', current URL: " + driver.getCurrentUrl());
         }
     }
 }
