@@ -242,13 +242,7 @@ public class RideService {
     public Ride create(Long orderingPassengerId, RideCreateRequest request) {
         Passenger orderingPassenger = passengerRepository.findById(orderingPassengerId)
             .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with id: " + orderingPassengerId));
-        
-        // Prevent creating new ride while having active ride (spec 2.6.1)
-        List<RideStatus> activeStatuses = List.of(RideStatus.PENDING, RideStatus.ACCEPTED, RideStatus.ACTIVE);
-        if (rideRepository.existsActiveRideForPassenger(orderingPassenger.getId(), orderingPassenger.getEmail(), activeStatuses)) {
-            throw new BadRequestException("Cannot create a new ride while you have an active ride. Please wait until your current ride is finished.");
-        }
-        
+
         // Validate minimum waypoints (at least start and destination)
         if (request.waypoints() == null || request.waypoints().size() < 2) {
             throw new BadRequestException("Ride must have at least 2 waypoints (start and destination)");
@@ -265,7 +259,43 @@ public class RideService {
         // Get vehicle type
         VehicleType vehicleType = vehicleTypeRepository.findByName(request.vehicleType())
             .orElseThrow(() -> new ResourceNotFoundException("Vehicle type not found: " + request.vehicleType()));
-        
+
+        // Distance, duration and cost from Mapbox Directions (single source of truth)
+        EstimateRequest estimateRequest = buildEstimateRequestFromWaypoints(request);
+        EstimateResponse estimate = mapService.estimateRide(estimateRequest);
+        int estimatedSeconds = estimate.durationInMinutes() * 60;
+
+        // Prevent creating rides that overlap with passenger's existing active/scheduled rides.
+        List<RideStatus> potentiallyBlockingStatuses = List.of(
+            RideStatus.PENDING,
+            RideStatus.ACCEPTED,
+            RideStatus.ACTIVE
+        );
+        if (rideRepository.existsActiveRideForPassenger(
+                orderingPassenger.getId(),
+                orderingPassenger.getEmail(),
+                potentiallyBlockingStatuses
+        )) {
+            Instant now = Instant.now();
+            Instant newRideStart = request.scheduledFor() != null ? request.scheduledFor() : now;
+            Instant newRideEnd = newRideStart.plusSeconds(Math.max(estimatedSeconds, 1));
+            List<Ride> passengerBlockingRides = rideRepository.findActiveRidesForPassenger(
+                orderingPassenger.getId(),
+                orderingPassenger.getEmail(),
+                potentiallyBlockingStatuses
+            );
+
+            boolean hasOverlap = passengerBlockingRides.stream().anyMatch(existingRide ->
+                doesRideOverlapForPassenger(existingRide, newRideStart, newRideEnd, now)
+            );
+
+            if (hasOverlap) {
+                throw new BadRequestException(
+                    "Cannot create a new ride while you have an active ride. Please wait until your current ride is finished."
+                );
+            }
+        }
+
         // Create ride
         Ride ride = new Ride();
         ride.setStatus(RideStatus.PENDING);
@@ -280,13 +310,9 @@ public class RideService {
         ride.setPricingPricePerKm(vehicleType.getPricePerKm());
         ride.setPricingVehicleTypeName(vehicleType.getName().name());
 
-        // Distance, duration and cost from Mapbox Directions (single source of truth)
-        EstimateRequest estimateRequest = buildEstimateRequestFromWaypoints(request);
-        EstimateResponse estimate = mapService.estimateRide(estimateRequest);
         BigDecimal totalDistance = BigDecimal.valueOf(estimate.distanceInKm());
         ride.setTotalDistanceKm(totalDistance);
         ride.setTotalCost(BigDecimal.valueOf(estimate.estimatedPrice()));
-        int estimatedSeconds = estimate.durationInMinutes() * 60;
         ride.setEstimatedDurationSec(estimatedSeconds);
         if (request.scheduledFor() != null) {
             ride.setEstimatedArrivalAt(request.scheduledFor().plusSeconds(estimatedSeconds));
@@ -371,6 +397,15 @@ public class RideService {
         }
         
         return ride;
+    }
+
+    private boolean doesRideOverlapForPassenger(Ride existingRide, Instant newRideStart, Instant newRideEnd, Instant now) {
+        if (existingRide.getStatus() == RideStatus.ACTIVE) {
+            return true;
+        }
+        Instant existingStart = estimateRideStart(existingRide, now);
+        Instant existingEnd = estimateRideEnd(existingRide, existingStart);
+        return intervalsOverlap(existingStart, existingEnd, newRideStart, newRideEnd);
     }
     
     public Ride startRide(Long rideId, Long driverId) {
