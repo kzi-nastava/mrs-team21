@@ -18,7 +18,9 @@ public record DriverCreateRequest(
     
     String address,
     String phone,
-    
+
+    String profilePictureUrl,
+
     // Vehicle fields
     @NotNull(message = "Vehicle type ID is required")
     @Positive(message = "Vehicle type ID must be positive")

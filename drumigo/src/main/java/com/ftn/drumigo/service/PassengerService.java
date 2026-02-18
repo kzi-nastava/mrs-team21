@@ -72,6 +72,10 @@ public class PassengerService {
         passenger.setUpdatedAt(Instant.now());
         passenger.setPasswordHash(PasswordUtil.hashPassword(password)); // Hash password
 
+        if (request.profilePicture() != null && !request.profilePicture().isBlank()) {
+            passenger.setProfilePictureUrl(request.profilePicture());
+        }
+
         passenger = passengerRepository.save(passenger);
         
         // Create token and send confirmation email

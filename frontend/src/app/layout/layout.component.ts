@@ -1,6 +1,7 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 import { NavbarComponent, UserProfile } from './components/navbar/navbar.component';
 import { ProfileApiService } from '../features/profile/services/profile-api.service';
 import { AuthService } from '../shared/services/auth.service';
@@ -18,6 +19,8 @@ export class LayoutComponent implements OnInit, OnDestroy {
   private profileService = inject(ProfileApiService);
   private readonly authService = inject(AuthService);
   private readonly driverLocationPingService = inject(DriverLocationPingService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly destroy$ = new Subject<void>();
 
   user: UserProfile = {
     name: 'User',
@@ -29,9 +32,14 @@ export class LayoutComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadUserFromToken();
     this.driverLocationPingService.start();
+    this.authService.loginSuccess$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.loadUserFromToken();
+    });
   }
 
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
     this.driverLocationPingService.stop();
   }
 
@@ -57,6 +65,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
             initials: this.getInitials(fullName),
             avatarUrl: profile.avatarUrl,
           };
+          this.cdr.detectChanges();
         },
         error: (err) => {
           console.error('Failed to load profile:', err);
@@ -66,6 +75,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
               name: email,
               initials: this.getInitials(email),
             };
+            this.cdr.detectChanges();
           }
         },
       });

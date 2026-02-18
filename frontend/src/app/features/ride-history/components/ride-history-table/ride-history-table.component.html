@@ -118,7 +118,10 @@
         <td *ngIf="isColumnVisible('driver')">
           <div class="driver-cell">
             <div class="driver-avatar">
-              {{ getDriverInitials(ride.driver) }}
+              <img
+                [src]="ride.driver?.photoUrl || 'images/default-avatar.svg'"
+                [alt]="getDriverName(ride.driver)"
+              />
             </div>
             <span class="driver-name">{{ getDriverName(ride.driver) }}</span>
           </div>

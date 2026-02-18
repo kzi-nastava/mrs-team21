@@ -65,7 +65,7 @@ public class ScheduledRideReminderService {
     }
 
     private void sendReminderIfNotSent(Ride ride, int minutesBefore) {
-        if (notificationRepository.existsByRideAndTypeAndReminderMinutesBefore(
+        if (notificationRepository.existsByRideAndTypeAndReminderMinutes(
             ride, NotificationType.SCHEDULED_RIDE_REMINDER, minutesBefore)) {
             return;
         }
@@ -81,7 +81,7 @@ public class ScheduledRideReminderService {
         n.setRide(ride);
         n.setType(NotificationType.SCHEDULED_RIDE_REMINDER);
         n.setMessage(message);
-        n.setReminderMinutesBefore(minutesBefore);
+        n.setReminderMinutes(minutesBefore);
         notificationRepository.save(n);
 
         log.info("Sent scheduled ride reminder: rideId={}, minutesBefore={}, recipientUserId={}",

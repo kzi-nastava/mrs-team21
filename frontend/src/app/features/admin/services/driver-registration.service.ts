@@ -9,6 +9,7 @@ export interface DriverRegistrationRequest {
   email: string;
   address: string;
   phone: string;
+  profilePictureUrl?: string | null;
   vehicleTypeId: number;
   vehicleModel: string;
   vehicleLicensePlate: string;
