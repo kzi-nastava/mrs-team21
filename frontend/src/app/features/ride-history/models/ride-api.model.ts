@@ -72,3 +72,45 @@ export interface DriverRideHistoryItemDto {
   passengers: PassengerInfoDto[];
   panicOccurred: boolean;
 }
+
+/**
+ * DTO for passenger ride history items from backend.
+ * Maps to PassengerRideHistoryItemResponse.java
+ */
+export interface PassengerRideHistoryItemDto {
+  id: number;
+  status: string;
+  requestedAt: string;
+  scheduledFor: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  startAddress: string | null;
+  destinationAddress: string | null;
+  totalCost: number | null;
+  canceled: boolean;
+  canceledBy: string | null;
+  hasPanic: boolean;
+}
+
+export interface RideDetailsDriverDto {
+  id: number;
+  name: string;
+  surname: string;
+  email: string;
+  phone: string;
+  profilePictureUrl?: string | null;
+}
+
+export interface RideDetailsPassengerDto {
+  id: number | null;
+  name: string;
+  surname: string;
+  email: string;
+}
+
+export interface RideDetailsResponseDto {
+  ride: RideResponseDto;
+  driver: RideDetailsDriverDto | null;
+  passengers: RideDetailsPassengerDto[];
+  panicEvents: unknown[];
+}
