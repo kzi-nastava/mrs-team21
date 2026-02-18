@@ -48,7 +48,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
         role: roleData.label,
         type: roleData.type,
       };
-      this.profileService.getProfile(userId).subscribe({
+      this.profileService.getProfile().subscribe({
         next: (profile) => {
           const fullName = `${profile.firstName} ${profile.lastName}`;
           this.user = {

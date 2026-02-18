@@ -13,6 +13,7 @@ import { ProfilePhotoUploadComponent } from '../../../shared/components/profile-
 import { NotificationApiService } from '../services/notification-api.service';
 import { UserNotification } from '../models/notification.model';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AuthService } from '../../../shared/services/auth.service';
 
 @Component({
   selector: 'app-profile-page',
@@ -27,6 +28,7 @@ export class ProfilePageComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly notificationService = inject(NotificationApiService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly authService = inject(AuthService);
 
   readonly profile = signal<ProfileData | null>(null);
   readonly profileLoading = signal<boolean>(true);
@@ -77,11 +79,15 @@ export class ProfilePageComponent implements OnInit {
   readonly isDriver = computed(() => this.profile()?.role === 'DRIVER');
 
   ngOnInit(): void {
-    // TODO: Get userId from auth service
-    const userId = 1; // Hardcoded for now
+    if (!this.authService.isAuthenticated()) {
+      this.profileLoading.set(false);
+      this.profileError.set('You are not signed in.');
+      this.router.navigate(['/login']);
+      return;
+    }
 
     this.profileService
-      .getProfile(userId)
+      .getProfile()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
@@ -156,7 +162,7 @@ export class ProfilePageComponent implements OnInit {
 
       // Update profile with new picture
       this.profileService
-        .updateProfile(p.id, { profilePictureUrl: dataUrl })
+        .updateProfile({ profilePictureUrl: dataUrl })
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: (updatedProfile) => {
@@ -239,7 +245,7 @@ export class ProfilePageComponent implements OnInit {
 
     // Call backend API to update profile
     this.profileService
-      .updateProfile(p.id, {
+      .updateProfile({
         name: values.firstName,
         surname: values.lastName,
         email: values.email,
