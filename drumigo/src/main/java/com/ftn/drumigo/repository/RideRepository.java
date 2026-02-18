@@ -91,4 +91,20 @@ public interface RideRepository extends JpaRepository<Ride, Long> {
                                     @Param("statuses") List<RideStatus> statuses,
                                     @Param("hasPanic") Boolean hasPanic,
                                     Pageable pageable);
+
+    /**
+     * Rides that are accepted, scheduled, and start within the next 15 minutes (for reminder notifications).
+     */
+    @Query("""
+           SELECT r FROM Ride r
+           WHERE r.status = :status
+             AND r.scheduledFor IS NOT NULL
+             AND r.scheduledFor > :after
+             AND r.scheduledFor <= :before
+           """)
+    List<Ride> findAcceptedScheduledRidesInReminderWindow(
+        @Param("status") RideStatus status,
+        @Param("after") Instant after,
+        @Param("before") Instant before
+    );
 }
