@@ -9,7 +9,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class VehicleInfoResponse {
     private Long id;
+    private String model;
     private String vehicleTypeName;
+    private String licensePlate;
     private Integer numSeats;
     private Boolean babyFriendly;
     private Boolean petFriendly;

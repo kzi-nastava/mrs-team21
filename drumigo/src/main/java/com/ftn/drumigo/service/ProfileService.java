@@ -52,7 +52,9 @@ public class ProfileService {
             if (vehicle != null) {
                 VehicleInfoResponse vehicleInfo = new VehicleInfoResponse();
                 vehicleInfo.setId(vehicle.getId());
+                vehicleInfo.setModel(vehicle.getModel());
                 vehicleInfo.setVehicleTypeName(vehicle.getVehicleType().getName().name());
+                vehicleInfo.setLicensePlate(vehicle.getLicensePlate());
                 vehicleInfo.setNumSeats(vehicle.getNumSeats());
                 vehicleInfo.setBabyFriendly(vehicle.getBabyFriendly());
                 vehicleInfo.setPetFriendly(vehicle.getPetFriendly());
