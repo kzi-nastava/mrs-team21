@@ -948,8 +948,18 @@ public class RideService {
             }
         }
 
-        // Remove all waypoints after the start (keep start, remove destinations)
-        rideWaypointRepository.deleteByRideAndWaypointOrderGreaterThan(ride, 0);
+        // Keep pickup waypoint and replace destination with actual stop location so history remains meaningful.
+        List<RideWaypoint> existingWaypoints = rideWaypointRepository.findByRideOrderByWaypointOrderAsc(ride);
+        if (!existingWaypoints.isEmpty()) {
+            int pickupOrder = existingWaypoints.get(0).getWaypointOrder();
+            rideWaypointRepository.deleteByRideAndWaypointOrderGreaterThan(ride, pickupOrder);
+
+            RideWaypoint stopWaypoint = new RideWaypoint();
+            stopWaypoint.setRide(ride);
+            stopWaypoint.setLocation(stopLocation);
+            stopWaypoint.setWaypointOrder(pickupOrder + 1);
+            rideWaypointRepository.save(stopWaypoint);
+        }
 
         // Update ride
         ride.setStoppedAt(Instant.now());

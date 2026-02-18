@@ -1,9 +1,12 @@
 package com.ftn.drumigo.service;
 
 import com.ftn.drumigo.domain.Ride;
+import com.ftn.drumigo.domain.RideWaypoint;
+import com.ftn.drumigo.domain.Location;
 import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.domain.users.Driver;
 import com.ftn.drumigo.domain.users.Passenger;
+import com.ftn.drumigo.dto.ride.request.RideStopRequest;
 import com.ftn.drumigo.event.RideFinishedEvent;
 import com.ftn.drumigo.exception.BadRequestException;
 import com.ftn.drumigo.exception.ResourceNotFoundException;
@@ -28,6 +31,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -262,6 +266,49 @@ class RideServiceTest {
         assertTrue(result.isEmpty());
     }
 
+    @Test
+    void stopRide_keepsPickupAndStoresStopAsDestinationForHistory() {
+        Driver driver = driver(120L, true);
+        Ride ride = ride(220L, RideStatus.ACTIVE, driver);
+        Location pickupLocation = location(1L, "Pickup address");
+        Location originalDestinationLocation = location(2L, "Original destination");
+        Location stopLocation = location(3L, "Stopped here");
+        RideWaypoint pickupWaypoint = waypoint(ride, pickupLocation, 1);
+        RideWaypoint originalDestinationWaypoint = waypoint(ride, originalDestinationLocation, 2);
+
+        RideStopRequest request = new RideStopRequest(
+            "Stopped here",
+            BigDecimal.valueOf(45.2671),
+            BigDecimal.valueOf(19.8335)
+        );
+
+        when(rideRepository.findById(220L)).thenReturn(Optional.of(ride));
+        when(locationRepository.findByAddressAndLatAndLng(
+            "Stopped here",
+            BigDecimal.valueOf(45.2671),
+            BigDecimal.valueOf(19.8335)
+        )).thenReturn(Optional.of(stopLocation));
+        when(rideWaypointRepository.findFirstByRideOrderByWaypointOrderDesc(ride))
+            .thenReturn(Optional.of(originalDestinationWaypoint));
+        when(rideWaypointRepository.findByRideOrderByWaypointOrderAsc(ride))
+            .thenReturn(List.of(pickupWaypoint, originalDestinationWaypoint));
+        when(rideRepository.save(any(Ride.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(driverRepository.save(any(Driver.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Ride result = rideService.stopRide(220L, 120L, request);
+
+        assertEquals(RideStatus.FINISHED, result.getStatus());
+        assertEquals(stopLocation, result.getStopLocation());
+        verify(rideWaypointRepository).deleteByRideAndWaypointOrderGreaterThan(ride, 1);
+
+        ArgumentCaptor<RideWaypoint> stopWaypointCaptor = ArgumentCaptor.forClass(RideWaypoint.class);
+        verify(rideWaypointRepository).save(stopWaypointCaptor.capture());
+        RideWaypoint savedStopWaypoint = stopWaypointCaptor.getValue();
+        assertEquals(ride.getId(), savedStopWaypoint.getRide().getId());
+        assertEquals(stopLocation, savedStopWaypoint.getLocation());
+        assertEquals(2, savedStopWaypoint.getWaypointOrder());
+    }
+
     private static Ride ride(Long id, RideStatus status, Driver driver) {
         Ride ride = new Ride();
         ride.setId(id);
@@ -282,5 +329,22 @@ class RideServiceTest {
         passenger.setId(id);
         passenger.setEmail(email);
         return passenger;
+    }
+
+    private static Location location(Long id, String address) {
+        Location location = new Location();
+        location.setId(id);
+        location.setAddress(address);
+        location.setLat(BigDecimal.valueOf(45.2));
+        location.setLng(BigDecimal.valueOf(19.8));
+        return location;
+    }
+
+    private static RideWaypoint waypoint(Ride ride, Location location, int order) {
+        RideWaypoint waypoint = new RideWaypoint();
+        waypoint.setRide(ride);
+        waypoint.setLocation(location);
+        waypoint.setWaypointOrder(order);
+        return waypoint;
     }
 }
