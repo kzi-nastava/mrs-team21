@@ -13,5 +13,4 @@ public class DrumigoApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(DrumigoApplication.class, args);
 	}
-
 }
