@@ -48,6 +48,6 @@ public class Notification {
      * Null for other notification types.
      */
     @Column(name = "reminder_minutes_before")
-    private Integer reminderMinutesBefore;
+    private Integer reminderMinutes;
 }
 

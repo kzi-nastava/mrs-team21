@@ -13,6 +13,6 @@ import org.springframework.stereotype.Repository;
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
     Page<Notification> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
 
-    boolean existsByRideAndTypeAndReminderMinutesBefore(Ride ride, NotificationType type, Integer reminderMinutesBefore);
+    boolean existsByRideAndTypeAndReminderMinutes(Ride ride, NotificationType type, Integer reminderMinutes);
 }
 

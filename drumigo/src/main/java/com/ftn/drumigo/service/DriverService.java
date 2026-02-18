@@ -62,7 +62,10 @@ public class DriverService {
         driver.setActive(true);
         driver.setCreatedAt(Instant.now());
         driver.setUpdatedAt(Instant.now());
-        
+        if (request.profilePictureUrl() != null && !request.profilePictureUrl().isBlank()) {
+            driver.setProfilePictureUrl(request.profilePictureUrl());
+        }
+
         driver = driverRepository.save(driver);
         
         // Create vehicle

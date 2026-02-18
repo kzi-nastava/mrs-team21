@@ -86,8 +86,18 @@ export class RegisterComponent implements OnInit {
   onPhotoSelected(file: File): void {
     this.selectedPhotoFile = file;
     console.log('Photo selected (auto-cropped to 1:1):', file.name, file.size, 'bytes');
-    // TODO: Upload to backend storage and get URL
-    // this.uploadService.uploadProfilePhoto(file).subscribe(url => ...);
+  }
+
+  private submitWithPayload(payload: PassengerRegisterRequest): void {
+    this.registerService.register(payload).subscribe({
+      next: (response) => {
+        console.log('Registration successful:', response);
+        this.router.navigate(['/login']);
+      },
+      error: (error) => {
+        console.error('Registration failed:', error);
+      },
+    });
   }
 
   onSubmit(): void {
@@ -98,7 +108,7 @@ export class RegisterComponent implements OnInit {
     }
 
     const formValue = this.registerForm.value;
-    const payload: PassengerRegisterRequest = {
+    const basePayload: Omit<PassengerRegisterRequest, 'profilePicture'> = {
       firstName: formValue.firstName,
       lastName: formValue.lastName,
       email: formValue.email,
@@ -106,19 +116,19 @@ export class RegisterComponent implements OnInit {
       address: formValue.address,
       password: formValue.password,
       confirmPassword: formValue.confirmPassword,
-      profilePicture: this.selectedPhotoFile ? this.selectedPhotoFile.name : undefined, // Placeholder; replace with actual URL after upload
     };
 
-    this.registerService.register(payload).subscribe({
-      next: (response) => {
-        console.log('Registration successful:', response);
-        // TODO: Show success message
-        this.router.navigate(['/login']); // Navigate to login after successful registration
-      },
-      error: (error) => {
-        console.error('Registration failed:', error);
-        // TODO: Show error message
-      },
-    });
+    const file = this.selectedPhotoFile;
+    if (!file) {
+      this.submitWithPayload({ ...basePayload, profilePicture: undefined });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      this.submitWithPayload({ ...basePayload, profilePicture: dataUrl });
+    };
+    reader.readAsDataURL(file);
   }
 }

@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Subject } from 'rxjs';
 
 export interface JwtPayload {
   sub: string; // email
@@ -15,6 +16,10 @@ export interface JwtPayload {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly TOKEN_KEY = 'token';
+
+  /** Emits when a token is set (e.g. after login). Subscribe to refresh UI that depends on profile. */
+  private readonly tokenSet$ = new Subject<void>();
+  readonly loginSuccess$ = this.tokenSet$.asObservable();
 
   /**
    * Get the current user's ID from the JWT token.
@@ -71,6 +76,14 @@ export class AuthService {
    */
   isAdmin(): boolean {
     return this.getRole() === 'ADMIN';
+  }
+
+  /**
+   * Store the JWT token (e.g. after login). Emits on loginSuccess$ so subscribers can refresh profile/UI.
+   */
+  setToken(token: string): void {
+    sessionStorage.setItem(this.TOKEN_KEY, token);
+    this.tokenSet$.next();
   }
 
   /**

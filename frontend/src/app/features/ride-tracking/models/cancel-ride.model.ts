@@ -24,6 +24,7 @@ export interface RideSummaryForCancel {
     initials: string;
     rating: number;
     vehicle: string;
+    profilePictureUrl?: string | null;
   };
   passenger: {
     id: string;

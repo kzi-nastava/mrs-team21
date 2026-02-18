@@ -56,7 +56,7 @@
     @if (user.avatarUrl) {
       <img [src]="user.avatarUrl" alt="{{ user.name }}" class="user-avatar-img" />
     } @else {
-      <div class="user-avatar">{{ user.initials }}</div>
+      <img src="images/default-avatar.svg" [alt]="user.name" class="user-avatar-img" />
     }
     <div class="user-info">
       <div class="user-name">{{ user.name }}</div>

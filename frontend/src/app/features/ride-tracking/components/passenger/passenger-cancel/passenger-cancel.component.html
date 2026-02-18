@@ -33,7 +33,12 @@
 
       @if (ride.driver) {
         <div class="driver-summary">
-          <span class="driver-avatar">{{ ride.driver.initials }}</span>
+          <div class="driver-avatar">
+            <img
+              [src]="ride.driver.profilePictureUrl || 'images/default-avatar.svg'"
+              [alt]="ride.driver.firstName + ' ' + ride.driver.lastName"
+            />
+          </div>
           <span class="driver-name">{{ ride.driver.firstName }} {{ ride.driver.lastName }}</span>
           <span class="driver-car">{{ ride.driver.vehicle }}</span>
         </div>
