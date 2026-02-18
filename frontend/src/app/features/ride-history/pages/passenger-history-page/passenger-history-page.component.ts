@@ -13,6 +13,7 @@ import {
   RideForRating,
 } from '../../components/rating-modal/rating-modal.component';
 import { ReviewResponse, ReviewService } from '../../services/review.service';
+import { FavoriteRoutesService } from '../../services/favorite-routes.service';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 
@@ -37,6 +38,7 @@ import { ToastService } from '../../../../shared/services/toast.service';
 export class PassengerHistoryPageComponent implements OnInit {
   private readonly rideHistoryService = inject(RideHistoryService);
   private readonly reviewService = inject(ReviewService);
+  private readonly favoriteRoutesService = inject(FavoriteRoutesService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly authService = inject(AuthService);
   private readonly toastService = inject(ToastService);
@@ -230,22 +232,48 @@ export class PassengerHistoryPageComponent implements OnInit {
   }
 
   onFavoriteToggled(ride: Ride): void {
-    // TODO: Backend Integration - Implement API call to mark ride as favorite
-    // 1. Create or update RidePassenger.isFavorite in the database
-    // 2. Call backend endpoint: PATCH /api/rides/{rideId}/favorite with { isFavorite: boolean }
-    // 3. Handle optimistic UI update vs. pessimistic (wait for response)
-    // 4. Add error handling and user feedback (toast notification)
-    // 5. Consider adding isFavorite to the Ride DTO in backend
-    
-    // For now: local toggle only
-    const updatedRide = { ...ride, isFavorite: !ride.isFavorite };
+    const passengerId = this.authService.getUserId();
+    if (!passengerId) {
+      this.toastService.error('Please log in to update favorites');
+      return;
+    }
 
-    this.allRides.update((rides) => rides.map((r) => (r.id === ride.id ? updatedRide : r)));
-    this.applySortingAndPagination();
-    
-    // Update selectedRide if it's the same ride
-    if (this.selectedRide()?.id === ride.id) {
-      this.selectedRide.set(updatedRide);
+    const rideIdNum = Number(ride.id);
+    if (ride.isFavorite) {
+      // Remove from favorites: use by-ride endpoint (we have ride id)
+      this.favoriteRoutesService
+        .deleteByRide(passengerId, rideIdNum)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            const updatedRide = { ...ride, isFavorite: false, favoriteRouteId: undefined };
+            this.allRides.update((rides) => rides.map((r) => (r.id === ride.id ? updatedRide : r)));
+            this.applySortingAndPagination();
+            if (this.selectedRide()?.id === ride.id) this.selectedRide.set(updatedRide);
+            this.toastService.success('Removed from favorites');
+          },
+          error: (err) => {
+            this.toastService.error(err?.error?.message ?? 'Failed to remove from favorites');
+          },
+        });
+    } else {
+      // Add to favorites
+      this.favoriteRoutesService
+        .createFromRide(passengerId, rideIdNum)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (fav) => {
+            const updatedRide = { ...ride, isFavorite: true, favoriteRouteId: fav.id };
+            this.allRides.update((rides) => rides.map((r) => (r.id === ride.id ? updatedRide : r)));
+            this.applySortingAndPagination();
+            if (this.selectedRide()?.id === ride.id) this.selectedRide.set(updatedRide);
+            this.toastService.success('Added to favorites');
+          },
+          error: (err) => {
+            const msg = err?.error?.message ?? err?.message ?? 'Failed to add to favorites';
+            this.toastService.error(msg);
+          },
+        });
     }
   }
 
