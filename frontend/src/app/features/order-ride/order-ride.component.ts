@@ -8,7 +8,7 @@ import { debounceTime, map, switchMap } from 'rxjs/operators';
 import { MapComponent } from '../map/map.component';
 import { EstimateService, AddressSuggestion } from '../landing/services/estimate-ride.service';
 import { AuthService } from '../../shared/services/auth.service';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { VehicleTypeName } from '../landing/models/estimate.model';
 import { LocationDTO } from '../landing/models/estimate.model';
@@ -16,6 +16,7 @@ import {
   FavoriteRoutesService,
   FavoriteRouteDto,
 } from '../ride-history/services/favorite-routes.service';
+import { ToastService } from '../../shared/services/toast.service';
 
 export interface Stop {
   id: string;
@@ -101,6 +102,7 @@ export class OrderRideComponent implements OnInit {
   private http = inject(HttpClient);
   private auth = inject(AuthService);
   private favoriteRoutesService = inject(FavoriteRoutesService);
+  private toastService = inject(ToastService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
   private apiUrl = environment.apiBaseUrl;
@@ -443,8 +445,21 @@ export class OrderRideComponent implements OnInit {
         next: (ride) => {
           this.router.navigate(['/ride-tracking', ride.id]);
         },
-        error: (err) => {
-          this.estimateError.set(err?.error?.message ?? err?.message ?? 'Failed to create ride');
+        error: (err: HttpErrorResponse) => {
+          const backendMessage = err?.error?.message ?? err?.message ?? 'Failed to create ride';
+          const isOverlappingRideRejection =
+            typeof backendMessage === 'string' &&
+            backendMessage.includes('Cannot create a new ride while you have an active ride');
+
+          if (isOverlappingRideRejection) {
+            const friendlyMessage =
+              'You already have an active or scheduled ride. You can schedule a new ride once that one is finished.';
+            this.estimateError.set(null);
+            this.toastService.warning(friendlyMessage);
+            return;
+          }
+
+          this.estimateError.set(backendMessage);
         },
       });
   }
