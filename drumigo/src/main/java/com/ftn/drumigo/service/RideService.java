@@ -52,7 +52,10 @@ public class RideService {
     private final ReviewRepository reviewRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final MapService mapService;
+    private static final String NO_ACTIVE_DRIVERS_MESSAGE = "There are currently no active drivers.";
     private static final long TEN_MINUTES_IN_SECONDS = Duration.ofMinutes(10).getSeconds();
+    private static final long DEFAULT_RIDE_DURATION_SECONDS = Duration.ofMinutes(15).getSeconds();
+    private static final List<RideStatus> ASSIGNMENT_BLOCKING_STATUSES = List.of(RideStatus.ACTIVE, RideStatus.ACCEPTED);
 
     public List<Ride> getActiveRides() {
         return rideRepository.findByStatus(RideStatus.ACTIVE);
@@ -403,7 +406,7 @@ public class RideService {
         List<Driver> activeDrivers = driverRepository.findByActiveDriverTrue();
 
         if (activeDrivers.isEmpty()) {
-            return DriverAssignmentResult.rejected("There are currently no active drivers.");
+            return DriverAssignmentResult.rejected(NO_ACTIVE_DRIVERS_MESSAGE);
         }
 
         Instant now = Instant.now();
@@ -419,35 +422,69 @@ public class RideService {
                 continue;
             }
 
+            List<Ride> driverAssignments = rideRepository.findByDriverAndStatusIn(driver, ASSIGNMENT_BLOCKING_STATUSES);
             double pickupDistanceKm = calculateDistanceToPickupKm(vehicle, pickupWaypoint);
-            boolean hasFutureScheduledRide =
-                rideRepository.existsByDriverAndStatusAndScheduledForAfter(driver, RideStatus.ACCEPTED, now);
-            boolean hasImmediateAcceptedRide =
-                rideRepository.existsByDriverAndStatusAndScheduledForIsNull(driver, RideStatus.ACCEPTED);
-            boolean currentlyOccupied = driver.isBusy() || hasImmediateAcceptedRide;
-
-            Ride activeRide = null;
-            long remainingToFinishSec = Long.MAX_VALUE;
-            if (driver.isBusy()) {
-                activeRide = getCurrentActiveRide(driver);
-                remainingToFinishSec = estimateRemainingToFinishSec(activeRide, now);
-            }
+            boolean hasFutureScheduledRide = driverAssignments.stream().anyMatch(assignment ->
+                assignment.getStatus() == RideStatus.ACCEPTED
+                    && assignment.getScheduledFor() != null
+                    && assignment.getScheduledFor().isAfter(now)
+            );
+            Instant availableAt = estimateDriverAvailableAt(driverAssignments, now);
+            long remainingToFinishSec = estimateRemainingToFinishSec(availableAt, now);
+            boolean currentlyOccupied = remainingToFinishSec > 0;
+            Instant assignmentStart = resolveAssignmentStart(ride, availableAt, now);
+            boolean reservationConflict = hasReservationConflict(driverAssignments, ride, assignmentStart, now);
 
             eligibleCandidates.add(new DriverAssignmentCandidate(
                 driver,
                 pickupDistanceKm,
                 hasFutureScheduledRide,
                 currentlyOccupied,
-                remainingToFinishSec
+                remainingToFinishSec,
+                availableAt,
+                reservationConflict
             ));
         }
 
         if (eligibleCandidates.isEmpty()) {
-            return DriverAssignmentResult.rejected("No active drivers match the requested ride requirements.");
+            return DriverAssignmentResult.rejected(NO_ACTIVE_DRIVERS_MESSAGE);
         }
 
+        if (ride.getScheduledFor() != null) {
+            return assignScheduledRideDriver(eligibleCandidates, ride.getScheduledFor());
+        }
+
+        return assignImmediateRideDriver(eligibleCandidates);
+    }
+
+    private DriverAssignmentResult assignScheduledRideDriver(
+            List<DriverAssignmentCandidate> eligibleCandidates,
+            Instant scheduledFor
+    ) {
+        List<DriverAssignmentCandidate> scheduledCandidates = eligibleCandidates.stream()
+            .filter(candidate -> !candidate.reservationConflict())
+            .filter(candidate -> !candidate.availableAt().isAfter(scheduledFor))
+            .toList();
+
+        if (scheduledCandidates.isEmpty()) {
+            return DriverAssignmentResult.rejected(NO_ACTIVE_DRIVERS_MESSAGE);
+        }
+
+        Driver reservedDriver = scheduledCandidates.stream()
+            .min(Comparator
+                .comparingDouble(DriverAssignmentCandidate::pickupDistanceKm)
+                .thenComparing(DriverAssignmentCandidate::availableAt)
+                .thenComparing(candidate -> candidate.driver().getId()))
+            .orElseThrow()
+            .driver();
+
+        return DriverAssignmentResult.assigned(reservedDriver);
+    }
+
+    private DriverAssignmentResult assignImmediateRideDriver(List<DriverAssignmentCandidate> eligibleCandidates) {
         List<DriverAssignmentCandidate> freeCandidates = eligibleCandidates.stream()
             .filter(candidate -> !candidate.currentlyOccupied())
+            .filter(candidate -> !candidate.reservationConflict())
             .toList();
 
         if (!freeCandidates.isEmpty()) {
@@ -461,20 +498,22 @@ public class RideService {
             return DriverAssignmentResult.assigned(nearestFreeDriver);
         }
 
-        if (eligibleCandidates.stream().allMatch(DriverAssignmentCandidate::hasFutureScheduledRide)) {
-            return DriverAssignmentResult.rejected("There are currently no active drivers.");
+        if (eligibleCandidates.stream().allMatch(
+                candidate -> candidate.reservationConflict()
+                    || (candidate.currentlyOccupied() && candidate.hasFutureScheduledRide())
+        )) {
+            return DriverAssignmentResult.rejected(NO_ACTIVE_DRIVERS_MESSAGE);
         }
 
         List<DriverAssignmentCandidate> fallbackCandidates = eligibleCandidates.stream()
             .filter(DriverAssignmentCandidate::currentlyOccupied)
+            .filter(candidate -> !candidate.reservationConflict())
             .filter(candidate -> !candidate.hasFutureScheduledRide())
             .filter(candidate -> candidate.remainingToFinishSec() <= TEN_MINUTES_IN_SECONDS)
             .toList();
 
         if (fallbackCandidates.isEmpty()) {
-            return DriverAssignmentResult.rejected(
-                "All active drivers are currently busy and cannot finish within 10 minutes."
-            );
+            return DriverAssignmentResult.rejected(NO_ACTIVE_DRIVERS_MESSAGE);
         }
 
         Driver fallbackDriver = fallbackCandidates.stream()
@@ -517,33 +556,96 @@ public class RideService {
         );
     }
 
-    private Ride getCurrentActiveRide(Driver driver) {
-        List<Ride> activeRides = rideRepository.findByDriverAndStatus(driver, RideStatus.ACTIVE);
-        if (activeRides.isEmpty()) {
-            return null;
+    private Instant estimateDriverAvailableAt(List<Ride> assignments, Instant now) {
+        Instant availableAt = now;
+        for (Ride assignment : assignments) {
+            if (assignment.getStatus() == RideStatus.ACCEPTED
+                    && assignment.getScheduledFor() != null
+                    && assignment.getScheduledFor().isAfter(now)) {
+                // Future scheduled rides reserve a future slot, but do not block current availability.
+                continue;
+            }
+
+            Instant startAt = estimateRideStart(assignment, now);
+            Instant endAt = estimateRideEnd(assignment, startAt);
+            if (endAt.isAfter(availableAt)) {
+                availableAt = endAt;
+            }
         }
-        return activeRides.get(0);
+
+        return availableAt;
     }
 
-    private long estimateRemainingToFinishSec(Ride activeRide, Instant now) {
-        if (activeRide == null) {
-            return Long.MAX_VALUE;
+    private Instant resolveAssignmentStart(Ride ride, Instant availableAt, Instant now) {
+        Instant requestedStart = ride.getScheduledFor() != null ? ride.getScheduledFor() : now;
+        return requestedStart.isAfter(availableAt) ? requestedStart : availableAt;
+    }
+
+    private boolean hasReservationConflict(
+            List<Ride> existingAssignments,
+            Ride newRide,
+            Instant assignmentStart,
+            Instant now
+    ) {
+        Instant assignmentEnd = estimateRideEnd(newRide, assignmentStart);
+
+        for (Ride existingAssignment : existingAssignments) {
+            if (newRide.getId() != null && newRide.getId().equals(existingAssignment.getId())) {
+                continue;
+            }
+
+            Instant existingStart = estimateRideStart(existingAssignment, now);
+            Instant existingEnd = estimateRideEnd(existingAssignment, existingStart);
+            if (intervalsOverlap(assignmentStart, assignmentEnd, existingStart, existingEnd)) {
+                return true;
+            }
         }
 
-        if (activeRide.getEstimatedArrivalAt() != null) {
-            return Math.max(0, Duration.between(now, activeRide.getEstimatedArrivalAt()).getSeconds());
-        }
+        return false;
+    }
 
-        if (activeRide.getStartTime() != null && activeRide.getEstimatedDurationSec() != null) {
-            long elapsedSeconds = Duration.between(activeRide.getStartTime(), now).getSeconds();
-            return Math.max(0, activeRide.getEstimatedDurationSec() - elapsedSeconds);
+    private Instant estimateRideStart(Ride ride, Instant now) {
+        if (ride.getStatus() == RideStatus.ACTIVE && ride.getStartTime() != null) {
+            return ride.getStartTime();
         }
-
-        if (activeRide.getEstimatedDurationSec() != null) {
-            return activeRide.getEstimatedDurationSec();
+        if (ride.getScheduledFor() != null) {
+            return ride.getScheduledFor();
         }
+        if (ride.getStartTime() != null) {
+            return ride.getStartTime();
+        }
+        if (ride.getRequestedAt() != null) {
+            return ride.getRequestedAt();
+        }
+        return now;
+    }
 
-        return Long.MAX_VALUE;
+    private Instant estimateRideEnd(Ride ride, Instant startAt) {
+        if (ride.getEndTime() != null) {
+            return ride.getEndTime();
+        }
+        if (ride.getEstimatedArrivalAt() != null && !ride.getEstimatedArrivalAt().isBefore(startAt)) {
+            return ride.getEstimatedArrivalAt();
+        }
+        return startAt.plusSeconds(estimateRideDurationSec(ride));
+    }
+
+    private long estimateRideDurationSec(Ride ride) {
+        if (ride.getEstimatedDurationSec() != null && ride.getEstimatedDurationSec() > 0) {
+            return ride.getEstimatedDurationSec();
+        }
+        return DEFAULT_RIDE_DURATION_SECONDS;
+    }
+
+    private boolean intervalsOverlap(Instant startA, Instant endA, Instant startB, Instant endB) {
+        return startA.isBefore(endB) && startB.isBefore(endA);
+    }
+
+    private long estimateRemainingToFinishSec(Instant availableAt, Instant now) {
+        if (!availableAt.isAfter(now)) {
+            return 0;
+        }
+        return Duration.between(now, availableAt).getSeconds();
     }
 
     private void setDriverBusy(Driver driver, boolean busy) {
@@ -667,7 +769,9 @@ public class RideService {
         double pickupDistanceKm,
         boolean hasFutureScheduledRide,
         boolean currentlyOccupied,
-        long remainingToFinishSec
+        long remainingToFinishSec,
+        Instant availableAt,
+        boolean reservationConflict
     ) {
     }
 
@@ -735,6 +839,7 @@ public class RideService {
         ride.setCancelReason(reason);
         ride.setCanceledByUser(canceledBy);
         setDriverBusy(ride.getDriver(), false);
+        rideRepository.save(ride);
         createCancellationNotifications(ride);
     }
     

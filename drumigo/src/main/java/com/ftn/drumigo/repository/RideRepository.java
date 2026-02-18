@@ -17,8 +17,7 @@ import java.util.List;
 public interface RideRepository extends JpaRepository<Ride, Long> {
     List<Ride> findByStatus(RideStatus status);
     List<Ride> findByDriverAndStatus(Driver driver, RideStatus status);
-    boolean existsByDriverAndStatusAndScheduledForAfter(Driver driver, RideStatus status, Instant scheduledFor);
-    boolean existsByDriverAndStatusAndScheduledForIsNull(Driver driver, RideStatus status);
+    List<Ride> findByDriverAndStatusIn(Driver driver, List<RideStatus> statuses);
     Page<Ride> findByDriverAndStatusAndScheduledForAfter(Driver driver, RideStatus status, Instant scheduledFor, Pageable pageable);
     
     @Query("""
