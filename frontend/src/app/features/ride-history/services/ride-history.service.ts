@@ -1,11 +1,23 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
+import {
+  catchError,
+  EMPTY,
+  expand,
+  forkJoin,
+  map,
+  Observable,
+  of,
+  reduce,
+  switchMap,
+} from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { Ride } from '../models';
 import {
   DriverRideHistoryItemDto,
   PageResponse,
+  PassengerRideHistoryItemDto,
+  RideDetailsResponseDto,
   RideResponseDto,
 } from '../models/ride-api.model';
 
@@ -33,8 +45,47 @@ export class RideHistoryService {
    * Get ride history for a passenger.
    * Returns rides where the user was a passenger.
    */
-  getPassengerRideHistory(): Ride[] {
-    return this.getMockRideData();
+  getPassengerRideHistory(
+    passengerId: number,
+    from?: Date | null,
+    to?: Date | null,
+    page = 0,
+    size = 10,
+    sort = 'requestedAt,desc',
+  ): Observable<DriverRideHistoryResponse> {
+    const params = this.buildHistoryParams(from, to, page, size, sort);
+
+    return this.http
+      .get<PageResponse<PassengerRideHistoryItemDto>>(
+        `${environment.apiBaseUrl}/passengers/${passengerId}/rides/history`,
+        { params },
+      )
+      .pipe(
+        switchMap((response) => {
+          const mappedRides = response.content.map((item) => this.mapPassengerHistoryItem(item));
+
+          return this.enrichRidesWithDetails(mappedRides).pipe(
+            map((rides) => ({
+              rides,
+              totalElements: response.totalElements,
+              totalPages: response.totalPages,
+              currentPage: response.number,
+              pageSize: response.size,
+            })),
+          );
+        }),
+      );
+  }
+
+  getAllPassengerRideHistory(
+    passengerId: number,
+    from?: Date | null,
+    to?: Date | null,
+    sort = 'requestedAt,desc',
+  ): Observable<Ride[]> {
+    return this.getAllRideHistoryPages((page, size) =>
+      this.getPassengerRideHistory(passengerId, from, to, page, size, sort),
+    );
   }
 
   /**
@@ -49,20 +100,7 @@ export class RideHistoryService {
     size = 10,
     sort = 'requestedAt,desc',
   ): Observable<DriverRideHistoryResponse> {
-    let params = new HttpParams()
-      .set('page', page)
-      .set('size', size)
-      .set('sort', sort);
-
-    if (from) {
-      params = params.set('from', from.toISOString());
-    }
-    if (to) {
-      // Set end of day for the 'to' date
-      const endOfDay = new Date(to);
-      endOfDay.setHours(23, 59, 59, 999);
-      params = params.set('to', endOfDay.toISOString());
-    }
+    const params = this.buildHistoryParams(from, to, page, size, sort);
 
     return this.http
       .get<PageResponse<DriverRideHistoryItemDto>>(
@@ -98,8 +136,55 @@ export class RideHistoryService {
    * Get ride history for an admin.
    * Returns all rides in the system (with admin visibility).
    */
-  getAdminRideHistory(): Ride[] {
-    return this.getMockRideData();
+  getAdminRideHistory(
+    from?: Date | null,
+    to?: Date | null,
+    page = 0,
+    size = 10,
+    sort = 'requestedAt,desc',
+  ): Observable<DriverRideHistoryResponse> {
+    const params = this.buildHistoryParams(from, to, page, size, sort);
+
+    return this.http
+      .get<PageResponse<RideResponseDto>>(`${environment.apiBaseUrl}/admin/rides/history`, {
+        params,
+      })
+      .pipe(
+        switchMap((response) => {
+          const mappedRides = response.content.map((ride) => this.mapRideResponse(ride));
+
+          return this.enrichRidesWithDetails(mappedRides).pipe(
+            map((rides) => ({
+              rides,
+              totalElements: response.totalElements,
+              totalPages: response.totalPages,
+              currentPage: response.number,
+              pageSize: response.size,
+            })),
+          );
+        }),
+      );
+  }
+
+  getAllDriverRideHistory(
+    driverId: number,
+    from?: Date | null,
+    to?: Date | null,
+    sort = 'requestedAt,desc',
+  ): Observable<Ride[]> {
+    return this.getAllRideHistoryPages((page, size) =>
+      this.getDriverRideHistory(driverId, from, to, page, size, sort),
+    );
+  }
+
+  getAllAdminRideHistory(
+    from?: Date | null,
+    to?: Date | null,
+    sort = 'requestedAt,desc',
+  ): Observable<Ride[]> {
+    return this.getAllRideHistoryPages((page, size) =>
+      this.getAdminRideHistory(from, to, page, size, sort),
+    );
   }
 
   /**
@@ -167,8 +252,8 @@ export class RideHistoryService {
           valueB = `${b.origin}${b.destination}`;
           break;
         case 'status':
-          valueA = a.isCancelled ? 1 : 0;
-          valueB = b.isCancelled ? 1 : 0;
+          valueA = this.getStatusSortPriority(a);
+          valueB = this.getStatusSortPriority(b);
           break;
         case 'earnings':
           valueA = a.cost;
@@ -184,6 +269,106 @@ export class RideHistoryService {
     });
 
     return sorted;
+  }
+
+  private getStatusSortPriority(ride: Ride): number {
+    const status = ride.status ?? (ride.isCancelled ? 'CANCELLED' : 'FINISHED');
+    const priority: Record<string, number> = {
+      PENDING: 1,
+      ACCEPTED: 2,
+      ACTIVE: 3,
+      FINISHED: 4,
+      CANCELLED: 5,
+      REJECTED: 6,
+    };
+
+    return priority[status] ?? 99;
+  }
+
+  private getAllRideHistoryPages(
+    fetchPage: (page: number, size: number) => Observable<DriverRideHistoryResponse>,
+    pageSize = 100,
+  ): Observable<Ride[]> {
+    return fetchPage(0, pageSize).pipe(
+      expand((response) => {
+        const nextPage = response.currentPage + 1;
+        return nextPage < response.totalPages ? fetchPage(nextPage, pageSize) : EMPTY;
+      }),
+      map((response) => response.rides),
+      reduce((all, rides) => all.concat(rides), [] as Ride[]),
+    );
+  }
+
+  private buildHistoryParams(
+    from?: Date | null,
+    to?: Date | null,
+    page = 0,
+    size = 10,
+    sort = 'requestedAt,desc',
+  ): HttpParams {
+    let params = new HttpParams()
+      .set('page', page)
+      .set('size', size)
+      .set('sort', sort);
+
+    if (from) {
+      params = params.set('from', from.toISOString());
+    }
+
+    if (to) {
+      const endOfDay = new Date(to);
+      endOfDay.setHours(23, 59, 59, 999);
+      params = params.set('to', endOfDay.toISOString());
+    }
+
+    return params;
+  }
+
+  private getRideDetails(rideId: number): Observable<RideDetailsResponseDto> {
+    return this.http.get<RideDetailsResponseDto>(`${environment.apiBaseUrl}/rides/${rideId}/details`);
+  }
+
+  private enrichRidesWithDetails(rides: Ride[]): Observable<Ride[]> {
+    if (rides.length === 0) {
+      return of([]);
+    }
+
+    const detailRequests = rides.map((ride) =>
+      this.getRideDetails(Number(ride.id)).pipe(
+        map((details) => this.mergeRideWithDetails(ride, details)),
+        catchError(() => of(ride)),
+      ),
+    );
+
+    return forkJoin(detailRequests);
+  }
+
+  private mergeRideWithDetails(ride: Ride, details: RideDetailsResponseDto): Ride {
+    const baseFromDetails = details.ride ? this.mapRideResponse(details.ride) : ride;
+
+    return {
+      ...ride,
+      ...baseFromDetails,
+      driver: details.driver
+        ? {
+            firstName: details.driver.name,
+            lastName: details.driver.surname,
+            email: details.driver.email,
+            phone: details.driver.phone,
+            photoUrl: details.driver.profilePictureUrl ?? undefined,
+          }
+        : baseFromDetails.driver ?? ride.driver,
+      passengers:
+        details.passengers?.map((p) => ({
+          firstName: p.name,
+          lastName: p.surname,
+          email: p.email,
+          phone: '',
+        })) ?? ride.passengers,
+      panicActivated: ride.panicActivated || (details.panicEvents?.length ?? 0) > 0,
+      cancelledBy: ride.cancelledBy,
+      cancellationReason: ride.cancellationReason,
+    };
   }
 
   /**
@@ -369,6 +554,27 @@ export class RideHistoryService {
         vehicleType: 'STANDARD',
       },
     ];
+  }
+
+  private mapPassengerHistoryItem(item: PassengerRideHistoryItemDto): Ride {
+    const startTime = item.startTime ?? item.scheduledFor ?? item.requestedAt;
+
+    return {
+      id: String(item.id),
+      startTime: startTime ? new Date(startTime) : new Date(),
+      endTime: item.endTime ? new Date(item.endTime) : null,
+      origin: item.startAddress ?? 'Unknown pickup',
+      destination: item.destinationAddress ?? 'Unknown destination',
+      cost: item.totalCost ?? 0,
+      isCancelled: item.canceled || item.status === 'CANCELLED',
+      cancelledBy: null,
+      cancellationReason: item.canceledBy ? `Cancelled by ${item.canceledBy}` : undefined,
+      panicActivated: item.hasPanic,
+      passengers: [],
+      status: item.status,
+      scheduledFor: item.scheduledFor ? new Date(item.scheduledFor) : null,
+      requestedAt: item.requestedAt ? new Date(item.requestedAt) : null,
+    };
   }
 
   private mapRideResponse(ride: RideResponseDto): Ride {
