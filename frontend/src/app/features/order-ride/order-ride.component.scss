@@ -453,6 +453,104 @@
   }
 }
 
+/* Favorite routes picker */
+.favorite-routes-picker {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: rgba(91, 76, 219, 0.06);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.favorite-routes-picker__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dark);
+  margin: 0 0 12px 0;
+}
+
+.favorite-routes-picker__icon {
+  width: 18px;
+  height: 18px;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.favorite-routes-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.favorite-route-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 16px;
+  text-align: left;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-dark);
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+
+  &:hover {
+    border-color: var(--primary);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(91, 76, 219, 0.1);
+  }
+
+  &.active {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    border-color: var(--primary);
+    color: var(--white);
+
+    .favorite-route-card__icon {
+      color: var(--white);
+    }
+  }
+}
+
+.favorite-route-card__icon {
+  width: 18px;
+  height: 18px;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.favorite-route-card__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 480px) {
+  .favorite-route-card__label {
+    white-space: normal;
+  }
+}
+
+.favorite-route-card--manual .favorite-route-card__icon {
+  display: none;
+}
+
 /* Schedule Toggle */
 
 .schedule-label {

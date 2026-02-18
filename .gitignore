@@ -26,6 +26,7 @@ bun-debug.log
 
 # Cursor
 .cursor/
+scripts/
 
 # Visual Studio Code
 .vscode/*

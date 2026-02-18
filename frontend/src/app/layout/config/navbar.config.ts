@@ -19,7 +19,6 @@ export const NAVIGATION_CONFIG: NavigationConfig = {
     { label: 'Order a Ride', icon: 'clock', path: '/order-ride', section: 'main' },
     { label: 'Ride Tracking', icon: 'map-pin', path: '/ride-tracking/1', section: 'main' },
     { label: 'Ride History', icon: 'file-text', path: '/ride-history', section: 'main' },
-    { label: 'Favorite Routes', icon: 'bookmark', path: '/favorite-routes', section: 'main', disabled: true },
 
     // Account Section
     { label: 'Profile', icon: 'user', path: '/profile', section: 'account' },
