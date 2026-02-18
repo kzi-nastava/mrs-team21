@@ -24,30 +24,47 @@ export class MapboxDirectionsService {
 
   constructor(private http: HttpClient) {}
 
+  /** Route between two points. */
   getRoute(from: LngLat, to: LngLat): Observable<[number, number][]> {
-    return this.requestRoute(from, to, 'driving-traffic').pipe(
-      catchError(() => this.requestRoute(from, to, 'driving'))
+    return this.getRouteWithWaypoints([from, to]);
+  }
+
+  /**
+   * Route through multiple waypoints (2–25 points). Returns full road-aligned geometry.
+   */
+  getRouteWithWaypoints(
+    coordinates: Array<{ lat: number; lng: number }>,
+  ): Observable<[number, number][]> {
+    if (coordinates.length < 2) {
+      return throwError(() => new Error('At least 2 waypoints required.'));
+    }
+    if (coordinates.length > 25) {
+      return throwError(() => new Error('At most 25 waypoints allowed.'));
+    }
+    return this.requestRouteWithCoordinates(coordinates, 'driving-traffic').pipe(
+      catchError(() => this.requestRouteWithCoordinates(coordinates, 'driving')),
     );
   }
 
-  private requestRoute(
-    from: LngLat,
-    to: LngLat,
-    profile: 'driving-traffic' | 'driving'
+  private requestRouteWithCoordinates(
+    coordinates: Array<{ lat: number; lng: number }>,
+    profile: 'driving-traffic' | 'driving',
   ): Observable<[number, number][]> {
     const token = environment.mapboxToken;
     if (!token || token === 'MAPBOX_API_KEY' || token.trim() === '') {
       return throwError(() => new Error('Mapbox API key is missing or invalid.'));
     }
 
-    const coordinates = `${from.lng},${from.lat};${to.lng},${to.lat}`;
+    const coordinatesStr = coordinates
+      .map((c) => `${c.lng},${c.lat}`)
+      .join(';');
     const params = new HttpParams()
       .set('geometries', 'geojson')
       .set('overview', 'full')
       .set('access_token', token);
 
     return this.http
-      .get<DirectionsResponse>(`${this.baseUrl}/${profile}/${coordinates}`, {
+      .get<DirectionsResponse>(`${this.baseUrl}/${profile}/${coordinatesStr}`, {
         params,
       })
       .pipe(
@@ -66,7 +83,7 @@ export class MapboxDirectionsService {
           }
 
           return geometry.coordinates;
-        })
+        }),
       );
   }
 }

@@ -182,14 +182,25 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    if (ride.route && ride.route.length > 0) {
-      // Use waypoints from route
-      const coordinates: [number, number][] = [...ride.route]
-        .sort((a, b) => a.order - b.order)
-        .map((waypoint) => [waypoint.lng, waypoint.lat] as [number, number]);
-      this.routeCoordinates.set(coordinates);
+    const waypoints = ride.route && ride.route.length > 0
+      ? [...ride.route].sort((a, b) => a.order - b.order)
+      : null;
+
+    if (waypoints && waypoints.length >= 2) {
+      const coords = waypoints.map((wp) => ({ lat: wp.lat, lng: wp.lng }));
+      const fallback = waypoints.map((wp) => [wp.lng, wp.lat] as [number, number]);
+      this.directionsService
+        .getRouteWithWaypoints(coords)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (coordinates) => {
+            if (coordinates.length >= 2) this.routeCoordinates.set(coordinates);
+          },
+          error: () => {
+            this.routeCoordinates.set(fallback);
+          },
+        });
     } else {
-      // Fallback to start and destination
       const coordinates: [number, number][] = [
         [ride.startLocation.lng, ride.startLocation.lat],
         [ride.destinationLocation.lng, ride.destinationLocation.lat],
