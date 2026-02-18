@@ -91,6 +91,45 @@ public class EmailService {
     }
 
     @Async
+    public void sendLinkedPassengerRideAcceptedEmail(
+            String email,
+            Long rideId,
+            String pickupAddress,
+            String destinationAddress
+    ) {
+        String trackingLink = frontendUrl + "/ride-tracking/" + rideId;
+        String subject = "You've been added to a Drumigo ride";
+        String body = String.format(
+                "Hello,\n\n" +
+                        "You have been added to a ride and it has been accepted.\n\n" +
+                        "From: %s\n" +
+                        "To: %s\n\n" +
+                        "Track your ride: %s\n\n" +
+                        "Best regards,\n" +
+                        "Team 9+10",
+                pickupAddress,
+                destinationAddress,
+                trackingLink
+        );
+        sendEmail(email, subject, body);
+    }
+
+    @Async
+    public void sendLinkedPassengerRideRejectedEmail(String email, String reason) {
+        String subject = "Ride request was not accepted";
+        String body = String.format(
+                "Hello,\n\n" +
+                        "The ride you were linked to could not be fulfilled.\n\n" +
+                        "Reason: %s\n\n" +
+                        "Please try again later or contact support if you have questions.\n\n" +
+                        "Best regards,\n" +
+                        "Team 9+10",
+                reason
+        );
+        sendEmail(email, subject, body);
+    }
+
+    @Async
     public void sendPasswordResetEmail(String email, String token) {
         String resetLink = frontendUrl + "/reset-password/" + token;
         String subject = "Reset Your Drumigo Password";
