@@ -5,6 +5,8 @@ import { CommonModule } from '@angular/common';
 import { PersonalInfoFormComponent } from '../../../shared/components/personal-info-form/personal-info-form.component';
 import { ProfilePhotoUploadComponent } from '../../../shared/components/profile-photo-upload/profile-photo-upload.component';
 import { DriverRegistrationService } from '../services/driver-registration.service';
+import { finalize } from 'rxjs/operators';
+import { ToastService } from '../../../shared/services/toast.service';
 
 type VehicleCategory = 'Standard' | 'Luxury' | 'Van';
 
@@ -42,6 +44,7 @@ export class DriverRegistrationComponent implements OnInit {
   private fb = inject(FormBuilder);
   private driverRegistrationService = inject(DriverRegistrationService);
   private router = inject(Router);
+  private toastService = inject(ToastService);
 
   currentStep = 1;
   totalSteps = 2;
@@ -170,15 +173,24 @@ export class DriverRegistrationComponent implements OnInit {
       vehiclePetFriendly: vehicleData.petFriendly,
     };
 
-    this.driverRegistrationService.registerDriver(registrationRequest).subscribe({
+    this.driverRegistrationService
+      .registerDriver(registrationRequest)
+      // Always stop the spinner, even if an interceptor completes the stream without next/error.
+      .pipe(
+        finalize(() => {
+          this.isSubmitting = false;
+        }),
+      )
+      .subscribe({
       next: (response) => {
         console.log('Driver registered successfully:', response);
-        this.isSubmitting = false;
-        this.showSuccessMessage = true;
+        // UX: immediately reset the form to allow registering the next driver.
+        // Admin should not get "stuck" on a separate success screen.
+        this.toastService.success('Driver created. Activation email sent.');
+        this.addAnotherDriver();
       },
       error: (error) => {
         console.error('Error registering driver:', error);
-        this.isSubmitting = false;
         // TODO: Show error message to user
         alert(error.error?.message || 'Failed to register driver. Please try again.');
       },
