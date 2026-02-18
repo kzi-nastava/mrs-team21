@@ -2,7 +2,6 @@ package com.ftn.drumigo.service;
 
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.users.Driver;
-import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.domain.UserToken;
 import com.ftn.drumigo.domain.enums.RideStatus;
@@ -10,8 +9,6 @@ import com.ftn.drumigo.domain.enums.TokenType;
 import com.ftn.drumigo.dto.auth.request.LoginRequest;
 import com.ftn.drumigo.dto.auth.response.LoginResponse;
 import com.ftn.drumigo.dto.PasswordUpdateRequest;
-import com.ftn.drumigo.dto.ResetPasswordConfirmRequest;
-import com.ftn.drumigo.dto.ResetPasswordRequestRequest;
 import com.ftn.drumigo.exception.BadRequestException;
 import com.ftn.drumigo.exception.ResourceNotFoundException;
 import com.ftn.drumigo.repository.DriverRepository;
@@ -38,6 +35,8 @@ public class AuthService {
     private final DriverRepository driverRepository;
     private final RideRepository rideRepository;
     private final JwtUtil jwtUtil;
+    private final EmailService emailService;
+    private final PasswordUtil passwordUtil;
 
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
@@ -99,9 +98,9 @@ public class AuthService {
         }
     }
     
-    public void requestPasswordReset(ResetPasswordRequestRequest request) {
-        User user = userRepository.findByEmail(request.email())
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + request.email()));
+    public void requestPasswordReset(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
         
         // Generate reset token
         String token = UUID.randomUUID().toString();
@@ -112,30 +111,42 @@ public class AuthService {
         userToken.setUser(user);
         userToken.setTokenHash(tokenHash);
         userToken.setType(TokenType.PASSWORD_RESET);
-        userToken.setExpiresAt(Instant.now().plusSeconds(60 * 60)); // 60 minutes
+        userToken.setExpiresAt(Instant.now().plusSeconds(30 * 60)); // 30 minutes
         userToken.setCreatedAt(Instant.now());
         
         userTokenRepository.save(userToken);
-        
-        // In production, send email with token
+
+        // Send email to user
+        emailService.sendPasswordResetEmail(user.getEmail(), token);
     }
     
-    public void confirmPasswordReset(ResetPasswordConfirmRequest request) {
-        String tokenHash = TokenUtil.hashToken(request.token());
-        
+    public void resetPassword(Long userId, String token, String newPassword) {
+        String tokenHash = TokenUtil.hashToken(token);
+        Instant now = Instant.now();
+
         UserToken userToken = userTokenRepository
             .findByTokenHashAndTypeAndUsedAtIsNullAndExpiresAtAfter(
-                tokenHash, TokenType.PASSWORD_RESET, Instant.now())
+                tokenHash, TokenType.PASSWORD_RESET, now)
             .orElseThrow(() -> new BadRequestException("Invalid or expired reset token"));
-        
+
+        // Verify that the authenticated user matches the token's user
+        if (!userId.equals(userToken.getUser().getId())) {
+            throw new BadRequestException("You can only reset your own password");
+        }
+
+        // Validate new password
+        if (!passwordUtil.isValid(newPassword)) {
+            throw new BadRequestException("New password has to have at least 6 characters, one capital character and one number.");
+        }
+
         // Mark token as used
-        userToken.setUsedAt(Instant.now());
+        userToken.setUsedAt(now);
         userTokenRepository.save(userToken);
         
         // Update password
         User user = userToken.getUser();
-        user.setPasswordHash(PasswordUtil.hashPassword(request.newPassword()));
-        user.setUpdatedAt(Instant.now());
+        user.setPasswordHash(PasswordUtil.hashPassword(newPassword));
+        user.setUpdatedAt(now);
         userRepository.save(user);
     }
     
@@ -148,7 +159,12 @@ public class AuthService {
         if (!currentPasswordHash.equals(user.getPasswordHash())) {
             throw new BadRequestException("Current password is incorrect");
         }
-        
+
+        // Validate new password
+        if (!passwordUtil.isValid(request.newPassword())) {
+            throw new BadRequestException("New password has to have at least 6 characters, one capital character and one number.");
+        }
+
         // Update password
         user.setPasswordHash(PasswordUtil.hashPassword(request.newPassword()));
         user.setUpdatedAt(Instant.now());
