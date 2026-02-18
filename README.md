@@ -348,20 +348,6 @@ All test accounts use password: `password`
 
 See `drumigo/src/main/resources/db/seed/mysql-seed.sql` for details.
 
-## 🔧 Development Scripts (H2 Legacy)
-
-The `drumigo/h2_scripts/` directory contains SQL scripts for various testing scenarios (originally for H2, reference only):
-
-- `active_vehicles_display/` - Active vehicle map testing
-- `driver_ride_history/` - Driver ride history scenarios
-- `profile_test_data/` - Profile data for testing
-- `ride_completion/` - Ride completion flows
-- `ride_rating/` - Rating system testing
-- `ride_tracking_inconsistency/` - Edge case testing
-- `sample_rides/` - Sample ride data
-
-These are for reference only; use the MySQL seed script for actual development.
-
 ## 📚 Documentation
 
 - [docs/specifikacija.md](docs/specifikacija.md) - Complete project specification (Serbian)
