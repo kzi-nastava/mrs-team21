@@ -49,5 +49,10 @@ public class Notification {
      */
     @Column(name = "reminder_minutes_before")
     private Integer reminderMinutes;
+
+    /** Explicit setter so IDEs and reflection reliably see it (column: reminder_minutes_before). */
+    public void setReminderMinutes(Integer reminderMinutes) {
+        this.reminderMinutes = reminderMinutes;
+    }
 }
 
