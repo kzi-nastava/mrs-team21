@@ -1,8 +1,14 @@
 package com.ftn.drumigo.util;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+@Component
 public final class PasswordUtil {
 
     private PasswordUtil() {}
@@ -23,5 +29,11 @@ public final class PasswordUtil {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Error hashing password", e);
         }
+    }
+
+    // Password must be 6-64 chars, contain at least one uppercase letter, one lowercase letter, and one digit or special character
+    public boolean isValid(String password) {
+        if (password == null) return false;
+        return password.matches("(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9\\W]).{6,64}");
     }
 }
