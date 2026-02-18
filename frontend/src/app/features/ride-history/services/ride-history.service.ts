@@ -574,6 +574,8 @@ export class RideHistoryService {
       status: item.status,
       scheduledFor: item.scheduledFor ? new Date(item.scheduledFor) : null,
       requestedAt: item.requestedAt ? new Date(item.requestedAt) : null,
+      isFavorite: item.isFavorite ?? false,
+      favoriteRouteId: item.favoriteRouteId ?? undefined,
     };
   }
 

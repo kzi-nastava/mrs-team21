@@ -55,8 +55,10 @@ public class ScheduledRideReminderService {
             if (secondsUntilStart <= 0) {
                 continue;
             }
+            // Send at most one reminder per run: the first one that is due and not yet sent.
+            // "Due" = we are at or past the reminder time (secondsUntilStart <= reminderMin * 60).
             for (int reminderMin : REMINDER_MINUTES) {
-                if (isWithinReminderSlot(secondsUntilStart, reminderMin)) {
+                if (secondsUntilStart <= reminderMin * 60L) {
                     sendReminderIfNotSent(ride, reminderMin);
                     break;
                 }
@@ -100,12 +102,6 @@ public class ScheduledRideReminderService {
             minutesBefore,
             pickup
         );
-    }
-
-    private boolean isWithinReminderSlot(long secondsUntilStart, int reminderMinutesBefore) {
-        long upperBoundSeconds = reminderMinutesBefore * 60L;
-        long lowerBoundSeconds = upperBoundSeconds - 60L;
-        return secondsUntilStart <= upperBoundSeconds && secondsUntilStart > lowerBoundSeconds;
     }
 
     private Optional<User> collectRecipient(Ride ride) {

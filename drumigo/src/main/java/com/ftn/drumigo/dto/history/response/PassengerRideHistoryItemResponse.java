@@ -17,6 +17,8 @@ public record PassengerRideHistoryItemResponse(
     BigDecimal totalCost,
     Boolean canceled,
     String canceledBy,
-    Boolean hasPanic
+    Boolean hasPanic,
+    Boolean isFavorite,
+    Long favoriteRouteId
 ) {}
 

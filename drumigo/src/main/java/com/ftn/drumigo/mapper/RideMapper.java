@@ -112,7 +112,33 @@ public class RideMapper {
             ride.getTotalCost(),
             canceled,
             canceledBy,
-            hasPanic
+            hasPanic,
+            null,
+            null
+        );
+    }
+
+    public PassengerRideHistoryItemResponse toPassengerHistoryResponse(
+            Ride ride, List<RideWaypoint> waypoints, boolean hasPanic, boolean isFavorite, Long favoriteRouteId) {
+        PassengerRideHistoryItemResponse base = toPassengerHistoryResponse(ride, waypoints, hasPanic);
+        if (base == null) {
+            return null;
+        }
+        return new PassengerRideHistoryItemResponse(
+            base.id(),
+            base.status(),
+            base.requestedAt(),
+            base.scheduledFor(),
+            base.startTime(),
+            base.endTime(),
+            base.startAddress(),
+            base.destinationAddress(),
+            base.totalCost(),
+            base.canceled(),
+            base.canceledBy(),
+            base.hasPanic(),
+            isFavorite,
+            favoriteRouteId
         );
     }
 }
