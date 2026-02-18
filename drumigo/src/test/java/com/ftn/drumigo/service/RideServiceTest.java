@@ -3,6 +3,7 @@ package com.ftn.drumigo.service;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.domain.users.Driver;
+import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.event.RideFinishedEvent;
 import com.ftn.drumigo.exception.BadRequestException;
 import com.ftn.drumigo.exception.ResourceNotFoundException;
@@ -28,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -203,6 +206,62 @@ class RideServiceTest {
         verify(eventPublisher).publishEvent(any(RideFinishedEvent.class));
     }
 
+    @Test
+    void getMyActiveRide_passenger_ignoresFutureScheduledRide() {
+        Passenger passenger = passenger(100L, "ana.petrovic@example.com");
+        Ride futureAcceptedRide = ride(200L, RideStatus.ACCEPTED, null);
+        futureAcceptedRide.setScheduledFor(Instant.now().plusSeconds(3 * 60 * 60));
+
+        when(passengerRepository.findById(100L)).thenReturn(Optional.of(passenger));
+        when(rideRepository.findActiveRidesForPassenger(
+            100L,
+            "ana.petrovic@example.com",
+            List.of(RideStatus.PENDING, RideStatus.ACCEPTED, RideStatus.ACTIVE)
+        )).thenReturn(List.of(futureAcceptedRide));
+
+        Optional<Ride> result = rideService.getMyActiveRide(100L, "PASSENGER");
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void getMyActiveRide_passenger_returnsTrackableRideAndSkipsFutureScheduled() {
+        Passenger passenger = passenger(101L, "ana.petrovic@example.com");
+        Ride futureAcceptedRide = ride(201L, RideStatus.ACCEPTED, null);
+        futureAcceptedRide.setScheduledFor(Instant.now().plusSeconds(2 * 60 * 60));
+        Ride activeRide = ride(202L, RideStatus.ACTIVE, null);
+        activeRide.setScheduledFor(Instant.now().plusSeconds(2 * 60 * 60));
+
+        when(passengerRepository.findById(101L)).thenReturn(Optional.of(passenger));
+        when(rideRepository.findActiveRidesForPassenger(
+            101L,
+            "ana.petrovic@example.com",
+            List.of(RideStatus.PENDING, RideStatus.ACCEPTED, RideStatus.ACTIVE)
+        )).thenReturn(List.of(futureAcceptedRide, activeRide));
+
+        Optional<Ride> result = rideService.getMyActiveRide(101L, "PASSENGER");
+
+        assertTrue(result.isPresent());
+        assertEquals(202L, result.get().getId());
+    }
+
+    @Test
+    void getMyActiveRide_driver_ignoresFutureScheduledAcceptedRide() {
+        Driver driver = driver(110L, false);
+        Ride futureAcceptedRide = ride(210L, RideStatus.ACCEPTED, driver);
+        futureAcceptedRide.setScheduledFor(Instant.now().plusSeconds(4 * 60 * 60));
+
+        when(driverRepository.findById(110L)).thenReturn(Optional.of(driver));
+        when(rideRepository.findByDriverAndStatusIn(
+            driver,
+            List.of(RideStatus.ACCEPTED, RideStatus.ACTIVE)
+        )).thenReturn(List.of(futureAcceptedRide));
+
+        Optional<Ride> result = rideService.getMyActiveRide(110L, "DRIVER");
+
+        assertTrue(result.isEmpty());
+    }
+
     private static Ride ride(Long id, RideStatus status, Driver driver) {
         Ride ride = new Ride();
         ride.setId(id);
@@ -216,5 +275,12 @@ class RideServiceTest {
         driver.setId(id);
         driver.setBusy(busy);
         return driver;
+    }
+
+    private static Passenger passenger(Long id, String email) {
+        Passenger passenger = new Passenger();
+        passenger.setId(id);
+        passenger.setEmail(email);
+        return passenger;
     }
 }

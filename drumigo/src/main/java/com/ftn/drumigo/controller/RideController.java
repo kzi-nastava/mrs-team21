@@ -88,6 +88,7 @@ public class RideController {
 
     /**
      * Returns the current user's active ride id for tracking (passenger: PENDING/ACCEPTED/ACTIVE; driver: ACCEPTED/ACTIVE).
+     * Future scheduled rides are not returned until their scheduled start time.
      * Returns 404 if the user has no active ride.
      */
     @GetMapping("/me/active")

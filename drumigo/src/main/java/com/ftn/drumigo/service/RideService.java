@@ -67,8 +67,10 @@ public class RideService {
      * Returns the current user's "active" ride for tracking, if any.
      * Passenger: ride in PENDING, ACCEPTED, or ACTIVE (as ordering or linked passenger).
      * Driver: ride in ACCEPTED or ACTIVE assigned to them.
+     * Future scheduled rides are excluded from tracking until scheduled time is reached.
      */
     public Optional<Ride> getMyActiveRide(Long userId, String role) {
+        Instant now = Instant.now();
         if ("PASSENGER".equals(role)) {
             Optional<Passenger> passengerOpt = passengerRepository.findById(userId);
             if (passengerOpt.isEmpty()) {
@@ -83,6 +85,7 @@ public class RideService {
                     statuses
                 )
                 .stream()
+                .filter(ride -> isTrackableNow(ride, now))
                 .sorted(Comparator
                     .comparingInt((Ride r) -> switch (r.getStatus()) {
                         case ACTIVE -> 0;
@@ -101,12 +104,21 @@ public class RideService {
             return rideRepository
                 .findByDriverAndStatusIn(driverOpt.get(), statuses)
                 .stream()
+                .filter(ride -> isTrackableNow(ride, now))
                 .sorted(Comparator
                     .comparingInt((Ride r) -> r.getStatus() == RideStatus.ACTIVE ? 0 : 1)
                     .thenComparing(Ride::getRequestedAt, Comparator.nullsLast(Comparator.reverseOrder())))
                 .findFirst();
         }
         return Optional.empty();
+    }
+
+    private boolean isTrackableNow(Ride ride, Instant now) {
+        if (ride.getStatus() == RideStatus.ACTIVE) {
+            return true;
+        }
+        Instant scheduledFor = ride.getScheduledFor();
+        return scheduledFor == null || !scheduledFor.isAfter(now);
     }
     
     public Ride getById(Long id) {
