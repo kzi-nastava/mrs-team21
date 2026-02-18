@@ -10,10 +10,14 @@
     <app-ride-history-filters
       [startDate]="startDate()"
       [endDate]="endDate()"
-      [resultsCount]="filteredRides().length"
+      [resultsCount]="totalElements()"
       (filterChanged)="onFilterChanged($event)"
       (filterCleared)="onFilterCleared()"
     />
+
+    @if (isLoading()) {
+      <div class="loading-banner">Loading ride history...</div>
+    }
 
     <!-- Rides Table -->
     <app-ride-history-table
@@ -24,6 +28,35 @@
       (rideSelected)="onRideSelected($event)"
       (sortChanged)="onSortChanged($event)"
     />
+
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button
+          type="button"
+          class="pagination-btn"
+          [disabled]="currentPage() === 0 || isLoading()"
+          (click)="goToPreviousPage()"
+        >
+          <span class="pagination-icon">&#8592;</span>
+          Previous
+        </button>
+
+        <span class="pagination-info">
+          Page {{ currentPage() + 1 }} of {{ totalPages() }}
+          <span class="pagination-total">({{ totalElements() }} rides)</span>
+        </span>
+
+        <button
+          type="button"
+          class="pagination-btn"
+          [disabled]="currentPage() >= totalPages() - 1 || isLoading()"
+          (click)="goToNextPage()"
+        >
+          Next
+          <span class="pagination-icon">&#8594;</span>
+        </button>
+      </div>
+    }
   </main>
 </div>
 
