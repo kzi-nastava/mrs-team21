@@ -220,28 +220,19 @@ public class RideService {
         ride.setPricingStartPrice(vehicleType.getStartPrice());
         ride.setPricingPricePerKm(vehicleType.getPricePerKm());
         ride.setPricingVehicleTypeName(vehicleType.getName().name());
-        
-        // Calculate distance and ETA (stub implementation for KT1)
-        BigDecimal totalDistance = calculateDistance(request.waypoints());
+
+        // Distance, duration and cost from Mapbox Directions (single source of truth)
+        EstimateRequest estimateRequest = buildEstimateRequestFromWaypoints(request);
+        EstimateResponse estimate = mapService.estimateRide(estimateRequest);
+        BigDecimal totalDistance = BigDecimal.valueOf(estimate.distanceInKm());
         ride.setTotalDistanceKm(totalDistance);
-        
-        // Calculate estimated cost
-        BigDecimal totalCost = vehicleType.getStartPrice()
-            .add(totalDistance.multiply(vehicleType.getPricePerKm()));
-        ride.setTotalCost(totalCost);
-        
-        // Estimate duration (stub: assume 50 km/h average speed)
-        if (totalDistance.compareTo(BigDecimal.ZERO) > 0) {
-            int estimatedSeconds = totalDistance.divide(new BigDecimal("50"), 2, java.math.RoundingMode.HALF_UP)
-                .multiply(new BigDecimal("3600"))
-                .intValue();
-            ride.setEstimatedDurationSec(estimatedSeconds);
-            
-            if (request.scheduledFor() != null) {
-                ride.setEstimatedArrivalAt(request.scheduledFor().plusSeconds(estimatedSeconds));
-            } else {
-                ride.setEstimatedArrivalAt(Instant.now().plusSeconds(estimatedSeconds));
-            }
+        ride.setTotalCost(BigDecimal.valueOf(estimate.estimatedPrice()));
+        int estimatedSeconds = estimate.durationInMinutes() * 60;
+        ride.setEstimatedDurationSec(estimatedSeconds);
+        if (request.scheduledFor() != null) {
+            ride.setEstimatedArrivalAt(request.scheduledFor().plusSeconds(estimatedSeconds));
+        } else {
+            ride.setEstimatedArrivalAt(Instant.now().plusSeconds(estimatedSeconds));
         }
         
         ride = rideRepository.save(ride);
@@ -358,40 +349,28 @@ public class RideService {
         return ride;
     }
     
-    private BigDecimal calculateDistance(List<RideCreateRequest.WaypointRequest> waypoints) {
-        // Stub implementation: calculate simple distance between waypoints
-        // In production, use a routing service
-        if (waypoints.size() < 2) {
-            return BigDecimal.ZERO;
+    private EstimateRequest buildEstimateRequestFromWaypoints(RideCreateRequest request) {
+        List<RideCreateRequest.WaypointRequest> ordered = new ArrayList<>(request.waypoints());
+        ordered.sort(Comparator.comparingInt(RideCreateRequest.WaypointRequest::order));
+        if (ordered.size() < 2) {
+            throw new BadRequestException("Ride must have at least 2 waypoints (start and destination)");
         }
-        
-        BigDecimal totalDistance = BigDecimal.ZERO;
-        for (int i = 0; i < waypoints.size() - 1; i++) {
-            RideCreateRequest.WaypointRequest wp1 = waypoints.get(i);
-            RideCreateRequest.WaypointRequest wp2 = waypoints.get(i + 1);
-            
-            // Haversine formula (simplified for KT1)
-            double lat1 = wp1.lat().doubleValue();
-            double lon1 = wp1.lng().doubleValue();
-            double lat2 = wp2.lat().doubleValue();
-            double lon2 = wp2.lng().doubleValue();
-            
-            double distance = haversineDistance(lat1, lon1, lat2, lon2);
-            totalDistance = totalDistance.add(BigDecimal.valueOf(distance));
-        }
-        
-        return totalDistance;
-    }
-    
-    private double haversineDistance(double lat1, double lon1, double lat2, double lon2) {
-        final int R = 6371; // Earth radius in km
-        double latDistance = Math.toRadians(lat2 - lat1);
-        double lonDistance = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-            + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-            * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
+        LocationDTO startLocation = new LocationDTO(
+            ordered.get(0).lat().doubleValue(),
+            ordered.get(0).lng().doubleValue(),
+            ordered.get(0).address()
+        );
+        LocationDTO destinationLocation = new LocationDTO(
+            ordered.get(ordered.size() - 1).lat().doubleValue(),
+            ordered.get(ordered.size() - 1).lng().doubleValue(),
+            ordered.get(ordered.size() - 1).address()
+        );
+        List<LocationDTO> middleWaypoints = ordered.size() > 2
+            ? ordered.subList(1, ordered.size() - 1).stream()
+                .map(wp -> new LocationDTO(wp.lat().doubleValue(), wp.lng().doubleValue(), wp.address()))
+                .toList()
+            : null;
+        return new EstimateRequest(startLocation, destinationLocation, middleWaypoints, request.vehicleType());
     }
 
     private RideCreateRequest.WaypointRequest getPickupWaypoint(List<RideCreateRequest.WaypointRequest> waypoints) {
@@ -549,13 +528,24 @@ public class RideService {
         if (vehicle == null || vehicle.getCurrentLat() == null || vehicle.getCurrentLng() == null) {
             return Double.MAX_VALUE;
         }
-
-        return haversineDistance(
+        return haversineDistanceKm(
             vehicle.getCurrentLat().doubleValue(),
             vehicle.getCurrentLng().doubleValue(),
             pickupWaypoint.lat().doubleValue(),
             pickupWaypoint.lng().doubleValue()
         );
+    }
+
+    /** Approximate distance in km between two points (for driver-assignment comparison only, not pricing). */
+    private static double haversineDistanceKm(double lat1, double lon1, double lat2, double lon2) {
+        final int R = 6371; // Earth radius in km
+        double latRad = Math.toRadians(lat2 - lat1);
+        double lonRad = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latRad / 2) * Math.sin(latRad / 2)
+            + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+            * Math.sin(lonRad / 2) * Math.sin(lonRad / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
     }
 
     private Instant estimateDriverAvailableAt(List<Ride> assignments, Instant now) {

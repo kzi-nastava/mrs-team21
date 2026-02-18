@@ -1,7 +1,17 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { Subject } from 'rxjs';
+import { debounceTime, map, switchMap } from 'rxjs/operators';
 import { MapComponent } from '../map/map.component';
+import { EstimateService, AddressSuggestion } from '../landing/services/estimate-ride.service';
+import { AuthService } from '../../shared/services/auth.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+import { VehicleTypeName } from '../landing/models/estimate.model';
+import { LocationDTO } from '../landing/models/estimate.model';
 
 export interface Stop {
   id: string;
@@ -21,6 +31,7 @@ export interface RideOrder {
   vehicleType: 'standard' | 'luxury' | 'van';
   scheduleNow: boolean;
   scheduledTime?: string;
+  scheduledFor?: string; // ISO string for API
   specialRequests: string;
   babySeat: boolean;
   petTransport: boolean;
@@ -67,6 +78,26 @@ export class OrderRideComponent implements OnInit {
   termsAccepted = signal<boolean>(false);
   scheduleHours = signal<number | null>(null);
   scheduleMinutes = signal<number | null>(null);
+  routeCoordinates = signal<[number, number][] | undefined>(undefined);
+  showRoute = signal(false);
+  estimateLoading = signal(false);
+  estimateError = signal<string | null>(null);
+  /** Geocoded waypoints [start, ...stops, destination] from last successful estimate, for confirm. */
+  lastGeocodedWaypoints = signal<LocationDTO[] | null>(null);
+
+  /** API address suggestions; showSuggestionsFor indicates which field (pickup, destination, or stop id). */
+  addressSuggestions = signal<AddressSuggestion[]>([]);
+  showSuggestionsFor = signal<'pickup' | 'destination' | string | null>(null);
+
+  private estimateService = inject(EstimateService);
+  private http = inject(HttpClient);
+  private auth = inject(AuthService);
+  private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
+  private apiUrl = environment.apiBaseUrl;
+  private pickupQuery$ = new Subject<string>();
+  private destinationQuery$ = new Subject<string>();
+  private stopQuery$ = new Subject<{ stopId: string; query: string }>();
 
   // Computed signals
   vehicleCapacity = computed(() => {
@@ -127,11 +158,74 @@ export class OrderRideComponent implements OnInit {
     });
   }
 
+  private toVehicleTypeName(v: 'standard' | 'luxury' | 'van'): VehicleTypeName {
+    return VehicleTypeName[v.toUpperCase() as keyof typeof VehicleTypeName] ?? VehicleTypeName.STANDARD;
+  }
+
   ngOnInit(): void {
     const order = this.rideOrder();
     if (order.pickup && order.destination) {
       this.calculatePrice();
     }
+    this.pickupQuery$
+      .pipe(
+        debounceTime(300),
+        switchMap((q) => this.estimateService.getAddressSuggestions(q)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((list) => {
+        this.addressSuggestions.set(list);
+        this.showSuggestionsFor.set(list.length > 0 ? 'pickup' : null);
+      });
+    this.destinationQuery$
+      .pipe(
+        debounceTime(300),
+        switchMap((q) => this.estimateService.getAddressSuggestions(q)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((list) => {
+        this.addressSuggestions.set(list);
+        this.showSuggestionsFor.set(list.length > 0 ? 'destination' : null);
+      });
+    this.stopQuery$
+      .pipe(
+        debounceTime(300),
+        switchMap(({ stopId, query }) =>
+          this.estimateService.getAddressSuggestions(query).pipe(
+            map((list) => ({ stopId, list })),
+          )
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(({ stopId, list }) => {
+        this.addressSuggestions.set(list);
+        this.showSuggestionsFor.set(list.length > 0 ? stopId : null);
+      });
+  }
+
+  onPickupInput(value: string): void {
+    this.pickupQuery$.next(value);
+  }
+
+  onDestinationInput(value: string): void {
+    this.destinationQuery$.next(value);
+  }
+
+  onStopAddressInput(stopId: string, value: string): void {
+    this.stopQuery$.next({ stopId, query: value });
+  }
+
+  selectAddressSuggestion(address: string): void {
+    const forField = this.showSuggestionsFor();
+    if (forField === 'pickup') this.updatePickup(address);
+    else if (forField === 'destination') this.updateDestination(address);
+    else if (typeof forField === 'string') this.updateStopAddress(forField, address);
+    this.addressSuggestions.set([]);
+    this.showSuggestionsFor.set(null);
+  }
+
+  hideAddressSuggestions(): void {
+    setTimeout(() => this.showSuggestionsFor.set(null), 150);
   }
 
   goToStep(step: 1 | 2 | 3): void {
@@ -261,35 +355,79 @@ export class OrderRideComponent implements OnInit {
   }
 
   calculatePrice(): void {
-    // Hardcoded placeholder calculation
-    // Formula: base price per vehicle type + km * 120
-    const basePrices: Record<string, number> = {
-      standard: 150,
-      luxury: 300,
-      van: 250,
-    };
-
-    // Simulate distance calculation (in real app, use Google Maps API)
-    const simulatedDistance = Math.floor(Math.random() * 20) + 2;
-    const simulatedDuration = Math.floor((simulatedDistance / 40) * 60);
-
     const order = this.rideOrder();
-    const basePrice = basePrices[order.vehicleType];
-    const distancePrice = simulatedDistance * 120;
-    const totalPrice = basePrice + distancePrice;
-
-    this.rideOrder.set({
-      ...order,
-      estimatedPrice: totalPrice,
-      estimatedDistance: simulatedDistance,
-      estimatedDuration: simulatedDuration,
-    });
+    if (!order.pickup?.trim() || !order.destination?.trim()) return;
+    const stopAddresses = order.stops.map((s) => s.address.trim()).filter(Boolean);
+    this.estimateLoading.set(true);
+    this.estimateError.set(null);
+    this.estimateService
+      .getEstimateWithWaypoints(
+        order.pickup,
+        order.destination,
+        this.toVehicleTypeName(order.vehicleType),
+        stopAddresses,
+      )
+      .subscribe({
+        next: (result) => {
+          this.rideOrder.set({
+            ...order,
+            estimatedPrice: result.estimatedPrice,
+            estimatedDistance: result.distanceInKm,
+            estimatedDuration: result.durationInMinutes,
+          });
+          this.routeCoordinates.set(result.routeCoordinates ?? undefined);
+          this.showRoute.set(Array.isArray(result.routeCoordinates) && result.routeCoordinates.length >= 2);
+          this.lastGeocodedWaypoints.set(result.geocodedWaypoints ?? null);
+          this.estimateLoading.set(false);
+        },
+        error: (err) => {
+          this.estimateError.set(err?.message ?? 'Failed to get estimate');
+          this.estimateLoading.set(false);
+        },
+      });
   }
 
   confirmRide(): void {
-    // TODO: Submit ride order to backend
-    console.log('Ride order confirmed:', this.rideOrder());
-    alert('Ride requested! (Feature to be integrated with backend)');
+    const order = this.rideOrder();
+    const waypoints = this.lastGeocodedWaypoints();
+    if (!waypoints || waypoints.length < 2) {
+      this.estimateError.set('Please calculate estimate first (enter addresses and wait for result).');
+      return;
+    }
+    const userId = this.auth.getUserId();
+    if (userId == null) {
+      this.estimateError.set('You must be logged in to order a ride.');
+      return;
+    }
+    const hours = this.scheduleHours() ?? 0;
+    const minutes = this.scheduleMinutes() ?? 0;
+    const scheduledFor =
+      order.scheduleNow
+        ? null
+        : new Date(Date.now() + hours * 3600000 + minutes * 60000).toISOString();
+    const body = {
+      waypoints: waypoints.map((wp, i) => ({
+        address: wp.address ?? '',
+        lat: wp.latitude,
+        lng: wp.longitude,
+        order: i + 1,
+      })),
+      vehicleType: order.vehicleType.toUpperCase(),
+      babyTransport: order.babySeat,
+      petTransport: order.petTransport,
+      linkedPassengerEmails: order.passengers.map((p) => p.email).filter(Boolean),
+      scheduledFor,
+    };
+    this.http
+      .post<{ id: number }>(`${this.apiUrl}/rides?orderingPassengerId=${userId}`, body)
+      .subscribe({
+        next: (ride) => {
+          this.router.navigate(['/ride-tracking', ride.id]);
+        },
+        error: (err) => {
+          this.estimateError.set(err?.error?.message ?? err?.message ?? 'Failed to create ride');
+        },
+      });
   }
 
   getVehicleTypeName(): string {
