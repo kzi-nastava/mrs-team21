@@ -30,6 +30,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -60,6 +61,52 @@ public class RideService {
 
     public List<Ride> getActiveRides() {
         return rideRepository.findByStatus(RideStatus.ACTIVE);
+    }
+
+    /**
+     * Returns the current user's "active" ride for tracking, if any.
+     * Passenger: ride in PENDING, ACCEPTED, or ACTIVE (as ordering or linked passenger).
+     * Driver: ride in ACCEPTED or ACTIVE assigned to them.
+     */
+    public Optional<Ride> getMyActiveRide(Long userId, String role) {
+        if ("PASSENGER".equals(role)) {
+            Optional<Passenger> passengerOpt = passengerRepository.findById(userId);
+            if (passengerOpt.isEmpty()) {
+                return Optional.empty();
+            }
+            Passenger passenger = passengerOpt.get();
+            List<RideStatus> statuses = List.of(RideStatus.PENDING, RideStatus.ACCEPTED, RideStatus.ACTIVE);
+            return rideRepository
+                .findActiveRidesForPassenger(
+                    passenger.getId(),
+                    passenger.getEmail(),
+                    statuses
+                )
+                .stream()
+                .sorted(Comparator
+                    .comparingInt((Ride r) -> switch (r.getStatus()) {
+                        case ACTIVE -> 0;
+                        case ACCEPTED -> 1;
+                        default -> 2;
+                    })
+                    .thenComparing(Ride::getRequestedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .findFirst();
+        }
+        if ("DRIVER".equals(role)) {
+            Optional<Driver> driverOpt = driverRepository.findById(userId);
+            if (driverOpt.isEmpty()) {
+                return Optional.empty();
+            }
+            List<RideStatus> statuses = List.of(RideStatus.ACCEPTED, RideStatus.ACTIVE);
+            return rideRepository
+                .findByDriverAndStatusIn(driverOpt.get(), statuses)
+                .stream()
+                .sorted(Comparator
+                    .comparingInt((Ride r) -> r.getStatus() == RideStatus.ACTIVE ? 0 : 1)
+                    .thenComparing(Ride::getRequestedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .findFirst();
+        }
+        return Optional.empty();
     }
     
     public Ride getById(Long id) {

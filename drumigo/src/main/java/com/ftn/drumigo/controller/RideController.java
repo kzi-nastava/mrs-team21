@@ -7,6 +7,7 @@ import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.dto.PanicEventResponse;
 import com.ftn.drumigo.dto.PassengerResponse;
 import com.ftn.drumigo.dto.ReviewResponse;
+import com.ftn.drumigo.dto.ActiveRideIdResponse;
 import com.ftn.drumigo.dto.RideCreateRequest;
 import com.ftn.drumigo.dto.RideDetailsResponse;
 import com.ftn.drumigo.dto.RideInconsistencyCreateRequest;
@@ -84,6 +85,21 @@ public class RideController {
             .collect(Collectors.toList());
         return ResponseEntity.ok(responses);
     }
+
+    /**
+     * Returns the current user's active ride id for tracking (passenger: PENDING/ACCEPTED/ACTIVE; driver: ACCEPTED/ACTIVE).
+     * Returns 404 if the user has no active ride.
+     */
+    @GetMapping("/me/active")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ActiveRideIdResponse> getMyActiveRide(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return rideService.getMyActiveRide(
+                userDetails.getUserId(),
+                userDetails.getRole())
+            .map(ride -> ResponseEntity.ok(new ActiveRideIdResponse(ride.getId())))
+            .orElse(ResponseEntity.notFound().build());
+    }
     
     @GetMapping("/{id}")
     public ResponseEntity<RideTrackingResponse> getRide(@PathVariable Long id) {
@@ -160,6 +176,7 @@ public class RideController {
     }
     
     @PutMapping("/{id}/stop")
+    @PreAuthorize("hasRole('DRIVER')")
     public ResponseEntity<RideResponse> stopRide(
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails,
