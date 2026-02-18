@@ -23,6 +23,8 @@ import { StopRideComponent, StopRideInfo } from './components/driver/stop-ride/s
 import { InconsistencyReportComponent } from './components/passenger/inconsistency-report/inconsistency-report.component';
 import { RideApiService } from './services/ride-api.service';
 import { RideResponseDto } from '../ride-history/models/ride-api.model';
+import { AuthService } from '../../shared/services/auth.service';
+import { ToastService } from '../../shared/services/toast.service';
 
 @Component({
   selector: 'app-ride-tracking',
@@ -51,6 +53,11 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   private rideTrackingService = inject(RideTrackingApiService);
   private directionsService = inject(MapboxDirectionsService);
   private rideApiService = inject(RideApiService);
+  private authService = inject(AuthService);
+  private toastService = inject(ToastService);
+  private readonly STATUS_ACTIVE = 'ACTIVE';
+  private readonly STATUS_ACCEPTED = 'ACCEPTED';
+  private readonly STATUS_PENDING = 'PENDING';
 
   private lastRouteRequestAt = 0;
   private routeRequestInFlight = false;
@@ -68,9 +75,33 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   rideCompleted = signal<boolean>(false);
   endRideLoading = signal<boolean>(false);
   endRideError = signal<string | null>(null);
+  startLoading = signal<boolean>(false);
   stopLoading = signal<boolean>(false);
   stopError = signal<string | null>(null);
   upcomingRides = signal<RideResponseDto[]>([]);
+  isDriverUser = computed(() => this.authService.isDriver());
+  isPassengerUser = computed(() => this.authService.isPassenger());
+  isRideActive = computed(() => this.activeRide()?.status === this.STATUS_ACTIVE);
+  canUsePanic = computed(() => this.isRideActive());
+  canReportInconsistency = computed(() => this.isPassengerUser() && this.isRideActive());
+  rideNotStartedMessage = computed(() => {
+    if (!this.isPassengerUser()) return null;
+    const status = this.activeRide()?.status;
+    if (!status || status === this.STATUS_ACTIVE) return null;
+    if (status === this.STATUS_ACCEPTED) {
+      return 'Your ride has been accepted. Waiting for the driver to start the ride.';
+    }
+    if (status === this.STATUS_PENDING) {
+      return 'Your ride request is pending driver assignment.';
+    }
+    return `Your ride has not started yet (current status: ${status}).`;
+  });
+  canStartRide = computed(
+    () => this.isDriverUser() && this.activeRide()?.status === this.STATUS_ACCEPTED,
+  );
+  canStopRide = computed(
+    () => this.isDriverUser() && this.activeRide()?.status === this.STATUS_ACTIVE,
+  );
 
   nextScheduledRide = computed(() => this.upcomingRides()[0] ?? null);
 
@@ -421,6 +452,13 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Panic button methods
   openPanicModal(): void {
+    if (!this.canUsePanic()) {
+      const currentStatus = this.activeRide()?.status ?? 'UNKNOWN';
+      this.toastService.warning(
+        `Panic is available only during an active ride. Current status: ${currentStatus}.`,
+      );
+      return;
+    }
     this.showPanicModal.set(true);
   }
 
@@ -464,7 +502,56 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Stop ride button methods
   openStopModal(): void {
+    if (!this.isDriverUser()) {
+      return;
+    }
+    const ride = this.activeRide();
+    if (!ride || ride.status !== this.STATUS_ACTIVE) {
+      const currentStatus = ride?.status ?? 'UNKNOWN';
+      const message = currentStatus === this.STATUS_ACCEPTED
+        ? 'Ride is ACCEPTED. Start the ride first, then you can stop it.'
+        : `Ride can be stopped only when ACTIVE. Current status: ${currentStatus}.`;
+      this.toastService.warning(message);
+      return;
+    }
     this.showStopModal.set(true);
+  }
+
+  onStartRide(): void {
+    if (!this.isDriverUser()) {
+      return;
+    }
+    const rideId = Number(this.rideId());
+    if (!rideId) {
+      this.toastService.error('Ride id is missing or invalid.');
+      return;
+    }
+    const ride = this.activeRide();
+    if (!ride || ride.status !== this.STATUS_ACCEPTED) {
+      const currentStatus = ride?.status ?? 'UNKNOWN';
+      this.toastService.warning(
+        `Ride can be started only when ACCEPTED. Current status: ${currentStatus}.`,
+      );
+      return;
+    }
+
+    this.startLoading.set(true);
+    this.rideApiService
+      .startRide(rideId)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.startLoading.set(false)),
+      )
+      .subscribe({
+        next: () => {
+          this.toastService.success('Ride started successfully.');
+          this.loadActiveRide(String(rideId));
+        },
+        error: (error) => {
+          const message = error?.error?.message || 'Failed to start ride. Please try again.';
+          this.toastService.error(message);
+        },
+      });
   }
 
   closeStopModal(): void {
@@ -516,6 +603,14 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
       this.stopError.set('Current location unknown');
       return;
     }
+    const ride = this.activeRide();
+    if (!ride || ride.status !== this.STATUS_ACTIVE) {
+      const currentStatus = ride?.status ?? 'UNKNOWN';
+      this.toastService.warning(
+        `Ride can be stopped only when ACTIVE. Current status: ${currentStatus}.`,
+      );
+      return;
+    }
 
     this.stopLoading.set(true);
     this.stopError.set(null);
@@ -549,7 +644,9 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
         },
         error: (error) => {
           console.error('Failed to stop ride', error);
-          this.stopError.set('Failed to stop ride. Please try again.');
+          const message = error?.error?.message || 'Failed to stop ride. Please try again.';
+          this.stopError.set(message);
+          this.toastService.error(message);
         },
       });
   }

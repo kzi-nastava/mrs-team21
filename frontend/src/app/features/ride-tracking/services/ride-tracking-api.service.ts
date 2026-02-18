@@ -77,6 +77,7 @@ export class RideTrackingApiService {
 
     return {
       id: String(dto.id),
+      status: dto.status,
       startAddress: start?.address ?? 'Pickup',
       destinationAddress: dest?.address ?? 'Destination',
       startLocation,

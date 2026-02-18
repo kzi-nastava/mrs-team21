@@ -17,6 +17,7 @@ export class RideTrackingMockService {
   // Mock active ride data - simulating a ride in Novi Sad
   private mockActiveRide: ActiveRide = {
     id: '1',
+    status: 'ACTIVE',
     startAddress: 'Trg Slobode, Novi Sad',
     destinationAddress: 'Petrovaradin Fortress, Novi Sad',
     startLocation: {

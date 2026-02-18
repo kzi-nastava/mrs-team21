@@ -79,6 +79,29 @@ export class AuthService {
   }
 
   /**
+   * Resolve the app's default route for a specific role.
+   */
+  getDefaultRouteForRole(role: string | null | undefined): string {
+    if (role === 'PASSENGER') {
+      return '/order-ride';
+    }
+    if (role === 'DRIVER') {
+      return '/driver/ride-history';
+    }
+    if (role === 'ADMIN') {
+      return '/admin/ride-history';
+    }
+    return '/';
+  }
+
+  /**
+   * Resolve the app's default route for the currently authenticated user.
+   */
+  getDefaultRoute(): string {
+    return this.getDefaultRouteForRole(this.getRole());
+  }
+
+  /**
    * Store the JWT token (e.g. after login). Emits on loginSuccess$ so subscribers can refresh profile/UI.
    */
   setToken(token: string): void {

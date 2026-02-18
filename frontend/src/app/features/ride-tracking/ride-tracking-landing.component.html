@@ -1,0 +1,20 @@
+<div class="ride-tracking-landing">
+  @if (loading()) {
+    <p class="message">Loading...</p>
+  } @else if (errorMessage()) {
+    <h2 class="title">Unable to load ride tracking</h2>
+    <p class="message">{{ errorMessage() }}</p>
+  } @else if (noActiveRide()) {
+    <h2 class="title">No active ride</h2>
+    <p class="message">You don't have an active ride to track.</p>
+    <div class="actions">
+      @if (isPassenger()) {
+        <a routerLink="/order-ride" class="btn btn-primary">Order a ride</a>
+        <a routerLink="/ride-history" class="btn btn-secondary">Ride history</a>
+      }
+      @if (isDriver()) {
+        <a routerLink="/driver/ride-history" class="btn btn-primary">Ride history</a>
+      }
+    </div>
+  }
+</div>

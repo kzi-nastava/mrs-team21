@@ -4,6 +4,7 @@
 
 export interface ActiveRide {
   id: string;
+  status: string;
   startAddress: string;
   destinationAddress: string;
   startLocation: {
