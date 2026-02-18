@@ -1,4 +1,4 @@
-package com.ftn.drumigo.dto;
+package com.ftn.drumigo.dto.history.response;
 
 import com.ftn.drumigo.domain.enums.RideStatus;
 

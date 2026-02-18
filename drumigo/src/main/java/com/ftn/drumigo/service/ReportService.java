@@ -4,6 +4,7 @@ import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RidePassenger;
 import com.ftn.drumigo.domain.enums.RideStatus;
+import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.dto.ReportResponse;
 import com.ftn.drumigo.exception.ResourceNotFoundException;
 import com.ftn.drumigo.repository.PassengerRepository;
@@ -30,7 +31,7 @@ public class ReportService {
 
     public ReportResponse getUserReport(Long userId, Instant from, Instant to) {
         // Verify user exists
-        userRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         final Instant fromFinal = from != null ? from : Instant.ofEpochMilli(0);
@@ -48,7 +49,7 @@ public class ReportService {
         // Use database query to get rides efficiently
         // Note: Using inclusive boundaries (!isBefore and !isAfter)
         List<Ride> userRides = rideRepository.findByStatusAndUserAndRequestedAtBetween(
-                RideStatus.FINISHED, userId, fromFinal, toFinal);
+                RideStatus.FINISHED, userId, user.getEmail(), fromFinal, toFinal);
 
         long totalRides = userRides.size();
         long totalDistanceKm = userRides.stream()

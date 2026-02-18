@@ -3,35 +3,35 @@ package com.ftn.drumigo.controller;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RideInconsistency;
 import com.ftn.drumigo.domain.RideWaypoint;
-import com.ftn.drumigo.domain.enums.RideStatus;
-import com.ftn.drumigo.dto.*;
+import com.ftn.drumigo.domain.users.User;
+import com.ftn.drumigo.dto.PanicEventResponse;
 import com.ftn.drumigo.dto.PassengerResponse;
-import com.ftn.drumigo.dto.ride.request.RideStopRequest;
-import com.ftn.drumigo.dto.ride.request.RideCancelByDriverRequest;
-import com.ftn.drumigo.mapper.*;
+import com.ftn.drumigo.dto.ReviewResponse;
 import com.ftn.drumigo.dto.RideCreateRequest;
+import com.ftn.drumigo.dto.RideDetailsResponse;
 import com.ftn.drumigo.dto.RideInconsistencyCreateRequest;
 import com.ftn.drumigo.dto.RideInconsistencyResponse;
-import com.ftn.drumigo.dto.ride.response.RideResponse;
 import com.ftn.drumigo.dto.RideTrackingResponse;
+import com.ftn.drumigo.dto.RideWaypointResponse;
+import com.ftn.drumigo.dto.ride.request.RideCancelByDriverRequest;
+import com.ftn.drumigo.dto.ride.request.RideStopRequest;
+import com.ftn.drumigo.dto.ride.response.RideResponse;
+import com.ftn.drumigo.mapper.DriverMapper;
+import com.ftn.drumigo.mapper.PanicEventMapper;
+import com.ftn.drumigo.mapper.ReviewMapper;
 import com.ftn.drumigo.mapper.RideInconsistencyMapper;
 import com.ftn.drumigo.mapper.RideMapper;
+import com.ftn.drumigo.mapper.VehicleMapper;
+import com.ftn.drumigo.repository.UserRepository;
 import com.ftn.drumigo.security.CustomUserDetails;
 import com.ftn.drumigo.service.RideService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,6 +47,7 @@ public class RideController {
     private final PanicEventMapper panicEventMapper;
     private final DriverMapper driverMapper;
     private final VehicleMapper vehicleMapper;
+    private final UserRepository userRepository;
 
 
     @PostMapping
@@ -145,82 +146,6 @@ public class RideController {
         return ResponseEntity.ok(rideMapper.toResponse(ride, waypoints));
     }
     
-    @GetMapping("/passengers/{passengerId}/rides/history")
-    public ResponseEntity<Page<PassengerRideHistoryItemResponse>> getPassengerRideHistory(
-            @PathVariable Long passengerId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) Boolean hasPanic,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "requestedAt,desc") String sort) {
-        
-        List<RideStatus> statuses = null;
-        if (status != null && !status.isEmpty()) {
-            try {
-                statuses = Arrays.stream(status.split(","))
-                    .map(RideStatus::valueOf)
-                    .collect(Collectors.toList());
-            } catch (IllegalArgumentException e) {
-                throw new com.ftn.drumigo.exception.BadRequestException("Invalid status value. Valid values: " + 
-                    Arrays.toString(RideStatus.values()));
-            }
-        }
-        
-        String[] sortParams = sort.split(",");
-        Sort.Direction direction = sortParams.length > 1 && sortParams[1].equalsIgnoreCase("asc") 
-            ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Sort sortObj = Sort.by(direction, sortParams[0]);
-        
-        Pageable pageable = PageRequest.of(page, size, sortObj);
-        Page<Ride> rides = rideService.getPassengerRideHistory(passengerId, from, to, statuses, hasPanic, pageable);
-        Page<PassengerRideHistoryItemResponse> responses = rides.map(ride -> {
-            List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
-            boolean hasPanicForRide = rideService.hasPanic(ride.getId());
-            return rideMapper.toPassengerHistoryResponse(ride, waypoints, hasPanicForRide);
-        });
-        
-        return ResponseEntity.ok(responses);
-    }
-    
-    @GetMapping("/admin/rides/history")
-    public ResponseEntity<Page<RideResponse>> getAdminRideHistory(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) Boolean hasPanic,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "requestedAt,desc") String sort) {
-        
-        List<RideStatus> statuses = null;
-        if (status != null && !status.isEmpty()) {
-            try {
-                statuses = Arrays.stream(status.split(","))
-                    .map(RideStatus::valueOf)
-                    .collect(Collectors.toList());
-            } catch (IllegalArgumentException e) {
-                throw new com.ftn.drumigo.exception.BadRequestException("Invalid status value. Valid values: " + 
-                    Arrays.toString(RideStatus.values()));
-            }
-        }
-        
-        String[] sortParams = sort.split(",");
-        Sort.Direction direction = sortParams.length > 1 && sortParams[1].equalsIgnoreCase("asc") 
-            ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Sort sortObj = Sort.by(direction, sortParams[0]);
-        
-        Pageable pageable = PageRequest.of(page, size, sortObj);
-        Page<Ride> rides = rideService.getAdminRideHistory(from, to, statuses, hasPanic, pageable);
-        Page<RideResponse> responses = rides.map(ride -> {
-            List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
-            return rideMapper.toResponse(ride, waypoints);
-        });
-        
-        return ResponseEntity.ok(responses);
-    }
-    
     @GetMapping("/admin/rides/search")
     public ResponseEntity<List<RideResponse>> searchRidesByDriverName(
             @RequestParam String name) {
@@ -246,12 +171,26 @@ public class RideController {
         
         // Map to DTOs
         List<PassengerResponse> passengers = ridePassengers.stream()
-            .map(rp -> new PassengerResponse(
-                rp.getPassenger().getId(),
-                rp.getPassenger().getName(),
-                rp.getPassenger().getSurname(),
-                rp.getPassenger().getEmail()
-            ))
+            .map(rp -> {
+                // Try to find the user by email if they're registered
+                User user = userRepository.findByEmail(rp.getPassengerEmail()).orElse(null);
+                if (user != null) {
+                    return new PassengerResponse(
+                        user.getId(),
+                        user.getName(),
+                        user.getSurname(),
+                        user.getEmail()
+                    );
+                } else {
+                    // If user not registered, use email as name
+                    return new PassengerResponse(
+                        null,
+                        rp.getPassengerEmail(),
+                        "(Unregistered)",
+                        rp.getPassengerEmail()
+                    );
+                }
+            })
             .collect(Collectors.toList());
         
         List<ReviewResponse> reviewResponses = reviews.stream()

@@ -20,9 +20,7 @@ import com.ftn.drumigo.dto.ride.response.EstimateResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +28,6 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -89,8 +86,8 @@ public class RideService {
             && ride.getOrderingPassenger().getId().equals(passenger.getId());
         
         boolean isLinkedPassenger = ridePassengerRepository.findByRide(ride).stream()
-            .anyMatch(rp -> rp.getPassenger().getId().equals(passenger.getId()));
-        
+            .anyMatch(rp -> rp.getPassengerEmail().equals(passenger.getEmail()));
+
         if (!isOrderingPassenger && !isLinkedPassenger) {
             throw new BadRequestException("You are not authorized to report inconsistencies for this ride");
         }
@@ -284,30 +281,28 @@ public class RideService {
         // Add linked passengers with validation
         if (request.linkedPassengerEmails() != null && !request.linkedPassengerEmails().isEmpty()) {
             for (String email : request.linkedPassengerEmails()) {
-                User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new BadRequestException("User with email " + email + " not found"));
-                
-                if (!(user instanceof Passenger passenger)) {
-                    throw new BadRequestException("User with email " + email + " is not a passenger");
-                }
-                
                 // Prevent linking the ordering passenger
-                if (passenger.getId().equals(orderingPassengerId)) {
+                User orderingUser = userRepository.findById(orderingPassengerId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Ordering passenger not found"));
+                if (email.equals(orderingUser.getEmail())) {
                     throw new BadRequestException("Cannot link the ordering passenger to their own ride");
                 }
                 
                 RidePassenger ridePassenger = new RidePassenger();
                 ridePassenger.setRide(ride);
-                ridePassenger.setPassenger(passenger);
+                ridePassenger.setPassengerEmail(email);
                 ridePassengerRepository.save(ridePassenger);
                 
-                // Create notification for linked passenger
-                Notification notification = new Notification();
-                notification.setUser(passenger);
-                notification.setRide(ride);
-                notification.setType(NotificationType.LINKED_TO_RIDE);
-                notification.setMessage("You have been linked to a ride");
-                notificationRepository.save(notification);
+                // Create notification for linked passenger if user exists
+                User linkedUser = userRepository.findByEmail(email).orElse(null);
+                if (linkedUser != null) {
+                    Notification notification = new Notification();
+                    notification.setUser(linkedUser);
+                    notification.setRide(ride);
+                    notification.setType(NotificationType.LINKED_TO_RIDE);
+                    notification.setMessage("You have been linked to a ride");
+                    notificationRepository.save(notification);
+                }
             }
         }
         
@@ -437,7 +432,7 @@ public class RideService {
                     !r.getEndTime().isBefore(twentyFourHoursAgo);
                 return startedInWindow || endedInWindow;
             })
-            .collect(Collectors.toList());
+            .toList();
         
         long totalSeconds = 0;
         for (Ride ride : allRecentRides) {
@@ -462,7 +457,7 @@ public class RideService {
                 Instant windowStart = rideStart.isBefore(twentyFourHoursAgo) ? twentyFourHoursAgo : rideStart;
                 totalSeconds += Duration.between(windowStart, now).getSeconds();
             } else if (ride.getStatus() == RideStatus.CANCELLED && ride.getEndTime() != null) {
-                // For cancelled rides that had started, count the time until cancellation
+                // For canceled rides that had started, count the time until cancellation
                 Instant rideStart = ride.getStartTime();
                 Instant rideEnd = ride.getEndTime();
                 Instant windowStart = rideStart.isBefore(twentyFourHoursAgo) ? twentyFourHoursAgo : rideStart;
@@ -500,15 +495,18 @@ public class RideService {
             notificationRepository.save(notification);
         }
         
-        // Notifications for linked passengers
+        // Notifications for linked passengers (only if registered)
         List<RidePassenger> ridePassengers = ridePassengerRepository.findByRide(ride);
         for (RidePassenger rp : ridePassengers) {
-            Notification notification = new Notification();
-            notification.setUser(rp.getPassenger());
-            notification.setRide(ride);
-            notification.setType(NotificationType.RIDE_STARTED);
-            notification.setMessage("Your ride has started");
-            notificationRepository.save(notification);
+            User linkedUser = userRepository.findByEmail(rp.getPassengerEmail()).orElse(null);
+            if (linkedUser != null) {
+                Notification notification = new Notification();
+                notification.setUser(linkedUser);
+                notification.setRide(ride);
+                notification.setType(NotificationType.RIDE_STARTED);
+                notification.setMessage("Your ride has started");
+                notificationRepository.save(notification);
+            }
         }
     }
     
@@ -606,11 +604,8 @@ public class RideService {
             stopLocation = locationRepository.save(stopLocation);
         }
 
-        List<RideWaypoint> currentWaypoints = getRideWaypoints(ride);
-
-        // Find the original destination (highest order)
-        RideWaypoint originalDestination = currentWaypoints.stream()
-            .max((wp1, wp2) -> Integer.compare(wp1.getWaypointOrder(), wp2.getWaypointOrder()))
+        RideWaypoint originalDestination = rideWaypointRepository
+            .findFirstByRideOrderByWaypointOrderDesc(ride)
             .orElse(null);
 
         if (originalDestination != null) {
@@ -640,12 +635,8 @@ public class RideService {
         }
 
         // Remove all waypoints after the start (keep start, remove destinations)
-        for (RideWaypoint wp : currentWaypoints) {
-            if (wp.getWaypointOrder() > 0) {
-                rideWaypointRepository.delete(wp);
-            }
-        }
-        
+        rideWaypointRepository.deleteByRideAndWaypointOrderGreaterThan(ride, 0);
+
         // Update ride
         ride.setStoppedAt(Instant.now());
         ride.setStopLocation(stopLocation);
@@ -672,115 +663,19 @@ public class RideService {
             notificationRepository.save(notification);
         }
         
-        // Notifications for linked passengers
+        // Notifications for linked passengers (only if registered)
         List<RidePassenger> ridePassengers = ridePassengerRepository.findByRide(ride);
         for (RidePassenger rp : ridePassengers) {
-            Notification notification = new Notification();
-            notification.setUser(rp.getPassenger());
-            notification.setRide(ride);
-            notification.setType(NotificationType.RIDE_CANCELLED);
-            notification.setMessage("Your ride has been cancelled");
-            notificationRepository.save(notification);
-        }
-    }
-    
-    public Page<Ride> getPassengerRideHistory(Long passengerId, Instant from, Instant to, 
-                                              List<RideStatus> statuses, Boolean hasPanic, Pageable pageable) {
-        final Instant fromFinal = from == null ? Instant.ofEpochMilli(0) : from;
-        final Instant toFinal = to == null ? Instant.now() : to;
-        
-        // Get rides where passenger is ordering passenger (use inclusive boundaries)
-        List<Ride> allRides = rideRepository.findAll().stream()
-            .filter(r -> r.getOrderingPassenger() != null && 
-                        r.getOrderingPassenger().getId().equals(passengerId) &&
-                        !r.getRequestedAt().isBefore(fromFinal) && 
-                        !r.getRequestedAt().isAfter(toFinal))
-            .collect(Collectors.toList());
-        
-        // Also get rides where passenger is linked (use Set to avoid duplicates)
-        Set<Long> rideIds = allRides.stream().map(Ride::getId).collect(Collectors.toSet());
-        List<RidePassenger> linkedRides = ridePassengerRepository.findAll().stream()
-            .filter(rp -> rp.getPassenger().getId().equals(passengerId))
-            .collect(Collectors.toList());
-        for (RidePassenger rp : linkedRides) {
-            Ride ride = rp.getRide();
-            if (!ride.getRequestedAt().isBefore(fromFinal) && !ride.getRequestedAt().isAfter(toFinal)) {
-                if (!rideIds.contains(ride.getId())) {
-                    allRides.add(ride);
-                    rideIds.add(ride.getId());
-                }
+            User linkedUser = userRepository.findByEmail(rp.getPassengerEmail()).orElse(null);
+            if (linkedUser != null) {
+                Notification notification = new Notification();
+                notification.setUser(linkedUser);
+                notification.setRide(ride);
+                notification.setType(NotificationType.RIDE_CANCELLED);
+                notification.setMessage("Your ride has been cancelled");
+                notificationRepository.save(notification);
             }
         }
-        
-        // Filter by status if provided
-        List<Ride> filteredByStatus;
-        if (statuses != null && !statuses.isEmpty()) {
-            filteredByStatus = allRides.stream()
-                .filter(r -> statuses.contains(r.getStatus()))
-                .collect(Collectors.toList());
-        } else {
-            filteredByStatus = allRides;
-        }
-        
-        // Filter by panic if provided (optimize with repository query)
-        List<Ride> finalRides;
-        if (hasPanic != null && !filteredByStatus.isEmpty()) {
-            List<PanicEvent> panicEvents = panicEventRepository.findByRideIn(filteredByStatus);
-            Set<Long> ridesWithPanic = panicEvents.stream()
-                .map(pe -> pe.getRide().getId())
-                .collect(Collectors.toSet());
-            
-            if (hasPanic) {
-                finalRides = filteredByStatus.stream()
-                    .filter(r -> ridesWithPanic.contains(r.getId()))
-                    .collect(Collectors.toList());
-            } else {
-                finalRides = filteredByStatus.stream()
-                    .filter(r -> !ridesWithPanic.contains(r.getId()))
-                    .collect(Collectors.toList());
-            }
-        } else {
-            finalRides = filteredByStatus;
-        }
-        
-        // Sort using pageable.sort instead of hardcoding
-        Sort sort = pageable.getSort();
-        if (sort.isSorted()) {
-            Sort.Order order = sort.iterator().next();
-            String property = order.getProperty();
-            boolean ascending = order.getDirection().isAscending();
-            
-            finalRides.sort((r1, r2) -> {
-                @SuppressWarnings("rawtypes")
-                Comparable val1 = getSortValue(r1, property);
-                @SuppressWarnings("rawtypes")
-                Comparable val2 = getSortValue(r2, property);
-                @SuppressWarnings({"rawtypes", "unchecked"})
-                int result = val1.compareTo(val2);
-                return ascending ? result : -result;
-            });
-        } else {
-            // Default sort by requestedAt descending
-            finalRides.sort((r1, r2) -> r2.getRequestedAt().compareTo(r1.getRequestedAt()));
-        }
-        
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), finalRides.size());
-        List<Ride> pagedRides = finalRides.subList(start, end);
-        
-        return new PageImpl<>(
-            pagedRides, pageable, finalRides.size());
-    }
-    
-    @SuppressWarnings("rawtypes")
-    private Comparable getSortValue(Ride ride, String property) {
-        return switch (property) {
-            case "requestedAt" -> ride.getRequestedAt();
-            case "startTime" -> ride.getStartTime() != null ? ride.getStartTime() : Instant.ofEpochMilli(0);
-            case "endTime" -> ride.getEndTime() != null ? ride.getEndTime() : Instant.ofEpochMilli(0);
-            case "totalCost" -> ride.getTotalCost() != null ? ride.getTotalCost() : BigDecimal.ZERO;
-            default -> ride.getRequestedAt();
-        };
     }
     
     public Page<Ride> getAdminRideHistory(Instant from, Instant to, List<RideStatus> statuses, 
@@ -788,69 +683,7 @@ public class RideService {
         final Instant fromFinal = from == null ? Instant.ofEpochMilli(0) : from;
         final Instant toFinal = to == null ? Instant.now() : to;
         
-        // Use inclusive boundaries
-        List<Ride> allRides = rideRepository.findAll().stream()
-            .filter(r -> !r.getRequestedAt().isBefore(fromFinal) && !r.getRequestedAt().isAfter(toFinal))
-            .collect(Collectors.toList());
-        
-        // Filter by status if provided
-        List<Ride> filteredByStatus;
-        if (statuses != null && !statuses.isEmpty()) {
-            filteredByStatus = allRides.stream()
-                .filter(r -> statuses.contains(r.getStatus()))
-                .collect(Collectors.toList());
-        } else {
-            filteredByStatus = allRides;
-        }
-        
-        // Filter by panic if provided (optimize with repository query)
-        List<Ride> finalRides;
-        if (hasPanic != null && !filteredByStatus.isEmpty()) {
-            List<PanicEvent> panicEvents = panicEventRepository.findByRideIn(filteredByStatus);
-            Set<Long> ridesWithPanic = panicEvents.stream()
-                .map(pe -> pe.getRide().getId())
-                .collect(Collectors.toSet());
-            
-            if (hasPanic) {
-                finalRides = filteredByStatus.stream()
-                    .filter(r -> ridesWithPanic.contains(r.getId()))
-                    .collect(Collectors.toList());
-            } else {
-                finalRides = filteredByStatus.stream()
-                    .filter(r -> !ridesWithPanic.contains(r.getId()))
-                    .collect(Collectors.toList());
-            }
-        } else {
-            finalRides = filteredByStatus;
-        }
-        
-        // Sort using pageable.sort instead of hardcoding
-        Sort sort = pageable.getSort();
-        if (sort.isSorted()) {
-            Sort.Order order = sort.iterator().next();
-            String property = order.getProperty();
-            boolean ascending = order.getDirection().isAscending();
-            
-            finalRides.sort((r1, r2) -> {
-                @SuppressWarnings("rawtypes")
-                Comparable val1 = getSortValue(r1, property);
-                @SuppressWarnings("rawtypes")
-                Comparable val2 = getSortValue(r2, property);
-                @SuppressWarnings({"rawtypes", "unchecked"})
-                int result = val1.compareTo(val2);
-                return ascending ? result : -result;
-            });
-        } else {
-            // Default sort by requestedAt descending
-            finalRides.sort((r1, r2) -> r2.getRequestedAt().compareTo(r1.getRequestedAt()));
-        }
-        
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), finalRides.size());
-        List<Ride> pagedRides = finalRides.subList(start, end);
-        
-        return new PageImpl<>(
-            pagedRides, pageable, finalRides.size());
+        return rideRepository.findAdminRideHistory(fromFinal, toFinal, statuses, hasPanic, pageable);
     }
     
     public Ride reorderRide(Long rideId, Long passengerId) {
@@ -877,7 +710,7 @@ public class RideService {
         // Get linked passenger emails from original ride
         List<RidePassenger> linkedPassengers = ridePassengerRepository.findByRide(originalRide);
         List<String> linkedEmails = linkedPassengers.stream()
-            .map(rp -> rp.getPassenger().getEmail())
+            .map(RidePassenger::getPassengerEmail)
             .collect(Collectors.toList());
         
         // Convert vehicle type name string to enum
