@@ -39,7 +39,7 @@ public class AuthController {
     public ResponseEntity<Void> resetPassword(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable String token,
-            String newPassword) {
+            @RequestBody String newPassword) {
         authService.resetPassword(userDetails.getUserId(), token, newPassword);
         return ResponseEntity.ok().build();
     }
