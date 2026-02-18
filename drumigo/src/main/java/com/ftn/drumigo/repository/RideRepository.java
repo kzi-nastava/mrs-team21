@@ -17,6 +17,7 @@ import java.util.List;
 public interface RideRepository extends JpaRepository<Ride, Long> {
     List<Ride> findByStatus(RideStatus status);
     List<Ride> findByDriverAndStatus(Driver driver, RideStatus status);
+    boolean existsByDriverAndStatusAndScheduledForAfter(Driver driver, RideStatus status, Instant scheduledFor);
     Page<Ride> findByDriverAndStatusAndScheduledForAfter(Driver driver, RideStatus status, Instant scheduledFor, Pageable pageable);
     
     @Query("SELECT r FROM Ride r WHERE r.driver = :driver AND r.requestedAt BETWEEN :from AND :to")

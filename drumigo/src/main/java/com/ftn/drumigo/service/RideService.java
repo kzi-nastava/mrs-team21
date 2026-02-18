@@ -27,6 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,6 +52,7 @@ public class RideService {
     private final ReviewRepository reviewRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final MapService mapService;
+    private static final long TEN_MINUTES_IN_SECONDS = Duration.ofMinutes(10).getSeconds();
 
     public List<Ride> getActiveRides() {
         return rideRepository.findByStatus(RideStatus.ACTIVE);
@@ -257,8 +260,11 @@ public class RideService {
             rideWaypointRepository.save(waypoint);
         }
         
-        // Assign driver (simple algorithm: first available driver with matching vehicle type)
-        Driver assignedDriver = assignDriver(ride, vehicleType);
+        // Assign driver according to the spec:
+        // 1) nearest free driver, 2) fallback to busy driver finishing in <=10 minutes.
+        RideCreateRequest.WaypointRequest pickupWaypoint = getPickupWaypoint(request.waypoints());
+        DriverAssignmentResult assignmentResult = assignDriver(ride, vehicleType, pickupWaypoint);
+        Driver assignedDriver = assignmentResult.driver();
         if (assignedDriver != null) {
             ride.setDriver(assignedDriver);
             Vehicle vehicle = vehicleRepository.findByDriver(assignedDriver)
@@ -273,7 +279,7 @@ public class RideService {
         } else {
             ride.setStatus(RideStatus.REJECTED);
             // Create rejection notification for ordering passenger
-            createRejectionNotification(ride);
+            createRejectionNotification(ride, assignmentResult.rejectionMessage());
         }
         
         ride = rideRepository.save(ride);
@@ -379,35 +385,157 @@ public class RideService {
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     }
+
+    private RideCreateRequest.WaypointRequest getPickupWaypoint(List<RideCreateRequest.WaypointRequest> waypoints) {
+        return waypoints.stream()
+            .min(Comparator.comparingInt(RideCreateRequest.WaypointRequest::order))
+            .orElseThrow(() -> new BadRequestException("Ride must have at least one pickup waypoint"));
+    }
     
-    private Driver assignDriver(Ride ride, VehicleType vehicleType) {
-        // Simple algorithm: find first available driver with matching vehicle type
+    private DriverAssignmentResult assignDriver(
+            Ride ride,
+            VehicleType vehicleType,
+            RideCreateRequest.WaypointRequest pickupWaypoint
+    ) {
         List<Driver> activeDrivers = driverRepository.findByActiveDriverTrue();
-        
+
+        if (activeDrivers.isEmpty()) {
+            return DriverAssignmentResult.rejected("There are currently no active drivers.");
+        }
+
+        Instant now = Instant.now();
+        List<DriverAssignmentCandidate> eligibleCandidates = new ArrayList<>();
+
         for (Driver driver : activeDrivers) {
-            if (driver.isBusy()) {
-                continue;
-            }
-            // Check if driver has worked less than 8 hours in last 24 hours
             if (hasExceededWorkingHours(driver)) {
                 continue;
             }
-            
-            // Check if driver has a vehicle of the requested type
+
             Vehicle vehicle = vehicleRepository.findByDriver(driver).orElse(null);
-            if (vehicle != null && vehicle.getVehicleType().getId().equals(vehicleType.getId())) {
-                // Check vehicle requirements
-                if (ride.getBabyTransport() && !vehicle.getBabyFriendly()) {
-                    continue;
-                }
-                if (ride.getPetTransport() && !vehicle.getPetFriendly()) {
-                    continue;
-                }
-                return driver;
+            if (!isVehicleEligibleForRide(ride, vehicleType, vehicle)) {
+                continue;
             }
+
+            double pickupDistanceKm = calculateDistanceToPickupKm(vehicle, pickupWaypoint);
+            boolean hasFutureScheduledRide =
+                rideRepository.existsByDriverAndStatusAndScheduledForAfter(driver, RideStatus.ACCEPTED, now);
+
+            Ride activeRide = null;
+            long remainingToFinishSec = Long.MAX_VALUE;
+            if (driver.isBusy()) {
+                activeRide = getCurrentActiveRide(driver);
+                remainingToFinishSec = estimateRemainingToFinishSec(activeRide, now);
+            }
+
+            eligibleCandidates.add(new DriverAssignmentCandidate(
+                driver,
+                pickupDistanceKm,
+                hasFutureScheduledRide,
+                remainingToFinishSec
+            ));
         }
-        
-        return null;
+
+        if (eligibleCandidates.isEmpty()) {
+            return DriverAssignmentResult.rejected("No active drivers match the requested ride requirements.");
+        }
+
+        List<DriverAssignmentCandidate> freeCandidates = eligibleCandidates.stream()
+            .filter(candidate -> !candidate.driver().isBusy())
+            .toList();
+
+        if (!freeCandidates.isEmpty()) {
+            Driver nearestFreeDriver = freeCandidates.stream()
+                .min(Comparator
+                    .comparingDouble(DriverAssignmentCandidate::pickupDistanceKm)
+                    .thenComparing(candidate -> candidate.driver().getId()))
+                .orElseThrow()
+                .driver();
+
+            return DriverAssignmentResult.assigned(nearestFreeDriver);
+        }
+
+        if (eligibleCandidates.stream().allMatch(DriverAssignmentCandidate::hasFutureScheduledRide)) {
+            return DriverAssignmentResult.rejected("There are currently no active drivers.");
+        }
+
+        List<DriverAssignmentCandidate> fallbackCandidates = eligibleCandidates.stream()
+            .filter(candidate -> !candidate.hasFutureScheduledRide())
+            .filter(candidate -> candidate.remainingToFinishSec() <= TEN_MINUTES_IN_SECONDS)
+            .toList();
+
+        if (fallbackCandidates.isEmpty()) {
+            return DriverAssignmentResult.rejected(
+                "All active drivers are currently busy and cannot finish within 10 minutes."
+            );
+        }
+
+        Driver fallbackDriver = fallbackCandidates.stream()
+            .min(Comparator
+                .comparingDouble(DriverAssignmentCandidate::pickupDistanceKm)
+                .thenComparingLong(DriverAssignmentCandidate::remainingToFinishSec)
+                .thenComparing(candidate -> candidate.driver().getId()))
+            .orElseThrow()
+            .driver();
+
+        return DriverAssignmentResult.assigned(fallbackDriver);
+    }
+
+    private boolean isVehicleEligibleForRide(Ride ride, VehicleType vehicleType, Vehicle vehicle) {
+        if (vehicle == null || vehicle.getVehicleType() == null || vehicle.getVehicleType().getId() == null) {
+            return false;
+        }
+
+        if (!vehicle.getVehicleType().getId().equals(vehicleType.getId())) {
+            return false;
+        }
+
+        if (ride.getBabyTransport() && !Boolean.TRUE.equals(vehicle.getBabyFriendly())) {
+            return false;
+        }
+
+        return !ride.getPetTransport() || Boolean.TRUE.equals(vehicle.getPetFriendly());
+    }
+
+    private double calculateDistanceToPickupKm(Vehicle vehicle, RideCreateRequest.WaypointRequest pickupWaypoint) {
+        if (vehicle == null || vehicle.getCurrentLat() == null || vehicle.getCurrentLng() == null) {
+            return Double.MAX_VALUE;
+        }
+
+        return haversineDistance(
+            vehicle.getCurrentLat().doubleValue(),
+            vehicle.getCurrentLng().doubleValue(),
+            pickupWaypoint.lat().doubleValue(),
+            pickupWaypoint.lng().doubleValue()
+        );
+    }
+
+    private Ride getCurrentActiveRide(Driver driver) {
+        List<Ride> activeRides = rideRepository.findByDriverAndStatus(driver, RideStatus.ACTIVE);
+        if (activeRides.isEmpty()) {
+            return null;
+        }
+        return activeRides.get(0);
+    }
+
+    private long estimateRemainingToFinishSec(Ride activeRide, Instant now) {
+        if (activeRide == null) {
+            return Long.MAX_VALUE;
+        }
+
+        if (activeRide.getEstimatedArrivalAt() != null) {
+            return Math.max(0, Duration.between(now, activeRide.getEstimatedArrivalAt()).getSeconds());
+        }
+
+        if (activeRide.getStartTime() != null && activeRide.getEstimatedDurationSec() != null) {
+            long elapsedSeconds = Duration.between(activeRide.getStartTime(), now).getSeconds();
+            return Math.max(0, activeRide.getEstimatedDurationSec() - elapsedSeconds);
+        }
+
+        if (activeRide.getEstimatedDurationSec() != null) {
+            return activeRide.getEstimatedDurationSec();
+        }
+
+        return Long.MAX_VALUE;
     }
 
     private void setDriverBusy(Driver driver, boolean busy) {
@@ -510,15 +638,33 @@ public class RideService {
         }
     }
     
-    private void createRejectionNotification(Ride ride) {
+    private void createRejectionNotification(Ride ride, String reasonMessage) {
         // Notification for ordering passenger when ride is rejected
         if (ride.getOrderingPassenger() != null) {
             Notification notification = new Notification();
             notification.setUser(ride.getOrderingPassenger());
             notification.setRide(ride);
             notification.setType(NotificationType.RIDE_REJECTED);
-            notification.setMessage("Your ride request has been rejected. No available driver found.");
+            notification.setMessage("Your ride request has been rejected. " + reasonMessage);
             notificationRepository.save(notification);
+        }
+    }
+
+    private record DriverAssignmentCandidate(
+        Driver driver,
+        double pickupDistanceKm,
+        boolean hasFutureScheduledRide,
+        long remainingToFinishSec
+    ) {
+    }
+
+    private record DriverAssignmentResult(Driver driver, String rejectionMessage) {
+        private static DriverAssignmentResult assigned(Driver driver) {
+            return new DriverAssignmentResult(driver, null);
+        }
+
+        private static DriverAssignmentResult rejected(String rejectionMessage) {
+            return new DriverAssignmentResult(null, rejectionMessage);
         }
     }
     
