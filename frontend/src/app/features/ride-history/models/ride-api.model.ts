@@ -90,6 +90,8 @@ export interface PassengerRideHistoryItemDto {
   canceled: boolean;
   canceledBy: string | null;
   hasPanic: boolean;
+  isFavorite?: boolean;
+  favoriteRouteId?: number | null;
 }
 
 export interface RideDetailsDriverDto {
