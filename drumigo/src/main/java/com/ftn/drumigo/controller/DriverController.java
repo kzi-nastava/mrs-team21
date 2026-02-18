@@ -50,9 +50,21 @@ public class DriverController {
     private final RideMapper rideMapper;
     private final VehicleService vehicleService;
     private final VehicleMapper vehicleMapper;
+
+    private void requireAdmin(CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required");
+        }
+        if (!"ADMIN".equalsIgnoreCase(userDetails.getRole())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can perform this action");
+        }
+    }
     
     @PostMapping
-    public ResponseEntity<DriverResponse> createDriver(@Valid @RequestBody DriverCreateRequest request) {
+    public ResponseEntity<DriverResponse> createDriver(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody DriverCreateRequest request) {
+        requireAdmin(userDetails);
         Driver driver = driverService.create(request);
         return ResponseEntity.status(201).body(driverMapper.toResponse(driver));
     }
@@ -90,7 +102,10 @@ public class DriverController {
     }
     
     @PostMapping("/{id}/activation")
-    public ResponseEntity<ActivationTokenResponse> createActivationToken(@PathVariable Long id) {
+    public ResponseEntity<ActivationTokenResponse> createActivationToken(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        requireAdmin(userDetails);
         String token = driverService.createActivationToken(id);
         // Token expires in 24 hours
         Instant expiresAt = Instant.now().plusSeconds(24 * 60 * 60);

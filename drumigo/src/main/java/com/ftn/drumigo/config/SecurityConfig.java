@@ -56,7 +56,8 @@ public class SecurityConfig {
                     "/api/drivers/*/rides/upcoming",
                     "/api/users/*/notifications",
                     "/api/passengers",
-                    "/api/passengers/activate/**"
+                    "/api/passengers/activate/**",
+                    "/api/activation/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )

@@ -35,6 +35,7 @@ public class EmailService {
             }
 
             mailSender.send(message);
+            log.info("Email successfully sent to {} with subject '{}'", email, subject);
 
         } catch (Exception e) {
             log.error("Failed to send email to {}: {}", email, e.getMessage(), e);
@@ -56,6 +57,26 @@ public class EmailService {
                         "Team 9+10",
                 activationLink
         );
+        sendEmail(email, subject, body);
+    }
+
+    @Async
+    public void sendDriverActivationEmail(String email, String token) {
+        String activationLink = frontendUrl + "/activate-driver/" + token;
+        String subject = "Set Your Drumigo Driver Password";
+        String body = String.format(
+                "Hello,\n\n" +
+                        "Your driver account has been created by an administrator.\n\n" +
+                        "Open the link below and set your password:\n" +
+                        "%s\n\n" +
+                        "If your app does not have this page yet, use API endpoint:\n" +
+                        "PUT /api/activation/{token}/set-password\n\n" +
+                        "This link will expire in 24 hours.\n\n" +
+                        "Best regards,\n" +
+                        "Team 9+10",
+                activationLink
+        );
+        // Fire-and-forget: admin should not wait on SMTP latency.
         sendEmail(email, subject, body);
     }
 
