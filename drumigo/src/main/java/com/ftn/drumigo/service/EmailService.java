@@ -24,12 +24,28 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
+    private void sendEmail(String email, String subject, String body) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(email);
+            message.setSubject(subject);
+            message.setText(body);
+            if (sender != null && !sender.isBlank()) {
+                message.setFrom(sender);
+            }
+
+            mailSender.send(message);
+
+        } catch (Exception e) {
+            log.error("Failed to send email to {}: {}", email, e.getMessage(), e);
+            throw new EmailSendException("Failed to send email", e);
+        }
+    }
+
+    @Async
     public void sendActivationEmail(String email, String token) {
-
         String activationLink = frontendUrl + "/activate/" + token;
-
         String subject = "Activate Your Drumigo Account";
-
         String body = String.format(
                 "Hello,\n\n" +
                         "Thank you for registering!\n\n" +
@@ -40,23 +56,7 @@ public class EmailService {
                         "Team 9+10",
                 activationLink
         );
-
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(email);
-            message.setSubject(subject);
-            message.setText(body);
-            // Use configured SMTP username as the From address (Gmail requires this)
-            if (sender != null && !sender.isBlank()) {
-                message.setFrom(sender);
-            }
-
-            mailSender.send(message);
-
-        } catch (Exception e) {
-            log.error("Failed to send activation email to {}: {}", email, e.getMessage(), e);
-            throw new EmailSendException("Failed to send activation email", e);
-        }
+        sendEmail(email, subject, body);
     }
 
     @Async
@@ -87,21 +87,24 @@ public class EmailService {
                 ratingNote,
                 rideHistoryLink
         );
+        sendEmail(email, subject, body);
+    }
 
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(email);
-            message.setSubject(subject);
-            message.setText(body);
-            if (sender != null && !sender.isBlank()) {
-                message.setFrom(sender);
-            }
-
-            mailSender.send(message);
-
-        } catch (Exception e) {
-            log.error("Failed to send ride finished email to {}: {}", email, e.getMessage(), e);
-            throw new EmailSendException("Failed to send ride finished email", e);
-        }
+    @Async
+    public void sendPasswordResetEmail(String email, String token) {
+        String resetLink = frontendUrl + "/reset-password/" + token;
+        String subject = "Reset Your Drumigo Password";
+        String body = String.format(
+                "Hello,\n\n" +
+                        "We received a request to reset your Drumigo password.\n\n" +
+                        "Please click the link below to reset your password:\n" +
+                        "%s\n\n" +
+                        "This link will expire in 30 minutes.\n\n" +
+                        "If you did not request a password reset, please ignore this email.\n\n" +
+                        "Best regards,\n" +
+                        "Team 9+10",
+                resetLink
+        );
+        sendEmail(email, subject, body);
     }
 }
