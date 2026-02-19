@@ -1,6 +1,7 @@
-import { Component, OnInit, inject, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, OnInit, OnDestroy, inject, effect } from '@angular/core';
+import { CommonModule, NgTemplateOutlet } from '@angular/common';
+import { Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { NAVIGATION_CONFIG, SECTION_LABELS, NavItem } from '../../config/navbar.config';
 import { AuthService } from '../../../shared/services/auth.service';
 import { CurrentUserService } from '../../services/current-user.service';
@@ -18,11 +19,11 @@ export interface UserProfile {
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, NgTemplateOutlet],
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss'],
 })
-export class NavbarComponent implements OnInit {
+export class NavbarComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   readonly currentUserService = inject(CurrentUserService);
@@ -31,15 +32,38 @@ export class NavbarComponent implements OnInit {
   groupedNavItems: Map<string, NavItem[]> = new Map();
   sectionLabels = SECTION_LABELS;
 
+  /** Drawer open state for mobile menu (hamburger). */
+  drawerOpen = false;
+
+  private readonly boundEscape = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && this.drawerOpen) this.closeDrawer();
+  };
+
   constructor() {
     effect(() => {
       this.currentUserService.user();
       this.applyUserType();
     });
+    this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe(() => this.closeDrawer());
   }
 
   ngOnInit(): void {
     this.applyUserType();
+    window.addEventListener('keydown', this.boundEscape);
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('keydown', this.boundEscape);
+  }
+
+  toggleDrawer(): void {
+    this.drawerOpen = !this.drawerOpen;
+  }
+
+  closeDrawer(): void {
+    this.drawerOpen = false;
   }
 
   private applyUserType(): void {
