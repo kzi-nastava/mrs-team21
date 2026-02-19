@@ -366,10 +366,13 @@ The backend exposes a RESTful API at `http://localhost:8080/api`. Key endpoints:
 
 For detailed API documentation, explore the controller classes in `drumigo/src/main/java/com/ftn/drumigo/controller/`.
 
+**Profile pictures:** Only URLs are stored in the database (`profile_picture_url`). Image files live under `uploads/profile/` (or `uploads/profile/temp/` for pre-registration uploads). For registration flows (passenger or driver), upload first via `POST /api/auth/profile-picture` (multipart `file`, no auth), then send the returned `url` in the registration payload as `profilePictureUrl`. For logged-in profile updates, use `POST /api/profile/picture` and then `PUT /api/profile` with the returned URL.
+
 ## 🚧 Known Limitations & Future Work
 
 ### Not Yet Implemented
 
+- **Mobile passenger registration** does not upload profile pictures yet (backend expects `profilePictureUrl` from `POST /api/auth/profile-picture`; web app uses this flow).
 - Real-time WebSocket connections (ride updates are polling-based or refresh-based)
 - Multi-passenger ride splitting
 - Scheduled rides (future booking)
