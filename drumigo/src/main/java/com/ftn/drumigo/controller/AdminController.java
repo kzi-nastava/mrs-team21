@@ -4,6 +4,7 @@ import com.ftn.drumigo.domain.DriverProfileChangeRequest;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RideWaypoint;
 import com.ftn.drumigo.domain.enums.RideStatus;
+import com.ftn.drumigo.domain.enums.UserRole;
 import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.dto.*;
 import com.ftn.drumigo.dto.history.request.RideHistoryRequest;
@@ -12,6 +13,7 @@ import com.ftn.drumigo.dto.ride.response.RideResponse;
 import com.ftn.drumigo.dto.UserSearchItemDto;
 import com.ftn.drumigo.mapper.DriverProfileChangeRequestMapper;
 import com.ftn.drumigo.mapper.RideMapper;
+import com.ftn.drumigo.mapper.UserMapper;
 import com.ftn.drumigo.repository.UserRepository;
 import com.ftn.drumigo.security.CustomUserDetails;
 import com.ftn.drumigo.service.DriverProfileChangeRequestService;
@@ -32,6 +34,9 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Instant;
 import java.util.List;
 
+import static com.ftn.drumigo.domain.enums.UserRole.DRIVER;
+import static com.ftn.drumigo.domain.enums.UserRole.PASSENGER;
+
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
@@ -44,6 +49,27 @@ public class AdminController {
     private final DriverProfileChangeRequestMapper profileChangeRequestMapper;
     private final ReportService reportService;
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
+
+    /**
+     * List users (PASSENGER and DRIVER only) for admin user management. Paginated.
+     */
+    @GetMapping("/users")
+    public ResponseEntity<PageResponse<UserResponse>> getUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "email,asc") String sort,
+            @RequestParam(required = false) UserRole role) {
+        String[] sortParams = sort.split(",");
+        Sort.Direction direction = sortParams.length > 1 && sortParams[1].equalsIgnoreCase("desc")
+                ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Sort sortObj = Sort.by(direction, sortParams[0]);
+        Pageable pageable = PageRequest.of(page, size, sortObj);
+        List<UserRole> roles = role != null ? List.of(role) : List.of(PASSENGER, DRIVER);
+        Page<User> users = userRepository.findByRoleIn(roles, pageable);
+        Page<UserResponse> mapped = users.map(userMapper::toResponse);
+        return ResponseEntity.ok(PageResponse.of(mapped));
+    }
     
     @GetMapping("/profile-change-requests")
     public ResponseEntity<Page<DriverProfileChangeRequestResponse>> getProfileChangeRequests(
