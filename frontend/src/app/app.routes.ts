@@ -177,14 +177,6 @@ export const routes: Routes = [
                 .then((m) => m.AdminHistoryPageComponent),
           },
           {
-            path: 'active-rides',
-            loadComponent: () =>
-              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
-                (m) => m.PlaceholderFeatureComponent,
-              ),
-            data: { featureName: 'Active Rides', specRef: '2.13' },
-          },
-          {
             path: 'panic',
             loadComponent: () =>
               import('./shared/components/placeholder-feature/placeholder-feature.component').then(

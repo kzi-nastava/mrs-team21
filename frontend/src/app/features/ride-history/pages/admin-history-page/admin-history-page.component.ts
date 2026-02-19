@@ -1,5 +1,6 @@
 import { Component, OnInit, signal, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { RideHistoryService } from '../../services/ride-history.service';
@@ -30,6 +31,7 @@ import { ToastService } from '../../../../shared/services/toast.service';
 export class AdminHistoryPageComponent implements OnInit {
   private readonly rideHistoryService = inject(RideHistoryService);
   private readonly toastService = inject(ToastService);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   allRides = signal<Ride[]>([]);
@@ -131,6 +133,10 @@ export class AdminHistoryPageComponent implements OnInit {
 
   onRideDetailsClosed(): void {
     this.selectedRide.set(null);
+  }
+
+  onTrackRide(ride: Ride): void {
+    this.router.navigate(['/ride-tracking', ride.id]);
   }
 
   onPageChange(page: number): void {

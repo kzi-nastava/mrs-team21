@@ -22,6 +22,7 @@ export const adminHistoryConfig = {
     showEarnings: true,
     showRatings: true,
     showRatingAction: false, // Admins don't rate rides
+    showTrackRideButton: true, // Admins can open ride-tracking for ACTIVE rides
   } as RideDetailsConfig,
 
   pageTitle: 'System Ride History',

@@ -122,11 +122,42 @@
           </div>
         }
 
-        <!-- Action Button -->
-        <div class="action-section">
-          @if (isDriverUser()) {
-            @if (canStartRide()) {
-              <button class="btn-start-ride" (click)="onStartRide()" type="button" [disabled]="startLoading()">
+        @if (isAdminUser()) {
+          <div class="admin-tracking-notice">
+            Viewing as admin — tracking only. Driver and passenger actions are not available.
+          </div>
+        }
+
+        <!-- Action Button (hidden for admin) -->
+        @if (!isAdminUser()) {
+          <div class="action-section">
+            @if (isDriverUser()) {
+              @if (canStartRide()) {
+                <button class="btn-start-ride" (click)="onStartRide()" type="button" [disabled]="startLoading()">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                  </svg>
+                  @if (startLoading()) {
+                    Starting...
+                  } @else {
+                    Start Ride
+                  }
+                </button>
+              }
+              <button
+                class="btn-stop-ride"
+                [class.btn-stop-ride--disabled]="!canStopRide()"
+                [attr.aria-disabled]="!canStopRide()"
+                (click)="openStopModal()"
+                type="button"
+              >
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -135,20 +166,20 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                 >
-                  <polygon points="5 3 19 12 5 21 5 3" />
+                  <rect x="6" y="4" width="4" height="16" />
+                  <rect x="14" y="4" width="4" height="16" />
                 </svg>
-                @if (startLoading()) {
-                  Starting...
-                } @else {
-                  Start Ride
-                }
+                Stop Ride
               </button>
+              @if (activeRide()?.status === 'ACCEPTED' && !canStopRide()) {
+                <div class="stop-hint">Ride can be stopped only when status is ACTIVE.</div>
+              }
             }
             <button
-              class="btn-stop-ride"
-              [class.btn-stop-ride--disabled]="!canStopRide()"
-              [attr.aria-disabled]="!canStopRide()"
-              (click)="openStopModal()"
+              class="btn-panic"
+              [class.btn-panic--disabled]="!canUsePanic()"
+              [disabled]="!canUsePanic()"
+              (click)="openPanicModal()"
               type="button"
             >
               <svg
@@ -159,44 +190,21 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
-                <rect x="6" y="4" width="4" height="16" />
-                <rect x="14" y="4" width="4" height="16" />
+                <path
+                  d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+                />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
-              Stop Ride
+              Emergency / Panic
             </button>
-            @if (activeRide()?.status === 'ACCEPTED' && !canStopRide()) {
-              <div class="stop-hint">Ride can be stopped only when status is ACTIVE.</div>
+            @if (canReportInconsistency()) {
+              <app-inconsistency-report></app-inconsistency-report>
+            } @else if (isPassengerUser()) {
+              <div class="action-hint">Inconsistency reporting is available once the ride starts.</div>
             }
-          }
-          <button
-            class="btn-panic"
-            [class.btn-panic--disabled]="!canUsePanic()"
-            [disabled]="!canUsePanic()"
-            (click)="openPanicModal()"
-            type="button"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path
-                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-              />
-              <line x1="12" y1="9" x2="12" y2="13" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
-            Emergency / Panic
-          </button>
-          @if (canReportInconsistency()) {
-            <app-inconsistency-report></app-inconsistency-report>
-          } @else if (isPassengerUser()) {
-            <div class="action-hint">Inconsistency reporting is available once the ride starts.</div>
-          }
-        </div>
+          </div>
+        }
 
         @if (endRideError()) {
           <div class="post-ride-error">
