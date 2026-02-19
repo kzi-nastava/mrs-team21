@@ -34,9 +34,10 @@ class OrderFromFavoriteRouteE2ETest extends BaseE2ETest {
         driver.get(frontendUrl + "/order-ride");
         OrderRidePage orderPage = new OrderRidePage(driver, wait);
         orderPage.waitUntilLoaded();
+        orderPage.waitForFavoritesToLoad();
 
         Assertions.assertTrue(orderPage.isFavoriteSelectVisible(),
-            "Favorite dropdown should be visible when passenger has favorites.");
+            "Favorite picker should be visible when passenger has favorites.");
         Assertions.assertTrue(orderPage.getFavoriteOptionCount() >= 1,
             "At least one favorite option should be available.");
 

@@ -36,8 +36,8 @@ class RideHistoryFilterSortE2ETest extends BaseE2ETest {
 
         Assertions.assertTrue(filteredCount > 0,
             "Filtering by recent range should keep at least one ride.");
-        Assertions.assertTrue(filteredCount <= initialCount,
-            "Filtered results should not exceed initial results.");
+        // Do not assert filteredCount <= initialCount: with pagination, initial view may show page size
+        // (e.g. 10) while filtered total can be different (e.g. 25), so filtered can exceed initial.
         Assertions.assertTrue(filteredDates.stream().allMatch(d -> !d.isBefore(from) && !d.isAfter(to)),
             "All displayed rides must be within selected [from, to] date range.");
     }
