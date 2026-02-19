@@ -51,6 +51,27 @@ public class MapService {
         );
     }
 
+    public List<List<Double>> getRouteCoordinatesForOrderedWaypoints(List<LocationDTO> orderedWaypoints) {
+        if (orderedWaypoints == null || orderedWaypoints.size() < 2) {
+            throw new BadRequestException("At least 2 ordered waypoints are required");
+        }
+
+        LocationDTO startLocation = orderedWaypoints.get(0);
+        LocationDTO destinationLocation = orderedWaypoints.get(orderedWaypoints.size() - 1);
+        List<LocationDTO> middleWaypoints = orderedWaypoints.size() > 2
+            ? orderedWaypoints.subList(1, orderedWaypoints.size() - 1)
+            : List.of();
+
+        Point start = Point.fromLngLat(startLocation.longitude(), startLocation.latitude());
+        Point destination = Point.fromLngLat(destinationLocation.longitude(), destinationLocation.latitude());
+        List<Point> waypoints = middleWaypoints.stream()
+            .map(location -> Point.fromLngLat(location.longitude(), location.latitude()))
+            .toList();
+
+        DirectionsRoute route = getDirectionsRoute(start, destination, waypoints);
+        return decodeRouteGeometryToCoordinates(route.geometry());
+    }
+
     private DirectionsRoute getDirectionsRoute(EstimateRequest request) {
         Point start = Point.fromLngLat(request.startLocation().longitude(), request.startLocation().latitude());
         Point destination = Point.fromLngLat(request.destinationLocation().longitude(), request.destinationLocation().latitude());
@@ -62,6 +83,10 @@ public class MapService {
             }
         }
 
+        return getDirectionsRoute(start, destination, waypoints);
+    }
+
+    private DirectionsRoute getDirectionsRoute(Point start, Point destination, List<Point> waypoints) {
         MapboxDirections client = MapboxDirections.builder()
             .accessToken(MAPBOX_API_KEY)
             .origin(start)

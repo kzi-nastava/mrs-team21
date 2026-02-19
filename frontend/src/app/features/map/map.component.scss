@@ -262,4 +262,44 @@
         0 4px 10px rgba(79, 70, 229, 0.3);
     }
   }
+
+  .route-point-marker {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(3px);
+    border: 2px solid rgba(255, 255, 255, 0.92);
+    box-shadow:
+      0 8px 16px rgba(15, 23, 42, 0.24),
+      0 2px 6px rgba(15, 23, 42, 0.16);
+    color: #fff;
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    &:hover {
+      transform: translateY(-1px) scale(1.08);
+      box-shadow:
+        0 10px 18px rgba(15, 23, 42, 0.28),
+        0 3px 8px rgba(15, 23, 42, 0.18);
+    }
+  }
+
+  .route-point-start {
+    background: radial-gradient(circle at 28% 25%, #a7f3d0 0%, #34d399 58%, #10b981 100%);
+  }
+
+  .route-point-waypoint {
+    background: radial-gradient(circle at 28% 25%, #dbeafe 0%, #93c5fd 55%, #3b82f6 100%);
+  }
+
+  .route-point-destination {
+    background: radial-gradient(circle at 28% 25%, #fde68a 0%, #f59e0b 55%, #d97706 100%);
+  }
 }

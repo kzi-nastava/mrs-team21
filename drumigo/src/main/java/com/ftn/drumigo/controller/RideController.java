@@ -70,6 +70,7 @@ public class RideController {
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails driverDetails) {
         Ride ride = rideService.startRide(id, driverDetails.getUserId());
+        rideTrackingSimulationService.startSimulation(id);
         List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
         return ResponseEntity.ok(rideMapper.toResponse(ride, waypoints));
     }

@@ -25,6 +25,7 @@ import { RideApiService } from './services/ride-api.service';
 import { RideResponseDto } from '../ride-history/models/ride-api.model';
 import { AuthService } from '../../shared/services/auth.service';
 import { ToastService } from '../../shared/services/toast.service';
+import { buildRouteRequestThroughRemainingWaypoints } from './utils/remaining-waypoints.util';
 
 @Component({
   selector: 'app-ride-tracking',
@@ -62,6 +63,14 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   private lastRouteRequestAt = 0;
   private routeRequestInFlight = false;
   private readonly minRerouteIntervalMs = 20000;
+  private lastPassedWaypointOrder = Number.NEGATIVE_INFINITY;
+  private lastBackendLocation: { lat: number; lng: number } | null = null;
+  private routeProgressMeters = 0;
+  private routeCumulativeDistancesMeters: number[] = [];
+  private readonly minForwardMoveMeters = 8;
+  private readonly maxForwardMoveMeters = 90;
+  private readonly defaultForwardMoveMeters = 20;
+  private readonly earthRadiusMeters = 6371000;
 
   rideId = signal<string>('');
   activeRide = signal<ActiveRide | null>(null);
@@ -195,9 +204,11 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
             return;
           }
           this.activeRide.set(ride);
+          this.lastPassedWaypointOrder = Number.NEGATIVE_INFINITY;
           this.currentLocation.set(ride.currentLocation);
+          this.lastBackendLocation = ride.currentLocation;
           this.etaSeconds.set(ride.estimatedArrivalTime);
-          this.requestRouteFromCurrent(ride.currentLocation, ride.destinationLocation, true, ride);
+          this.requestRouteFromCurrent(ride.currentLocation, true, ride);
           this.updateMarkers();
           // Pass active ride to inconsistency report component
           if (this.inconsistencyReportComponent) {
@@ -229,10 +240,12 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: (coordinates) => {
-            if (coordinates.length >= 2) this.routeCoordinates.set(coordinates);
+            if (coordinates.length >= 2) {
+              this.setRouteCoordinatesAndProgress(coordinates);
+            }
           },
           error: () => {
-            this.routeCoordinates.set(fallback);
+            this.setRouteCoordinatesAndProgress(fallback);
           },
         });
     } else {
@@ -240,13 +253,12 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
         [ride.startLocation.lng, ride.startLocation.lat],
         [ride.destinationLocation.lng, ride.destinationLocation.lat],
       ];
-      this.routeCoordinates.set(coordinates);
+      this.setRouteCoordinatesAndProgress(coordinates);
     }
   }
 
   private requestRouteFromCurrent(
     currentLocation: { lat: number; lng: number },
-    destination: { lat: number; lng: number },
     force = false,
     fallbackRide?: ActiveRide,
   ): void {
@@ -261,8 +273,30 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
     this.routeRequestInFlight = true;
     this.lastRouteRequestAt = now;
 
+    const ride = fallbackRide ?? this.activeRide();
+    if (!ride) {
+      this.routeRequestInFlight = false;
+      return;
+    }
+
+    const routeWaypoints = ride.route && ride.route.length > 0
+      ? [...ride.route].sort((a, b) => a.order - b.order)
+      : [];
+    const routeRequest = buildRouteRequestThroughRemainingWaypoints(
+      currentLocation,
+      routeWaypoints,
+      this.lastPassedWaypointOrder,
+    );
+    this.lastPassedWaypointOrder = routeRequest.lastPassedWaypointOrder;
+
+    if (routeRequest.routeRequestPoints.length < 2) {
+      this.routeRequestInFlight = false;
+      this.calculateRouteCoordinates(ride);
+      return;
+    }
+
     this.directionsService
-      .getRoute(currentLocation, destination)
+      .getRouteWithWaypoints(routeRequest.routeRequestPoints)
       .pipe(
         finalize(() => {
           this.routeRequestInFlight = false;
@@ -272,14 +306,13 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
       .subscribe({
         next: (coordinates) => {
           if (coordinates && coordinates.length > 1) {
-            this.routeCoordinates.set(coordinates);
+            this.setRouteCoordinatesAndProgress(coordinates);
             this.updateMarkers();
             this.updateMapView();
           }
         },
         error: (error) => {
           console.warn('Failed to fetch road-aligned route:', error);
-          const ride = fallbackRide ?? this.activeRide();
           if (ride && (!this.routeCoordinates() || this.routeCoordinates()!.length < 2)) {
             this.calculateRouteCoordinates(ride);
           }
@@ -293,17 +326,17 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (update: LocationUpdate) => {
-          this.currentLocation.set({ lat: update.lat, lng: update.lng });
+          const backendLocation = { lat: update.lat, lng: update.lng };
+          const displayLocation = this.computeNextLocationOnRoute(backendLocation);
+          this.currentLocation.set(displayLocation);
+          this.lastBackendLocation = backendLocation;
           this.etaSeconds.set(update.estimatedArrivalTime);
           if (update.bearing !== undefined) {
             this.carBearing.set(update.bearing);
           }
           const ride = this.activeRide();
           if (ride) {
-            this.requestRouteFromCurrent(
-              { lat: update.lat, lng: update.lng },
-              ride.destinationLocation,
-            );
+            this.requestRouteFromCurrent(displayLocation, false, ride);
           }
           this.updateMarkers();
           this.updateMapView();
@@ -321,17 +354,48 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!ride || !displayLoc) return;
 
     const markers: MapMarker[] = [];
+    const routeWaypoints = ride.route ? [...ride.route].sort((a, b) => a.order - b.order) : [];
+
+    if (routeWaypoints.length >= 2) {
+      const start = routeWaypoints[0];
+      const destination = routeWaypoints[routeWaypoints.length - 1];
+      const middleWaypoints = routeWaypoints.slice(1, -1);
+
+      markers.push({
+        lat: start.lat,
+        lng: start.lng,
+        status: 'available',
+        kind: 'start',
+        label: 'Start',
+      });
+
+      middleWaypoints.forEach((waypoint, index) => {
+        markers.push({
+          lat: waypoint.lat,
+          lng: waypoint.lng,
+          status: 'available',
+          kind: 'waypoint',
+          label: `Waypoint ${index + 1}`,
+        });
+      });
+
+      markers.push({
+        lat: destination.lat,
+        lng: destination.lng,
+        status: 'available',
+        kind: 'destination',
+        label: 'Destination',
+      });
+    }
 
     // Only show the tracked vehicle (car icon will be used)
     markers.push({
       lat: displayLoc.lat,
       lng: displayLoc.lng,
       status: 'busy',
+      kind: 'vehicle',
       driverName: `${ride.driver.firstName} ${ride.driver.lastName}`,
     });
-
-    // Note: Start and destination are shown via route line, not markers
-    // This keeps the map clean and focused on the vehicle
 
     this.markers.set(markers);
   }
@@ -344,42 +408,115 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private getDisplayLocation(): { lat: number; lng: number } | null {
-    const currentLoc = this.currentLocation();
-    if (!currentLoc) {
-      return null;
-    }
-
-    const route = this.routeCoordinates();
-    if (!route || route.length < 2) {
-      return currentLoc;
-    }
-
-    return this.snapToRoute(currentLoc, route);
+    return this.currentLocation();
   }
 
-  private snapToRoute(
+  private setRouteCoordinatesAndProgress(coordinates: [number, number][]): void {
+    this.routeCoordinates.set(coordinates);
+    this.routeCumulativeDistancesMeters = this.buildRouteCumulativeDistances(coordinates);
+    if (this.routeCumulativeDistancesMeters.length < 2) {
+      this.routeProgressMeters = 0;
+      return;
+    }
+
+    const current = this.currentLocation();
+    if (!current) {
+      this.routeProgressMeters = 0;
+      return;
+    }
+
+    this.routeProgressMeters = this.closestDistanceAlongRoute(
+      current,
+      coordinates,
+      this.routeCumulativeDistancesMeters,
+    );
+    const snapped = this.pointAlongRouteAtDistance(
+      coordinates,
+      this.routeCumulativeDistancesMeters,
+      this.routeProgressMeters,
+    );
+    this.currentLocation.set(snapped);
+  }
+
+  private computeNextLocationOnRoute(backendLocation: { lat: number; lng: number }): {
+    lat: number;
+    lng: number;
+  } {
+    const route = this.routeCoordinates();
+    if (!route || route.length < 2) {
+      return backendLocation;
+    }
+
+    if (this.routeCumulativeDistancesMeters.length !== route.length) {
+      this.routeCumulativeDistancesMeters = this.buildRouteCumulativeDistances(route);
+    }
+    if (this.routeCumulativeDistancesMeters.length < 2) {
+      return backendLocation;
+    }
+
+    const backendProjectedDistance = this.closestDistanceAlongRoute(
+      backendLocation,
+      route,
+      this.routeCumulativeDistancesMeters,
+    );
+    this.routeProgressMeters = Math.max(this.routeProgressMeters, backendProjectedDistance);
+
+    let forwardMoveMeters = this.defaultForwardMoveMeters;
+    if (this.lastBackendLocation) {
+      forwardMoveMeters = this.distanceMeters(this.lastBackendLocation, backendLocation);
+    }
+    forwardMoveMeters = Math.max(
+      this.minForwardMoveMeters,
+      Math.min(this.maxForwardMoveMeters, forwardMoveMeters),
+    );
+
+    const totalRouteDistance =
+      this.routeCumulativeDistancesMeters[this.routeCumulativeDistancesMeters.length - 1] ?? 0;
+    this.routeProgressMeters = Math.min(totalRouteDistance, this.routeProgressMeters + forwardMoveMeters);
+
+    return this.pointAlongRouteAtDistance(
+      route,
+      this.routeCumulativeDistancesMeters,
+      this.routeProgressMeters,
+    );
+  }
+
+  private buildRouteCumulativeDistances(route: [number, number][]): number[] {
+    if (!route || route.length < 2) {
+      return [];
+    }
+    const cumulativeDistances: number[] = [0];
+    for (let i = 1; i < route.length; i++) {
+      const previous = { lat: route[i - 1][1], lng: route[i - 1][0] };
+      const current = { lat: route[i][1], lng: route[i][0] };
+      cumulativeDistances.push(
+        cumulativeDistances[i - 1] + this.distanceMeters(previous, current),
+      );
+    }
+    return cumulativeDistances;
+  }
+
+  private closestDistanceAlongRoute(
     point: { lat: number; lng: number },
     route: [number, number][],
-  ): { lat: number; lng: number } {
-    const earthRadius = 6371000;
+    cumulativeDistances: number[],
+  ): number {
+    if (route.length < 2 || cumulativeDistances.length < 2) {
+      return 0;
+    }
+
     const refLatRad = this.toRad(point.lat);
     const cosLat = Math.cos(refLatRad) || 0.000001;
 
     const toXY = (lng: number, lat: number) => {
-      const x = this.toRad(lng) * earthRadius * cosLat;
-      const y = this.toRad(lat) * earthRadius;
+      const x = this.toRad(lng) * this.earthRadiusMeters * cosLat;
+      const y = this.toRad(lat) * this.earthRadiusMeters;
       return { x, y };
     };
 
-    const toLngLat = (x: number, y: number) => {
-      const lat = this.toDeg(y / earthRadius);
-      const lng = this.toDeg(x / (earthRadius * cosLat));
-      return { lat, lng };
-    };
-
-    const p = toXY(point.lng, point.lat);
-    let closest = { x: p.x, y: p.y };
+    const projectedPoint = toXY(point.lng, point.lat);
     let minDistSq = Number.POSITIVE_INFINITY;
+    let closestDistanceAlongRoute = 0;
 
     for (let i = 0; i < route.length - 1; i++) {
       const [lngA, latA] = route[i];
@@ -388,31 +525,88 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
       const b = toXY(lngB, latB);
       const abx = b.x - a.x;
       const aby = b.y - a.y;
-      const apx = p.x - a.x;
-      const apy = p.y - a.y;
+      const apx = projectedPoint.x - a.x;
+      const apy = projectedPoint.y - a.y;
       const abLenSq = abx * abx + aby * aby;
-      const t = abLenSq === 0 ? 0 : (apx * abx + apy * aby) / abLenSq;
+      const t = abLenSq <= 0 ? 0 : (apx * abx + apy * aby) / abLenSq;
       const clampedT = Math.max(0, Math.min(1, t));
-      const proj = { x: a.x + abx * clampedT, y: a.y + aby * clampedT };
-      const dx = p.x - proj.x;
-      const dy = p.y - proj.y;
+      const projX = a.x + abx * clampedT;
+      const projY = a.y + aby * clampedT;
+      const dx = projectedPoint.x - projX;
+      const dy = projectedPoint.y - projY;
       const distSq = dx * dx + dy * dy;
 
       if (distSq < minDistSq) {
         minDistSq = distSq;
-        closest = proj;
+        const segmentStart = cumulativeDistances[i] ?? 0;
+        const segmentEnd = cumulativeDistances[i + 1] ?? segmentStart;
+        closestDistanceAlongRoute = segmentStart + (segmentEnd - segmentStart) * clampedT;
       }
     }
 
-    return toLngLat(closest.x, closest.y);
+    return closestDistanceAlongRoute;
+  }
+
+  private pointAlongRouteAtDistance(
+    route: [number, number][],
+    cumulativeDistances: number[],
+    distanceMeters: number,
+  ): { lat: number; lng: number } {
+    if (!route.length) {
+      return { lat: 0, lng: 0 };
+    }
+    if (route.length === 1 || cumulativeDistances.length < 2) {
+      return { lat: route[0][1], lng: route[0][0] };
+    }
+
+    if (distanceMeters <= 0) {
+      return { lat: route[0][1], lng: route[0][0] };
+    }
+
+    const totalDistance = cumulativeDistances[cumulativeDistances.length - 1] ?? 0;
+    if (distanceMeters >= totalDistance) {
+      const last = route[route.length - 1];
+      return { lat: last[1], lng: last[0] };
+    }
+
+    for (let i = 1; i < cumulativeDistances.length; i++) {
+      const segmentEndDistance = cumulativeDistances[i];
+      if (distanceMeters > segmentEndDistance) {
+        continue;
+      }
+      const segmentStartDistance = cumulativeDistances[i - 1];
+      const segmentLength = segmentEndDistance - segmentStartDistance;
+      const ratio =
+        segmentLength <= 0 ? 0 : (distanceMeters - segmentStartDistance) / segmentLength;
+      const [startLng, startLat] = route[i - 1];
+      const [endLng, endLat] = route[i];
+      return {
+        lat: startLat + (endLat - startLat) * ratio,
+        lng: startLng + (endLng - startLng) * ratio,
+      };
+    }
+
+    const fallback = route[route.length - 1];
+    return { lat: fallback[1], lng: fallback[0] };
+  }
+
+  private distanceMeters(
+    from: { lat: number; lng: number },
+    to: { lat: number; lng: number },
+  ): number {
+    const lat1 = this.toRad(from.lat);
+    const lat2 = this.toRad(to.lat);
+    const dLat = lat2 - lat1;
+    const dLng = this.toRad(to.lng - from.lng);
+    const sinLat = Math.sin(dLat / 2);
+    const sinLng = Math.sin(dLng / 2);
+    const a = sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLng * sinLng;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return this.earthRadiusMeters * c;
   }
 
   private toRad(value: number): number {
     return (value * Math.PI) / 180;
-  }
-
-  private toDeg(value: number): number {
-    return (value * 180) / Math.PI;
   }
 
   formatETA(seconds: number): string {

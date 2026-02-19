@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, timer, map, switchMap, takeWhile, of, tap, catchError } from 'rxjs';
+import { Observable, timer, map, switchMap, takeWhile, of } from 'rxjs';
 import { RideApiService } from './ride-api.service';
 import { ActiveRide, LocationUpdate, RideInconsistencyReport } from '../models/active-ride.model';
 
@@ -18,14 +18,7 @@ export class RideTrackingApiService {
     if (!Number.isInteger(id)) {
       return of(null);
     }
-    return this.rideApi.getRideForTracking(id).pipe(
-      tap((dto) => {
-        if (dto.status === 'ACTIVE' && dto.waypoints?.length >= 2) {
-          this.rideApi.startTrackingDemo(id).pipe(catchError(() => of(void 0))).subscribe();
-        }
-      }),
-      map((dto) => this.mapToActiveRide(dto)),
-    );
+    return this.rideApi.getRideForTracking(id).pipe(map((dto) => this.mapToActiveRide(dto)));
   }
 
   getVehicleLocationUpdates(rideId: string): Observable<LocationUpdate> {
