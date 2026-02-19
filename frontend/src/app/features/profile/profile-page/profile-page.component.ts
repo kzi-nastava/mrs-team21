@@ -168,7 +168,12 @@ export class ProfilePageComponent implements OnInit {
             .subscribe({
               next: (updatedProfile) => {
                 this.profile.set(updatedProfile);
-                this.currentUserService.setFromProfile(updatedProfile);
+                // Cache-bust avatar URL so navbar img refetches (same path overwritten on server)
+                const profileWithBuster =
+                  updatedProfile?.avatarUrl != null
+                    ? { ...updatedProfile, avatarUrl: `${updatedProfile.avatarUrl}?t=${Date.now()}` }
+                    : updatedProfile;
+                this.currentUserService.setFromProfile(profileWithBuster ?? updatedProfile);
                 this.showSuccess('Profile photo updated successfully');
               },
               error: (err) => {
