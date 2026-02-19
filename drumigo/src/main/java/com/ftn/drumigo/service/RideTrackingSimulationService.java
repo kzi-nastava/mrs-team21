@@ -6,7 +6,7 @@ import com.ftn.drumigo.domain.RideWaypoint;
 import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.dto.VehicleLocationUpdateRequest;
 import com.ftn.drumigo.exception.BadRequestException;
-import com.ftn.drumigo.exception.ResourceNotFoundException;
+import com.ftn.drumigo.repository.RideWaypointRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -31,6 +31,7 @@ public class RideTrackingSimulationService {
 
     private final RideService rideService;
     private final VehicleService vehicleService;
+    private final RideWaypointRepository rideWaypointRepository;
 
     private final ConcurrentHashMap<Long, SimulationState> simulatedRides = new ConcurrentHashMap<>();
 
@@ -46,7 +47,7 @@ public class RideTrackingSimulationService {
         if (ride.getDriver() == null || ride.getVehicle() == null) {
             throw new BadRequestException("Ride must have an assigned driver and vehicle.");
         }
-        List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
+        List<RideWaypoint> waypoints = rideWaypointRepository.findByRideWithLocationOrderByWaypointOrderAsc(ride);
         if (waypoints == null || waypoints.size() < 2) {
             throw new BadRequestException("Ride must have at least 2 waypoints for tracking demo.");
         }
@@ -80,7 +81,7 @@ public class RideTrackingSimulationService {
 
     private void advanceSimulation(Long rideId, SimulationState state) {
         Ride ride = rideService.getById(rideId);
-        List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
+        List<RideWaypoint> waypoints = rideWaypointRepository.findByRideWithLocationOrderByWaypointOrderAsc(ride);
         if (waypoints == null || waypoints.size() < 2) {
             simulatedRides.remove(rideId);
             return;

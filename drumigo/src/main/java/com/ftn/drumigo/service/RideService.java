@@ -1013,14 +1013,26 @@ public class RideService {
 
         // Keep pickup waypoint and replace destination with actual stop location so history remains meaningful.
         List<RideWaypoint> existingWaypoints = rideWaypointRepository.findByRideOrderByWaypointOrderAsc(ride);
-        if (!existingWaypoints.isEmpty()) {
+        if (existingWaypoints != null && !existingWaypoints.isEmpty()) {
             int pickupOrder = existingWaypoints.get(0).getWaypointOrder();
-            rideWaypointRepository.deleteByRideAndWaypointOrderGreaterThan(ride, pickupOrder);
+            int stopOrder = pickupOrder + 1;
 
-            RideWaypoint stopWaypoint = new RideWaypoint();
-            stopWaypoint.setRide(ride);
+            // Keep pickup and immediate destination slot, drop extra intermediate/destination waypoints.
+            rideWaypointRepository.deleteByRideAndWaypointOrderGreaterThan(ride, stopOrder);
+
+            RideWaypoint stopWaypoint = null;
+            for (RideWaypoint waypoint : existingWaypoints) {
+                if (waypoint.getWaypointOrder() == stopOrder) {
+                    stopWaypoint = waypoint;
+                    break;
+                }
+            }
+            if (stopWaypoint == null) {
+                stopWaypoint = new RideWaypoint();
+                stopWaypoint.setRide(ride);
+                stopWaypoint.setWaypointOrder(stopOrder);
+            }
             stopWaypoint.setLocation(stopLocation);
-            stopWaypoint.setWaypointOrder(pickupOrder + 1);
             rideWaypointRepository.save(stopWaypoint);
         }
 

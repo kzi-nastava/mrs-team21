@@ -299,7 +299,7 @@ class RideServiceTest {
 
         assertEquals(RideStatus.FINISHED, result.getStatus());
         assertEquals(stopLocation, result.getStopLocation());
-        verify(rideWaypointRepository).deleteByRideAndWaypointOrderGreaterThan(ride, 1);
+        verify(rideWaypointRepository).deleteByRideAndWaypointOrderGreaterThan(ride, 2);
 
         ArgumentCaptor<RideWaypoint> stopWaypointCaptor = ArgumentCaptor.forClass(RideWaypoint.class);
         verify(rideWaypointRepository).save(stopWaypointCaptor.capture());

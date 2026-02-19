@@ -5,7 +5,6 @@ import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RideWaypoint;
 import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.domain.users.Driver;
-import com.ftn.drumigo.dto.map.LocationDTO;
 import com.ftn.drumigo.dto.ride.request.RideStopRequest;
 import com.ftn.drumigo.dto.ride.request.EstimateRequest;
 import com.ftn.drumigo.dto.ride.response.EstimateResponse;
@@ -44,8 +43,6 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -94,6 +91,11 @@ class RideServiceStopRideUnitTest {
         activeRide.setTotalCost(new BigDecimal("1000.00"));
         activeRide.setTotalDistanceKm(new BigDecimal("10.00"));
 
+        Location pickupLocation = createLocation(6001L, "Pickup", new BigDecimal("45.25000000"), new BigDecimal("19.84000000"));
+        Location destinationLocation = createLocation(6002L, "Destination", new BigDecimal("45.27000000"), new BigDecimal("19.90000000"));
+        RideWaypoint pickupWaypoint = new RideWaypoint(7001L, activeRide, pickupLocation, 1);
+        RideWaypoint destinationWaypoint = new RideWaypoint(7002L, activeRide, destinationLocation, 2);
+
         stopRequest = new RideStopRequest(
             "Stop Point 1",
             new BigDecimal("45.25100000"),
@@ -103,7 +105,10 @@ class RideServiceStopRideUnitTest {
         lenient().when(rideRepository.findById(activeRide.getId())).thenReturn(Optional.of(activeRide));
         lenient().when(rideRepository.save(any(Ride.class))).thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(driverRepository.save(any(Driver.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        lenient().doNothing().when(rideWaypointRepository).deleteByRideAndWaypointOrderGreaterThan(any(Ride.class), eq(0));
+        lenient().when(rideWaypointRepository.findByRideOrderByWaypointOrderAsc(activeRide))
+            .thenReturn(List.of(pickupWaypoint, destinationWaypoint));
+        lenient().when(rideWaypointRepository.findFirstByRideOrderByWaypointOrderDesc(activeRide))
+            .thenReturn(Optional.of(destinationWaypoint));
     }
 
     @Test
@@ -132,7 +137,8 @@ class RideServiceStopRideUnitTest {
         assertEquals(false, assignedDriver.isBusy());
 
         verify(locationRepository, never()).save(any(Location.class));
-        verify(rideWaypointRepository).deleteByRideAndWaypointOrderGreaterThan(activeRide, 0);
+        verify(rideWaypointRepository).deleteByRideAndWaypointOrderGreaterThan(activeRide, 2);
+        verify(rideWaypointRepository).save(any(RideWaypoint.class));
         verify(rideRepository).save(activeRide);
         verify(driverRepository).save(assignedDriver);
 
