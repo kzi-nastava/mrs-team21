@@ -1,5 +1,8 @@
+$sidebar-width: 260px;
+$breakpoint-mobile: 900px;
+
 .sidebar {
-  width: 260px;
+  width: $sidebar-width;
   background: var(--white);
   border-right: 1px solid var(--border);
   padding: 24px 16px;
@@ -10,6 +13,92 @@
   left: 0;
   height: 100vh;
   z-index: 1000;
+
+  @media (max-width: $breakpoint-mobile) {
+    display: none;
+  }
+}
+
+/* Floating hamburger: visible only on small screens */
+.hamburger {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 1002;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: background 0.2s;
+  backdrop-filter: blur(4px);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.55);
+  }
+
+  @media (max-width: $breakpoint-mobile) {
+    display: flex;
+  }
+}
+
+.hamburger-line {
+  width: 20px;
+  height: 2px;
+  background: var(--text-dark);
+  border-radius: 1px;
+}
+
+/* Drawer overlay and panel (mobile) */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  background: rgba(0, 0, 0, 0.4);
+  animation: drawerBackdropIn 0.2s ease-out;
+}
+
+.drawer-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: $sidebar-width;
+  height: 100vh;
+  z-index: 1002;
+  background: var(--white);
+  border-right: 1px solid var(--border);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+  animation: drawerPanelIn 0.25s ease-out;
+}
+
+@keyframes drawerBackdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes drawerPanelIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 .sidebar-scroll {
