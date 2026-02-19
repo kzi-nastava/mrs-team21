@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
@@ -19,7 +20,9 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.GravityCompat;
@@ -41,6 +44,7 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.navigation.NavigationView;
 
 import java.util.List;
@@ -58,6 +62,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private NavController navController;
     private DrawerLayout drawerLayout;
     private MaterialToolbar toolbar;
+    private View toolbarAuthActions;
+    private MaterialButton toolbarSignInButton;
+    private MaterialButton toolbarSignUpButton;
     private RideApiService rideApiService;
     private DriverApiService driverApiService;
     private FusedLocationProviderClient fusedLocationClient;
@@ -90,6 +97,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         super.onCreate(savedInstanceState);
         
         binding = ActivityMainBinding.inflate(getLayoutInflater());
@@ -141,6 +149,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         // Handle navigation icon (hamburger menu) clicks
         toolbar.setNavigationOnClickListener(v -> openDrawer());
+
+        toolbarAuthActions = getLayoutInflater().inflate(R.layout.toolbar_auth_actions, toolbar, false);
+        Toolbar.LayoutParams layoutParams = new Toolbar.LayoutParams(
+            Toolbar.LayoutParams.WRAP_CONTENT,
+            Toolbar.LayoutParams.WRAP_CONTENT,
+            Gravity.END | Gravity.CENTER_VERTICAL
+        );
+        toolbar.addView(toolbarAuthActions, layoutParams);
+        toolbarSignInButton = toolbarAuthActions.findViewById(R.id.toolbarBtnSignIn);
+        toolbarSignUpButton = toolbarAuthActions.findViewById(R.id.toolbarBtnSignUp);
+
+        toolbarSignInButton.setOnClickListener(v -> navigateToDestination(R.id.loginFragment));
+        toolbarSignUpButton.setOnClickListener(v -> navigateToDestination(R.id.registrationFragment));
+        toolbarAuthActions.setVisibility(View.GONE);
     }
 
     private void setupNavigation() {
@@ -152,6 +174,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             
             navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
                 updateSelectedNavItem(destination.getId());
+                updateToolbarAuthActions(destination.getId());
             });
         }
     }
@@ -183,7 +206,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void updateSelectedNavItem(int destinationId) {
         int menuItemId;
-        if (destinationId == R.id.activeVehiclesMapFragment) {
+        if (destinationId == R.id.landingFragment || destinationId == R.id.activeVehiclesMapFragment) {
             menuItemId = R.id.nav_active_vehicles;
         } else if (destinationId == R.id.loginFragment) {
             menuItemId = R.id.nav_login;
@@ -203,12 +226,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         binding.navigationView.setCheckedItem(menuItemId);
     }
 
+    private void updateToolbarAuthActions(int destinationId) {
+        if (toolbarAuthActions == null) {
+            return;
+        }
+        boolean show = destinationId == R.id.landingFragment;
+        toolbarAuthActions.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         int itemId = item.getItemId();
 
         if (itemId == R.id.nav_active_vehicles) {
-            navController.navigate(R.id.activeVehiclesMapFragment);
+            navController.navigate(R.id.landingFragment);
         } else if (itemId == R.id.nav_login) {
             navController.navigate(R.id.loginFragment);
         } else if (itemId == R.id.nav_registration) {
@@ -277,6 +308,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void startRideAutoTracking() {
+        if (!isUserAuthenticated()) {
+            stopRideAutoTracking();
+            return;
+        }
         ridePollingHandler.removeCallbacks(ridePollingRunnable);
         ridePollingHandler.post(ridePollingRunnable);
     }
@@ -326,6 +361,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             return null;
         }
         return token;
+    }
+
+    private boolean isUserAuthenticated() {
+        return getAuthToken() != null;
     }
 
     private boolean hasLocationPermission() {
@@ -416,6 +455,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void checkActiveRides() {
+        if (!isUserAuthenticated()) {
+            return;
+        }
         if (navController == null) {
             return;
         }
@@ -461,6 +503,17 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Bundle args = new Bundle();
         args.putLong("rideId", rideId);
         navController.navigate(R.id.rideTrackingFragment, args);
+    }
+
+    private void navigateToDestination(int destinationId) {
+        if (navController == null) {
+            return;
+        }
+        NavDestination currentDestination = navController.getCurrentDestination();
+        if (currentDestination != null && currentDestination.getId() == destinationId) {
+            return;
+        }
+        navController.navigate(destinationId);
     }
 
     @Override

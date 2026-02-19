@@ -15,6 +15,10 @@ public class MapboxApiClient {
         return getRetrofit().create(MapboxDirectionsService.class);
     }
 
+    public static MapboxGeocodingService getGeocodingService() {
+        return getRetrofit().create(MapboxGeocodingService.class);
+    }
+
     private static Retrofit getRetrofit() {
         if (retrofit == null) {
             retrofit = new Retrofit.Builder()
