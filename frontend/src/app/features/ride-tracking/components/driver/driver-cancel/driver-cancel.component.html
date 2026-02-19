@@ -43,7 +43,11 @@
       <!-- Passenger Info -->
       @if (ride.passenger) {
         <div class="passenger-info">
-          <div class="passenger-avatar">{{ ride.passenger.initials }}</div>
+          <img
+            src="images/default-avatar.svg"
+            alt="Passenger"
+            class="passenger-avatar-img"
+          />
           <div class="passenger-details">
             <div class="passenger-name">
               {{ ride.passenger.firstName }} {{ ride.passenger.lastName }}
