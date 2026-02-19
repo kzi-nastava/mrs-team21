@@ -1,0 +1,105 @@
+.support-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: calc(100vh - 3rem);
+}
+
+.support-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.support-header p {
+  margin: 0.25rem 0 0;
+  color: #6b7280;
+}
+
+.chat-shell {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  gap: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  padding: 0.75rem;
+}
+
+.messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.message {
+  max-width: 75%;
+  border-radius: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: #f3f4f6;
+  align-self: flex-start;
+}
+
+.message--mine {
+  background: #dbeafe;
+  align-self: flex-end;
+}
+
+.message__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.message__content {
+  margin: 0.3rem 0 0;
+  white-space: pre-wrap;
+}
+
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.composer textarea {
+  border: 1px solid #d1d5db;
+  border-radius: 0.6rem;
+  resize: vertical;
+  padding: 0.65rem;
+  font: inherit;
+}
+
+.composer button {
+  align-self: flex-end;
+  border: 0;
+  border-radius: 0.5rem;
+  background: #2563eb;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.composer button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.state-card {
+  border: 1px dashed #d1d5db;
+  border-radius: 0.6rem;
+  padding: 0.9rem;
+  color: #6b7280;
+}
+
+.error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 0.9rem;
+}

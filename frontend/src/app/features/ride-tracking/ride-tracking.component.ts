@@ -800,8 +800,8 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onContactSupport(): void {
-    console.log('Contact support clicked');
-    // In real app: Open support chat or initiate call
+    this.closePanicModal();
+    this.router.navigate(['/support']);
   }
 
   onCancelRideFromPanic(): void {

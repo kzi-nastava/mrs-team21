@@ -1,0 +1,75 @@
+<section class="support-admin-page">
+  <header class="support-header">
+    <h1>Live Support / Chat</h1>
+    <p>Handle incoming support conversations from drivers and passengers.</p>
+  </header>
+
+  <div class="layout">
+    <aside class="conversations">
+      <h2>Conversations</h2>
+
+      @if (isLoadingConversations) {
+        <div class="state-card">Loading conversations...</div>
+      } @else if (conversations.length === 0) {
+        <div class="state-card">No support conversations yet.</div>
+      } @else {
+        @for (conversation of conversations; track trackConversation($index, conversation)) {
+          <button
+            type="button"
+            class="conversation-item"
+            [class.conversation-item--active]="conversation.userId === selectedUserId"
+            (click)="selectConversation(conversation.userId)"
+          >
+            <div class="conversation-item__header">
+              <span>{{ conversation.userName }} {{ conversation.userSurname }}</span>
+              <span>{{ formatTime(conversation.lastMessageAt) }}</span>
+            </div>
+            <p>{{ conversation.lastMessage }}</p>
+          </button>
+        }
+      }
+    </aside>
+
+    <section class="chat-panel">
+      @if (!selectedConversation) {
+        <div class="state-card">Select a conversation to start replying.</div>
+      } @else {
+        <div class="chat-title">
+          Chat with {{ selectedConversation.userName }} {{ selectedConversation.userSurname }}
+        </div>
+
+        @if (isLoadingMessages) {
+          <div class="state-card">Loading messages...</div>
+        } @else {
+          <div class="messages">
+            @for (message of messages; track trackMessage($index, message)) {
+              <article class="message" [class.message--mine]="isOwnMessage(message)">
+                <div class="message__meta">
+                  <span>{{ message.senderName }} {{ message.senderSurname }}</span>
+                  <span>{{ formatTime(message.createdAt) }}</span>
+                </div>
+                <p class="message__content">{{ message.content }}</p>
+              </article>
+            }
+          </div>
+        }
+
+        <div class="composer">
+          <textarea
+            [(ngModel)]="draftMessage"
+            rows="3"
+            [disabled]="isSending"
+            placeholder="Type a support reply..."
+          ></textarea>
+          <button type="button" [disabled]="isSending || !draftMessage.trim()" (click)="sendMessage()">
+            {{ isSending ? 'Sending...' : 'Send Reply' }}
+          </button>
+        </div>
+      }
+    </section>
+  </div>
+
+  @if (errorMessage) {
+    <p class="error">{{ errorMessage }}</p>
+  }
+</section>
