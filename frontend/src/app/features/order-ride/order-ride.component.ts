@@ -17,6 +17,7 @@ import {
   FavoriteRouteDto,
 } from '../ride-history/services/favorite-routes.service';
 import { ToastService } from '../../shared/services/toast.service';
+import { RideResponseDto } from '../ride-history/models/ride-api.model';
 
 export interface Stop {
   id: string;
@@ -440,9 +441,15 @@ export class OrderRideComponent implements OnInit {
       scheduledFor,
     };
     this.http
-      .post<{ id: number }>(`${this.apiUrl}/rides?orderingPassengerId=${userId}`, body)
+      .post<RideResponseDto>(`${this.apiUrl}/rides?orderingPassengerId=${userId}`, body)
       .subscribe({
         next: (ride) => {
+          if (ride.status === 'REJECTED') {
+            const message = 'No drivers are currently available. Please try again shortly.';
+            this.estimateError.set(null);
+            this.toastService.error(message);
+            return;
+          }
           this.router.navigate(['/ride-tracking', ride.id]);
         },
         error: (err: HttpErrorResponse) => {
