@@ -59,8 +59,6 @@ export class DriverRegistrationComponent implements OnInit {
   isSubmitting = false;
 
   selectedPhotoFile: File | null = null;
-  /** Base64 data URL of selected profile picture, set when user selects a photo */
-  selectedPhotoDataUrl: string | null = null;
 
   vehicleCategories: VehicleCategory[] = ['Standard', 'Luxury', 'Van'];
 
@@ -102,11 +100,6 @@ export class DriverRegistrationComponent implements OnInit {
   onPhotoSelected(file: File): void {
     this.selectedPhotoFile = file;
     console.log('Driver photo selected (auto-cropped to 1:1):', file.name, file.size, 'bytes');
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      this.selectedPhotoDataUrl = (e.target?.result as string) ?? null;
-    };
-    reader.readAsDataURL(file);
   }
 
   nextStep(): void {
@@ -160,45 +153,59 @@ export class DriverRegistrationComponent implements OnInit {
 
     this.isSubmitting = true;
 
-    // Prepare the data
     const driverData: DriverFormData = this.driverForm.value;
     const vehicleData: VehicleFormData = this.vehicleForm.value;
 
-    const registrationRequest = {
+    const buildRequest = (profilePictureUrl: string | null) => ({
       name: driverData.firstName,
       surname: driverData.lastName,
       email: driverData.email,
       phone: driverData.countryCode + driverData.phone,
       address: driverData.address,
-      profilePictureUrl: this.selectedPhotoDataUrl ?? null,
+      profilePictureUrl,
       vehicleTypeId: this.driverRegistrationService.mapCategoryToTypeId(vehicleData.category),
       vehicleModel: vehicleData.model,
       vehicleLicensePlate: vehicleData.licensePlate.toUpperCase(),
       vehicleNumSeats: vehicleData.seats,
       vehicleBabyFriendly: vehicleData.babySeats,
       vehiclePetFriendly: vehicleData.petFriendly,
+    });
+
+    const doRegister = (registrationRequest: ReturnType<typeof buildRequest>) => {
+      this.driverRegistrationService
+        .registerDriver(registrationRequest)
+        .pipe(
+          finalize(() => {
+            this.isSubmitting = false;
+          }),
+        )
+        .subscribe({
+          next: (response) => {
+            console.log('Driver registered successfully:', response);
+            this.toastService.success('Driver created. Activation email sent.');
+            this.addAnotherDriver();
+          },
+          error: (error) => {
+            console.error('Error registering driver:', error);
+            alert(error.error?.message || 'Failed to register driver. Please try again.');
+          },
+        });
     };
 
-    this.driverRegistrationService
-      .registerDriver(registrationRequest)
-      // Always stop the spinner, even if an interceptor completes the stream without next/error.
-      .pipe(
-        finalize(() => {
-          this.isSubmitting = false;
-        }),
-      )
-      .subscribe({
-      next: (response) => {
-        console.log('Driver registered successfully:', response);
-        // UX: immediately reset the form to allow registering the next driver.
-        // Admin should not get "stuck" on a separate success screen.
-        this.toastService.success('Driver created. Activation email sent.');
-        this.addAnotherDriver();
+    const file = this.selectedPhotoFile;
+    if (!file) {
+      doRegister(buildRequest(null));
+      return;
+    }
+
+    this.driverRegistrationService.uploadProfilePicture(file).subscribe({
+      next: (res) => {
+        doRegister(buildRequest(res.url));
       },
-      error: (error) => {
-        console.error('Error registering driver:', error);
-        // TODO: Show error message to user
-        alert(error.error?.message || 'Failed to register driver. Please try again.');
+      error: (err) => {
+        this.isSubmitting = false;
+        console.error('Profile picture upload failed:', err);
+        doRegister(buildRequest(null));
       },
     });
   }
@@ -209,7 +216,6 @@ export class DriverRegistrationComponent implements OnInit {
     this.driverSubmitted = false;
     this.vehicleSubmitted = false;
     this.selectedPhotoFile = null;
-    this.selectedPhotoDataUrl = null;
     this.driverForm.reset({
       countryCode: '+381',
     });

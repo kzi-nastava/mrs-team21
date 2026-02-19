@@ -12,11 +12,12 @@ describe('DriverRegistrationComponent', () => {
   beforeEach(async () => {
     driverRegistrationService = jasmine.createSpyObj<DriverRegistrationService>(
       'DriverRegistrationService',
-      ['registerDriver', 'mapCategoryToTypeId'],
+      ['registerDriver', 'mapCategoryToTypeId', 'uploadProfilePicture'],
     );
 
     driverRegistrationService.mapCategoryToTypeId.and.returnValue(2);
     driverRegistrationService.registerDriver.and.returnValue(of({ id: 1 } as any));
+    driverRegistrationService.uploadProfilePicture.and.returnValue(of({ url: '/api/uploads/profile/temp/test.jpg' }));
 
     await TestBed.configureTestingModule({
       imports: [DriverRegistrationComponent],
