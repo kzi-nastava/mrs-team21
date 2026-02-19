@@ -98,11 +98,33 @@ public class MapService {
      * Estimate price by vehicle type: base_price + distance_km * price_per_km (from DB).
      */
     public Double estimatePrice(Double distanceInKm, VehicleTypeName vehicleTypeName) {
-        VehicleType vehicleType = vehicleTypeRepository.findByName(vehicleTypeName)
-            .orElseThrow(() -> new BadRequestException("Vehicle type not found: " + vehicleTypeName));
-        return vehicleType.getStartPrice()
-            .add(vehicleType.getPricePerKm().multiply(java.math.BigDecimal.valueOf(distanceInKm)))
+        VehicleTypeName resolvedType = vehicleTypeName != null ? vehicleTypeName : VehicleTypeName.STANDARD;
+        VehicleType vehicleType = vehicleTypeRepository.findByName(resolvedType).orElse(null);
+        java.math.BigDecimal startPrice = vehicleType != null
+            ? vehicleType.getStartPrice()
+            : defaultStartPrice(resolvedType);
+        java.math.BigDecimal pricePerKm = vehicleType != null
+            ? vehicleType.getPricePerKm()
+            : defaultPricePerKm(resolvedType);
+        return startPrice
+            .add(pricePerKm.multiply(java.math.BigDecimal.valueOf(distanceInKm)))
             .doubleValue();
+    }
+
+    private java.math.BigDecimal defaultStartPrice(VehicleTypeName typeName) {
+        return switch (typeName) {
+            case LUXURY -> java.math.BigDecimal.valueOf(400);
+            case VAN -> java.math.BigDecimal.valueOf(300);
+            case STANDARD -> java.math.BigDecimal.valueOf(200);
+        };
+    }
+
+    private java.math.BigDecimal defaultPricePerKm(VehicleTypeName typeName) {
+        return switch (typeName) {
+            case LUXURY -> java.math.BigDecimal.valueOf(80);
+            case VAN -> java.math.BigDecimal.valueOf(60);
+            case STANDARD -> java.math.BigDecimal.valueOf(50);
+        };
     }
 
     /**

@@ -15,7 +15,6 @@ import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.dto.RideCreateRequest;
 import com.ftn.drumigo.dto.ride.response.EstimateResponse;
 import com.ftn.drumigo.exception.BadRequestException;
-import com.ftn.drumigo.exception.ResourceNotFoundException;
 import com.ftn.drumigo.repository.DriverRepository;
 import com.ftn.drumigo.repository.LocationRepository;
 import com.ftn.drumigo.repository.NotificationRepository;
@@ -150,15 +149,26 @@ class RideServiceCreateRideTest {
     }
 
     @Test
-    void create_whenVehicleTypeMissing_throwsResourceNotFound() {
+    void create_whenVehicleTypeMissing_createsDefaultTypeAndContinues() {
         Passenger passenger = passenger(13L, "orderer@mail.com");
         RideCreateRequest request = validRequest(VehicleTypeName.STANDARD, null, List.of(), false, false);
+        VehicleType createdType = vehicleType(99L, VehicleTypeName.STANDARD);
         when(passengerRepository.findById(13L)).thenReturn(Optional.of(passenger));
+        when(rideRepository.existsActiveRideForPassenger(eq(passenger.getId()), eq(passenger.getEmail()), anyList()))
+            .thenReturn(false);
+        when(mapService.estimateRide(any())).thenReturn(new EstimateResponse("polyline", List.of(), 6.5, 12, 900.0));
         when(vehicleTypeRepository.findByName(VehicleTypeName.STANDARD)).thenReturn(Optional.empty());
+        when(vehicleTypeRepository.save(any(VehicleType.class))).thenReturn(createdType);
+        when(rideRepository.save(any(Ride.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(locationRepository.findByAddressAndLatAndLng(any(), any(), any())).thenReturn(Optional.empty());
+        when(locationRepository.save(any(Location.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(rideWaypointRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(driverRepository.findByActiveDriverTrue()).thenReturn(List.of());
 
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> rideService.create(13L, request));
+        Ride result = rideService.create(13L, request);
 
-        assertEquals("Vehicle type not found: STANDARD", ex.getMessage());
+        assertEquals(RideStatus.REJECTED, result.getStatus());
+        verify(vehicleTypeRepository).save(any(VehicleType.class));
     }
 
     @Test

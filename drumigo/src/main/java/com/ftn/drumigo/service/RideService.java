@@ -4,6 +4,7 @@ import com.ftn.drumigo.domain.*;
 import com.ftn.drumigo.domain.enums.CancelReasonType;
 import com.ftn.drumigo.domain.enums.NotificationType;
 import com.ftn.drumigo.domain.enums.RideStatus;
+import com.ftn.drumigo.domain.enums.VehicleTypeName;
 import com.ftn.drumigo.domain.users.Driver;
 import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.users.User;
@@ -256,9 +257,8 @@ public class RideService {
             }
         }
         
-        // Get vehicle type
-        VehicleType vehicleType = vehicleTypeRepository.findByName(request.vehicleType())
-            .orElseThrow(() -> new ResourceNotFoundException("Vehicle type not found: " + request.vehicleType()));
+        // Get vehicle type (self-heal missing defaults in local/dev DBs).
+        VehicleType vehicleType = resolveOrCreateVehicleType(request.vehicleType());
 
         // Distance, duration and cost from Mapbox Directions (single source of truth)
         EstimateRequest estimateRequest = buildEstimateRequestFromWaypoints(request);
@@ -406,6 +406,34 @@ public class RideService {
         Instant existingStart = estimateRideStart(existingRide, now);
         Instant existingEnd = estimateRideEnd(existingRide, existingStart);
         return intervalsOverlap(existingStart, existingEnd, newRideStart, newRideEnd);
+    }
+
+    private VehicleType resolveOrCreateVehicleType(VehicleTypeName typeName) {
+        VehicleTypeName resolvedType = typeName != null ? typeName : VehicleTypeName.STANDARD;
+        return vehicleTypeRepository.findByName(resolvedType)
+            .orElseGet(() -> {
+                VehicleType vehicleType = new VehicleType();
+                vehicleType.setName(resolvedType);
+                vehicleType.setStartPrice(defaultStartPrice(resolvedType));
+                vehicleType.setPricePerKm(defaultPricePerKm(resolvedType));
+                return vehicleTypeRepository.save(vehicleType);
+            });
+    }
+
+    private BigDecimal defaultStartPrice(VehicleTypeName typeName) {
+        return switch (typeName) {
+            case LUXURY -> BigDecimal.valueOf(400);
+            case VAN -> BigDecimal.valueOf(300);
+            case STANDARD -> BigDecimal.valueOf(200);
+        };
+    }
+
+    private BigDecimal defaultPricePerKm(VehicleTypeName typeName) {
+        return switch (typeName) {
+            case LUXURY -> BigDecimal.valueOf(80);
+            case VAN -> BigDecimal.valueOf(60);
+            case STANDARD -> BigDecimal.valueOf(50);
+        };
     }
     
     public Ride startRide(Long rideId, Long driverId) {

@@ -402,7 +402,7 @@ export class OrderRideComponent implements OnInit {
           this.estimateLoading.set(false);
         },
         error: (err) => {
-          this.estimateError.set(err?.message ?? 'Failed to get estimate');
+          this.estimateError.set(err?.error?.message ?? err?.message ?? 'Failed to get estimate');
           this.estimateLoading.set(false);
         },
       });
