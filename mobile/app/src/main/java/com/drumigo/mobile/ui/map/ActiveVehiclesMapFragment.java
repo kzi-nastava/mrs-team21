@@ -30,7 +30,9 @@ import com.mapbox.maps.CameraOptions;
 import com.mapbox.maps.MapView;
 import com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor;
 import com.mapbox.maps.plugin.annotation.AnnotationPlugin;
+import com.mapbox.maps.plugin.annotation.AnnotationsUtils;
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager;
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManagerKt;
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions;
 
 import java.util.ArrayList;
@@ -245,8 +247,8 @@ public class ActiveVehiclesMapFragment extends Fragment {
         if (mapView == null || pointAnnotationManager != null) {
             return;
         }
-        AnnotationPlugin annotationPlugin = mapView.getAnnotations();
-        pointAnnotationManager = annotationPlugin.createPointAnnotationManager();
+        AnnotationPlugin annotationPlugin = AnnotationsUtils.getAnnotations(mapView);
+        pointAnnotationManager = PointAnnotationManagerKt.createPointAnnotationManager(annotationPlugin, null);
         pointAnnotationManager.addClickListener(annotation -> {
             if (binding == null) {
                 return false;
