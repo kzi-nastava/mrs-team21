@@ -38,8 +38,15 @@ export interface DriverRegistrationResponse {
 })
 export class DriverRegistrationService {
   private apiUrl = `${environment.apiBaseUrl}/drivers`;
+  private authUrl = `${environment.apiBaseUrl}/auth`;
 
   constructor(private http: HttpClient) {}
+
+  uploadProfilePicture(file: File): Observable<{ url: string }> {
+    const formData = new FormData();
+    formData.set('file', file);
+    return this.http.post<{ url: string }>(`${this.authUrl}/profile-picture`, formData);
+  }
 
   registerDriver(request: DriverRegistrationRequest): Observable<DriverRegistrationResponse> {
     // Guard against indefinite spinner if backend gets stuck.

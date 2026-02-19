@@ -72,8 +72,8 @@ public class PassengerService {
         passenger.setUpdatedAt(Instant.now());
         passenger.setPasswordHash(PasswordUtil.hashPassword(password)); // Hash password
 
-        if (request.profilePicture() != null && !request.profilePicture().isBlank()) {
-            passenger.setProfilePictureUrl(request.profilePicture());
+        if (request.profilePictureUrl() != null && !request.profilePictureUrl().isBlank()) {
+            passenger.setProfilePictureUrl(request.profilePictureUrl());
         }
 
         passenger = passengerRepository.save(passenger);
