@@ -7,6 +7,7 @@ import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.dto.PanicEventResponse;
 import com.ftn.drumigo.dto.PassengerResponse;
 import com.ftn.drumigo.dto.ReviewResponse;
+import com.ftn.drumigo.dto.ActiveRideIdResponse;
 import com.ftn.drumigo.dto.RideCreateRequest;
 import com.ftn.drumigo.dto.RideDetailsResponse;
 import com.ftn.drumigo.dto.RideInconsistencyCreateRequest;
@@ -69,6 +70,7 @@ public class RideController {
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails driverDetails) {
         Ride ride = rideService.startRide(id, driverDetails.getUserId());
+        rideTrackingSimulationService.startSimulation(id);
         List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
         return ResponseEntity.ok(rideMapper.toResponse(ride, waypoints));
     }
@@ -83,6 +85,22 @@ public class RideController {
             })
             .collect(Collectors.toList());
         return ResponseEntity.ok(responses);
+    }
+
+    /**
+     * Returns the current user's active ride id for tracking (passenger: PENDING/ACCEPTED/ACTIVE; driver: ACCEPTED/ACTIVE).
+     * Future scheduled rides are not returned until their scheduled start time.
+     * Returns 404 if the user has no active ride.
+     */
+    @GetMapping("/me/active")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ActiveRideIdResponse> getMyActiveRide(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return rideService.getMyActiveRide(
+                userDetails.getUserId(),
+                userDetails.getRole())
+            .map(ride -> ResponseEntity.ok(new ActiveRideIdResponse(ride.getId())))
+            .orElse(ResponseEntity.notFound().build());
     }
     
     @GetMapping("/{id}")
@@ -160,6 +178,7 @@ public class RideController {
     }
     
     @PutMapping("/{id}/stop")
+    @PreAuthorize("hasRole('DRIVER')")
     public ResponseEntity<RideResponse> stopRide(
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails,

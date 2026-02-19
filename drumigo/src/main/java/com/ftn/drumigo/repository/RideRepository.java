@@ -140,6 +140,21 @@ public interface RideRepository extends JpaRepository<Ride, Long> {
             @Param("statuses") List<RideStatus> statuses);
 
     /**
+     * Single active ride for passenger (PENDING, ACCEPTED, ACTIVE) as ordering or linked passenger, most recent first.
+     */
+    @Query("""
+           SELECT r FROM Ride r
+           WHERE r.status IN :statuses
+             AND (r.orderingPassenger.id = :passengerId OR EXISTS
+             (SELECT rp FROM RidePassenger rp WHERE rp.ride = r AND rp.passengerEmail = :passengerEmail))
+           ORDER BY r.requestedAt DESC
+           """)
+    List<Ride> findActiveRidesForPassenger(
+            @Param("passengerId") Long passengerId,
+            @Param("passengerEmail") String passengerEmail,
+            @Param("statuses") List<RideStatus> statuses);
+
+    /**
      * Rides that are accepted, scheduled, and start within the next 15 minutes (for reminder notifications).
      */
     @Query("""

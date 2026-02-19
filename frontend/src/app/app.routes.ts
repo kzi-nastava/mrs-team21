@@ -1,12 +1,14 @@
 import { Routes } from '@angular/router';
 import { LayoutComponent } from './layout/layout.component';
 import { authGuard } from './shared/guards/auth.guard';
+import { defaultRouteGuard } from './shared/guards/default-route.guard';
 import { roleGuard } from './shared/guards/role.guard';
 
 export const routes: Routes = [
-  // Landing page (root - no layout)
+  // Landing page (root - no layout). Authenticated users are redirected to their default page.
   {
     path: '',
+    canActivate: [defaultRouteGuard],
     loadComponent: () =>
       import('./features/landing/landing-page/landing-page.component').then(
         (m) => m.LandingPageComponent,
@@ -79,6 +81,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'ride-tracking',
+        loadComponent: () =>
+          import('./features/ride-tracking/ride-tracking-landing.component').then(
+            (m) => m.RideTrackingLandingComponent,
+          ),
+      },
+      {
         path: 'ride-tracking/:rideId',
         loadComponent: () =>
           import('./features/ride-tracking/ride-tracking.component').then(
@@ -114,11 +123,12 @@ export const routes: Routes = [
       },
       {
         path: 'support',
+        canActivate: [roleGuard],
+        data: { roles: ['PASSENGER', 'DRIVER'] },
         loadComponent: () =>
-          import('./shared/components/placeholder-feature/placeholder-feature.component').then(
-            (m) => m.PlaceholderFeatureComponent,
+          import('./features/support/support-page/support-page.component').then(
+            (m) => m.SupportPageComponent,
           ),
-        data: { featureName: 'Support', specRef: '2.11' },
       },
       // Driver only
       {
@@ -175,10 +185,9 @@ export const routes: Routes = [
           {
             path: 'support',
             loadComponent: () =>
-              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
-                (m) => m.PlaceholderFeatureComponent,
+              import('./features/support/admin-support-page/admin-support-page.component').then(
+                (m) => m.AdminSupportPageComponent,
               ),
-            data: { featureName: 'Live Support / Chat', specRef: '2.11' },
           },
           {
             path: 'drivers',

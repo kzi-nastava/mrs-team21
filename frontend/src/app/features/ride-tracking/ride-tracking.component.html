@@ -84,23 +84,97 @@
           </div>
         </div>
 
+        @if (routeCheckpoints().length > 0) {
+          <div class="checkpoints-section">
+            <div class="checkpoints-title">Checkpoints</div>
+            @for (checkpoint of routeCheckpoints(); track checkpoint.id) {
+              <div class="checkpoint-item" [class.passed]="checkpoint.passed">
+                <div
+                  class="checkpoint-icon"
+                  [class]="checkpoint.type"
+                  [class.passed]="checkpoint.passed"
+                >
+                  @if (checkpoint.passed) {
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="3"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  }
+                </div>
+                <div class="checkpoint-content">
+                  <div class="checkpoint-label">{{ checkpoint.title }}</div>
+                  <div class="checkpoint-address">{{ checkpoint.address }}</div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @if (rideNotStartedMessage()) {
+          <div class="ride-status-notice">
+            {{ rideNotStartedMessage() }}
+          </div>
+        }
+
         <!-- Action Button -->
         <div class="action-section">
-          <button class="btn-stop-ride" (click)="openStopModal()" type="button">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+          @if (isDriverUser()) {
+            @if (canStartRide()) {
+              <button class="btn-start-ride" (click)="onStartRide()" type="button" [disabled]="startLoading()">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
+                @if (startLoading()) {
+                  Starting...
+                } @else {
+                  Start Ride
+                }
+              </button>
+            }
+            <button
+              class="btn-stop-ride"
+              [class.btn-stop-ride--disabled]="!canStopRide()"
+              [attr.aria-disabled]="!canStopRide()"
+              (click)="openStopModal()"
+              type="button"
             >
-              <rect x="6" y="4" width="4" height="16" />
-              <rect x="14" y="4" width="4" height="16" />
-            </svg>
-            Stop Ride
-          </button>
-          <button class="btn-panic" (click)="openPanicModal()" type="button">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="6" y="4" width="4" height="16" />
+                <rect x="14" y="4" width="4" height="16" />
+              </svg>
+              Stop Ride
+            </button>
+            @if (activeRide()?.status === 'ACCEPTED' && !canStopRide()) {
+              <div class="stop-hint">Ride can be stopped only when status is ACTIVE.</div>
+            }
+          }
+          <button
+            class="btn-panic"
+            [class.btn-panic--disabled]="!canUsePanic()"
+            [disabled]="!canUsePanic()"
+            (click)="openPanicModal()"
+            type="button"
+          >
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -117,7 +191,11 @@
             </svg>
             Emergency / Panic
           </button>
-          <app-inconsistency-report></app-inconsistency-report>
+          @if (canReportInconsistency()) {
+            <app-inconsistency-report></app-inconsistency-report>
+          } @else if (isPassengerUser()) {
+            <div class="action-hint">Inconsistency reporting is available once the ride starts.</div>
+          }
         </div>
 
         @if (endRideError()) {
@@ -179,7 +257,7 @@
   </app-panic>
 
   <!-- Stop Ride Modal -->
-  @if (showStopModal()) {
+  @if (showStopModal() && isDriverUser()) {
     <div class="stop-modal-overlay" (click)="closeStopModal()">
       <div
         class="stop-modal-content"

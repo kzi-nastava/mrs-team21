@@ -1,5 +1,6 @@
 package com.ftn.drumigo.repository;
 
+import com.ftn.drumigo.domain.enums.UserRole;
 import com.ftn.drumigo.domain.users.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,5 +14,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
     Page<User> findByEmailContainingIgnoreCase(String emailPart, Pageable pageable);
+    Optional<User> findFirstByRoleOrderByIdAsc(UserRole role);
 }
 

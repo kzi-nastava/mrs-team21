@@ -4,6 +4,7 @@ import com.ftn.drumigo.domain.*;
 import com.ftn.drumigo.domain.enums.CancelReasonType;
 import com.ftn.drumigo.domain.enums.NotificationType;
 import com.ftn.drumigo.domain.enums.RideStatus;
+import com.ftn.drumigo.domain.enums.VehicleTypeName;
 import com.ftn.drumigo.domain.users.Driver;
 import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.users.User;
@@ -25,11 +26,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -60,6 +63,64 @@ public class RideService {
 
     public List<Ride> getActiveRides() {
         return rideRepository.findByStatus(RideStatus.ACTIVE);
+    }
+
+    /**
+     * Returns the current user's "active" ride for tracking, if any.
+     * Passenger: ride in PENDING, ACCEPTED, or ACTIVE (as ordering or linked passenger).
+     * Driver: ride in ACCEPTED or ACTIVE assigned to them.
+     * Future scheduled rides are excluded from tracking until scheduled time is reached.
+     */
+    public Optional<Ride> getMyActiveRide(Long userId, String role) {
+        Instant now = Instant.now();
+        if ("PASSENGER".equals(role)) {
+            Optional<Passenger> passengerOpt = passengerRepository.findById(userId);
+            if (passengerOpt.isEmpty()) {
+                return Optional.empty();
+            }
+            Passenger passenger = passengerOpt.get();
+            List<RideStatus> statuses = List.of(RideStatus.PENDING, RideStatus.ACCEPTED, RideStatus.ACTIVE);
+            return rideRepository
+                .findActiveRidesForPassenger(
+                    passenger.getId(),
+                    passenger.getEmail(),
+                    statuses
+                )
+                .stream()
+                .filter(ride -> isTrackableNow(ride, now))
+                .sorted(Comparator
+                    .comparingInt((Ride r) -> switch (r.getStatus()) {
+                        case ACTIVE -> 0;
+                        case ACCEPTED -> 1;
+                        default -> 2;
+                    })
+                    .thenComparing(Ride::getRequestedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .findFirst();
+        }
+        if ("DRIVER".equals(role)) {
+            Optional<Driver> driverOpt = driverRepository.findById(userId);
+            if (driverOpt.isEmpty()) {
+                return Optional.empty();
+            }
+            List<RideStatus> statuses = List.of(RideStatus.ACCEPTED, RideStatus.ACTIVE);
+            return rideRepository
+                .findByDriverAndStatusIn(driverOpt.get(), statuses)
+                .stream()
+                .filter(ride -> isTrackableNow(ride, now))
+                .sorted(Comparator
+                    .comparingInt((Ride r) -> r.getStatus() == RideStatus.ACTIVE ? 0 : 1)
+                    .thenComparing(Ride::getRequestedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .findFirst();
+        }
+        return Optional.empty();
+    }
+
+    private boolean isTrackableNow(Ride ride, Instant now) {
+        if (ride.getStatus() == RideStatus.ACTIVE) {
+            return true;
+        }
+        Instant scheduledFor = ride.getScheduledFor();
+        return scheduledFor == null || !scheduledFor.isAfter(now);
     }
     
     public Ride getById(Long id) {
@@ -183,13 +244,7 @@ public class RideService {
     public Ride create(Long orderingPassengerId, RideCreateRequest request) {
         Passenger orderingPassenger = passengerRepository.findById(orderingPassengerId)
             .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with id: " + orderingPassengerId));
-        
-        // Prevent creating new ride while having active ride (spec 2.6.1)
-        List<RideStatus> activeStatuses = List.of(RideStatus.PENDING, RideStatus.ACCEPTED, RideStatus.ACTIVE);
-        if (rideRepository.existsActiveRideForPassenger(orderingPassenger.getId(), orderingPassenger.getEmail(), activeStatuses)) {
-            throw new BadRequestException("Cannot create a new ride while you have an active ride. Please wait until your current ride is finished.");
-        }
-        
+
         // Validate minimum waypoints (at least start and destination)
         if (request.waypoints() == null || request.waypoints().size() < 2) {
             throw new BadRequestException("Ride must have at least 2 waypoints (start and destination)");
@@ -203,10 +258,45 @@ public class RideService {
             }
         }
         
-        // Get vehicle type
-        VehicleType vehicleType = vehicleTypeRepository.findByName(request.vehicleType())
-            .orElseThrow(() -> new ResourceNotFoundException("Vehicle type not found: " + request.vehicleType()));
-        
+        // Get vehicle type (self-heal missing defaults in local/dev DBs).
+        VehicleType vehicleType = resolveOrCreateVehicleType(request.vehicleType());
+
+        // Distance, duration and cost from Mapbox Directions (single source of truth)
+        EstimateRequest estimateRequest = buildEstimateRequestFromWaypoints(request);
+        EstimateResponse estimate = mapService.estimateRide(estimateRequest);
+        int estimatedSeconds = estimate.durationInMinutes() * 60;
+
+        // Prevent creating rides that overlap with passenger's existing active/scheduled rides.
+        List<RideStatus> potentiallyBlockingStatuses = List.of(
+            RideStatus.PENDING,
+            RideStatus.ACCEPTED,
+            RideStatus.ACTIVE
+        );
+        if (rideRepository.existsActiveRideForPassenger(
+                orderingPassenger.getId(),
+                orderingPassenger.getEmail(),
+                potentiallyBlockingStatuses
+        )) {
+            Instant now = Instant.now();
+            Instant newRideStart = request.scheduledFor() != null ? request.scheduledFor() : now;
+            Instant newRideEnd = newRideStart.plusSeconds(Math.max(estimatedSeconds, 1));
+            List<Ride> passengerBlockingRides = rideRepository.findActiveRidesForPassenger(
+                orderingPassenger.getId(),
+                orderingPassenger.getEmail(),
+                potentiallyBlockingStatuses
+            );
+
+            boolean hasOverlap = passengerBlockingRides.stream().anyMatch(existingRide ->
+                doesRideOverlapForPassenger(existingRide, newRideStart, newRideEnd, now)
+            );
+
+            if (hasOverlap) {
+                throw new BadRequestException(
+                    "Cannot create a new ride while you have an active ride. Please wait until your current ride is finished."
+                );
+            }
+        }
+
         // Create ride
         Ride ride = new Ride();
         ride.setStatus(RideStatus.PENDING);
@@ -221,13 +311,9 @@ public class RideService {
         ride.setPricingPricePerKm(vehicleType.getPricePerKm());
         ride.setPricingVehicleTypeName(vehicleType.getName().name());
 
-        // Distance, duration and cost from Mapbox Directions (single source of truth)
-        EstimateRequest estimateRequest = buildEstimateRequestFromWaypoints(request);
-        EstimateResponse estimate = mapService.estimateRide(estimateRequest);
         BigDecimal totalDistance = BigDecimal.valueOf(estimate.distanceInKm());
         ride.setTotalDistanceKm(totalDistance);
         ride.setTotalCost(BigDecimal.valueOf(estimate.estimatedPrice()));
-        int estimatedSeconds = estimate.durationInMinutes() * 60;
         ride.setEstimatedDurationSec(estimatedSeconds);
         if (request.scheduledFor() != null) {
             ride.setEstimatedArrivalAt(request.scheduledFor().plusSeconds(estimatedSeconds));
@@ -312,6 +398,43 @@ public class RideService {
         }
         
         return ride;
+    }
+
+    private boolean doesRideOverlapForPassenger(Ride existingRide, Instant newRideStart, Instant newRideEnd, Instant now) {
+        if (existingRide.getStatus() == RideStatus.ACTIVE) {
+            return true;
+        }
+        Instant existingStart = estimateRideStart(existingRide, now);
+        Instant existingEnd = estimateRideEnd(existingRide, existingStart);
+        return intervalsOverlap(existingStart, existingEnd, newRideStart, newRideEnd);
+    }
+
+    private VehicleType resolveOrCreateVehicleType(VehicleTypeName typeName) {
+        VehicleTypeName resolvedType = typeName != null ? typeName : VehicleTypeName.STANDARD;
+        return vehicleTypeRepository.findByName(resolvedType)
+            .orElseGet(() -> {
+                VehicleType vehicleType = new VehicleType();
+                vehicleType.setName(resolvedType);
+                vehicleType.setStartPrice(defaultStartPrice(resolvedType));
+                vehicleType.setPricePerKm(defaultPricePerKm(resolvedType));
+                return vehicleTypeRepository.save(vehicleType);
+            });
+    }
+
+    private BigDecimal defaultStartPrice(VehicleTypeName typeName) {
+        return switch (typeName) {
+            case LUXURY -> BigDecimal.valueOf(400);
+            case VAN -> BigDecimal.valueOf(300);
+            case STANDARD -> BigDecimal.valueOf(200);
+        };
+    }
+
+    private BigDecimal defaultPricePerKm(VehicleTypeName typeName) {
+        return switch (typeName) {
+            case LUXURY -> BigDecimal.valueOf(80);
+            case VAN -> BigDecimal.valueOf(60);
+            case STANDARD -> BigDecimal.valueOf(50);
+        };
     }
     
     public Ride startRide(Long rideId, Long driverId) {
@@ -846,57 +969,59 @@ public class RideService {
             throw new BadRequestException("Ride must be ACTIVE to be stopped. Current status: " + ride.getStatus());
         }
 
+        String resolvedStopAddress = resolveStopAddress(request);
+
         // Create or find stop location
         Location stopLocation = locationRepository.findByAddressAndLatAndLng(
-                request.stopAddress(), request.stopLat(), request.stopLng())
+                resolvedStopAddress, request.stopLat(), request.stopLng())
                 .orElse(null);
 
         if (stopLocation == null) {
             stopLocation = new Location();
-            stopLocation.setAddress(request.stopAddress());
+            stopLocation.setAddress(resolvedStopAddress);
             stopLocation.setLat(request.stopLat());
             stopLocation.setLng(request.stopLng());
             stopLocation = locationRepository.save(stopLocation);
         }
 
-        RideWaypoint originalDestination = rideWaypointRepository
-            .findFirstByRideOrderByWaypointOrderDesc(ride)
-            .orElse(null);
+        List<RideWaypoint> existingWaypoints = rideWaypointRepository.findByRideOrderByWaypointOrderAsc(ride);
+        recalculateStoppedRideTotals(ride, stopLocation, existingWaypoints);
 
-        if (originalDestination != null) {
-            // Calculate distance from stop to original destination using MapService
-            EstimateRequest estimateRequest = new EstimateRequest(
-                new LocationDTO(stopLocation.getLat().doubleValue(), stopLocation.getLng().doubleValue(), stopLocation.getAddress()),
-                new LocationDTO(originalDestination.getLocation().getLat().doubleValue(), originalDestination.getLocation().getLng().doubleValue(), originalDestination.getLocation().getAddress()),
-                List.of(),
-                null
-            );
-            try {
-                EstimateResponse estimate = mapService.estimateRide(estimateRequest);
-                BigDecimal remainingDistance = BigDecimal.valueOf(estimate.distanceInKm());
-                BigDecimal remainingCost = remainingDistance.multiply(ride.getPricingPricePerKm());
+        // Keep pickup waypoint and replace destination with actual stop location so history remains meaningful.
+        if (existingWaypoints != null && !existingWaypoints.isEmpty()) {
+            int pickupOrder = existingWaypoints.get(0).getWaypointOrder();
+            int stopOrder = pickupOrder + 1;
 
-                // Subtract remaining cost from original total cost
-                BigDecimal newCost = ride.getTotalCost().subtract(remainingCost);
-                ride.setTotalCost(newCost.max(BigDecimal.ZERO)); // Ensure non-negative
+            // Keep pickup and immediate destination slot, drop extra intermediate/destination waypoints.
+            rideWaypointRepository.deleteByRideAndWaypointOrderGreaterThan(ride, stopOrder);
 
-                // Update total distance (subtract remaining distance)
-                BigDecimal newDistance = ride.getTotalDistanceKm().subtract(remainingDistance);
-                ride.setTotalDistanceKm(newDistance.max(BigDecimal.ZERO));
-            } catch (Exception ex) {
-                // If Mapbox (via MapService) is unavailable or fails, skip recalculation
-                // and keep existing totalCost and totalDistanceKm to allow ride to be stopped.
+            RideWaypoint stopWaypoint = null;
+            for (RideWaypoint waypoint : existingWaypoints) {
+                if (waypoint.getWaypointOrder() == stopOrder) {
+                    stopWaypoint = waypoint;
+                    break;
+                }
             }
+            if (stopWaypoint == null) {
+                stopWaypoint = new RideWaypoint();
+                stopWaypoint.setRide(ride);
+                stopWaypoint.setWaypointOrder(stopOrder);
+            }
+            stopWaypoint.setLocation(stopLocation);
+            rideWaypointRepository.save(stopWaypoint);
         }
 
-        // Remove all waypoints after the start (keep start, remove destinations)
-        rideWaypointRepository.deleteByRideAndWaypointOrderGreaterThan(ride, 0);
-
         // Update ride
-        ride.setStoppedAt(Instant.now());
+        Instant stopTime = Instant.now();
+        ride.setStoppedAt(stopTime);
         ride.setStopLocation(stopLocation);
-        ride.setEndTime(Instant.now());
-        ride.setPaidAt(Instant.now());
+        ride.setEndTime(stopTime);
+        ride.setPaidAt(stopTime);
+        if (ride.getStartTime() != null) {
+            long elapsedSeconds = Math.max(0, Duration.between(ride.getStartTime(), stopTime).getSeconds());
+            ride.setEstimatedDurationSec((int) elapsedSeconds);
+        }
+        ride.setEstimatedArrivalAt(stopTime);
         ride.setStatus(RideStatus.FINISHED);
 
         // Vehicle availability removed - no longer tracking
@@ -905,6 +1030,52 @@ public class RideService {
         ride = rideRepository.save(ride);
         eventPublisher.publishEvent(new RideFinishedEvent(ride.getId()));
         return ride;
+    }
+
+    private String resolveStopAddress(RideStopRequest request) {
+        Optional<String> reverseGeocoded = mapService.reverseGeocodeAddress(request.stopLat(), request.stopLng());
+        if (reverseGeocoded.isPresent() && !reverseGeocoded.get().isBlank()) {
+            return reverseGeocoded.get();
+        }
+        return request.stopAddress();
+    }
+
+    private void recalculateStoppedRideTotals(Ride ride, Location stopLocation, List<RideWaypoint> orderedWaypoints) {
+        if (orderedWaypoints == null || orderedWaypoints.isEmpty()) {
+            return;
+        }
+
+        RideWaypoint pickupWaypoint = orderedWaypoints.get(0);
+        EstimateRequest traveledEstimateRequest = new EstimateRequest(
+            new LocationDTO(
+                pickupWaypoint.getLocation().getLat().doubleValue(),
+                pickupWaypoint.getLocation().getLng().doubleValue(),
+                pickupWaypoint.getLocation().getAddress()
+            ),
+            new LocationDTO(
+                stopLocation.getLat().doubleValue(),
+                stopLocation.getLng().doubleValue(),
+                stopLocation.getAddress()
+            ),
+            List.of(),
+            null
+        );
+
+        try {
+            EstimateResponse estimate = mapService.estimateRide(traveledEstimateRequest);
+            BigDecimal traveledDistanceKm = BigDecimal.valueOf(estimate.distanceInKm())
+                .setScale(2, RoundingMode.HALF_UP);
+            BigDecimal startPrice = ride.getPricingStartPrice() != null ? ride.getPricingStartPrice() : BigDecimal.ZERO;
+            BigDecimal pricePerKm = ride.getPricingPricePerKm() != null ? ride.getPricingPricePerKm() : BigDecimal.ZERO;
+            BigDecimal recalculatedCost = startPrice
+                .add(pricePerKm.multiply(traveledDistanceKm))
+                .setScale(2, RoundingMode.HALF_UP);
+
+            ride.setTotalDistanceKm(traveledDistanceKm.max(BigDecimal.ZERO));
+            ride.setTotalCost(recalculatedCost.max(BigDecimal.ZERO));
+        } catch (Exception ex) {
+            // Keep previous totals if estimate fails so stop can still complete.
+        }
     }
     
     private void createCancellationNotifications(Ride ride) {
