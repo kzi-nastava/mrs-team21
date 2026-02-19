@@ -60,6 +60,22 @@ public class MapService {
         );
     }
 
+    /**
+     * Get remaining duration in seconds from current vehicle position to destination using Mapbox Directions.
+     * Used to recalculate ETA during an active ride. Returns empty if Mapbox fails (caller should use stored estimate).
+     */
+    public Optional<Integer> getRemainingDurationSeconds(double currentLat, double currentLng, double destLat, double destLng) {
+        Point start = Point.fromLngLat(currentLng, currentLat);
+        Point destination = Point.fromLngLat(destLng, destLat);
+        try {
+            DirectionsRoute route = getDirectionsRoute(start, destination, List.of());
+            double durationSec = route.duration();
+            return Optional.of(Math.max(0, (int) Math.round(durationSec)));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
     public List<List<Double>> getRouteCoordinatesForOrderedWaypoints(List<LocationDTO> orderedWaypoints) {
         if (orderedWaypoints == null || orderedWaypoints.size() < 2) {
             throw new BadRequestException("At least 2 ordered waypoints are required");
