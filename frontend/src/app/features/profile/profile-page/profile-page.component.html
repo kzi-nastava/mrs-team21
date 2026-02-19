@@ -181,8 +181,8 @@
       </div>
     </div>
 
-    <!-- Driver Active Hours Section -->
-    @if (isDriver() && profile()!.activeHoursLast24h) {
+    <!-- Driver Active Hours Section (shows 0/8 when backend does not yet send activeHoursLast24h) -->
+    @if (isDriver()) {
       <div class="profile-card active-hours-card">
         <div class="active-hours-header">
           <div class="active-hours-title">
