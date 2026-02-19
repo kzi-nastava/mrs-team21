@@ -102,7 +102,7 @@ class RideServiceTest {
         assertEquals(RideStatus.FINISHED, result.getStatus());
         assertNotNull(result.getEndTime());
         assertNotNull(result.getPaidAt());
-        assertFalse(driver.isBusy());
+        assertFalse(Boolean.TRUE.equals(driver.getBusy()));
         assertFalse(result.getEndTime().isBefore(before));
         assertFalse(result.getEndTime().isAfter(after));
         assertFalse(result.getPaidAt().isBefore(before));
@@ -205,7 +205,7 @@ class RideServiceTest {
         assertEquals(RideStatus.FINISHED, result.getStatus());
         assertNotNull(result.getEndTime());
         assertNotNull(result.getPaidAt());
-        assertFalse(authenticatedDriver.isBusy());
+        assertFalse(Boolean.TRUE.equals(authenticatedDriver.getBusy()));
         verify(rideRepository).save(ride);
         verify(eventPublisher).publishEvent(any(RideFinishedEvent.class));
     }

@@ -46,7 +46,7 @@ public class VehicleService {
         return vehicles.stream()
             .map(vehicle -> vehicleMapper.toResponseWithAvailability(
                 vehicle,
-                vehicle.getDriver() == null || !vehicle.getDriver().isBusy()
+                vehicle.getDriver() == null || !Boolean.TRUE.equals(vehicle.getDriver().getBusy())
             ))
             .collect(Collectors.toList());
     }

@@ -1,0 +1,108 @@
+<div class="page-container">
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">User management</h1>
+      <p class="page-subtitle">View and block or unblock passengers and drivers.</p>
+    </div>
+
+    <div class="filters-row">
+      <label for="role-filter" class="filter-label">Role</label>
+      <select
+        id="role-filter"
+        class="filter-select"
+        [value]="roleFilter()"
+        (change)="onRoleFilterChange($any($event.target).value)"
+      >
+        @for (opt of roleFilterOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
+
+    @if (isLoading()) {
+      <div class="loading-banner">Loading users...</div>
+    }
+
+    <div class="table-wrapper">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of users(); track user.id) {
+            <tr>
+              <td>{{ user.name }} {{ user.surname }}</td>
+              <td>{{ user.email }}</td>
+              <td>{{ displayRole(user.role) }}</td>
+              <td>
+                <span [class.status-badge--blocked]="user.blocked" class="status-badge">
+                  {{ user.blocked ? 'Blocked' : 'Active' }}
+                </span>
+              </td>
+              <td class="actions-cell">
+                @if (user.blocked) {
+                  <button
+                    type="button"
+                    class="btn btn--unblock"
+                    [disabled]="actionInProgress() !== null"
+                    (click)="unblockUser(user)"
+                  >
+                    Unblock
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn btn--block"
+                    [disabled]="actionInProgress() !== null"
+                    (click)="blockUser(user)"
+                  >
+                    Block
+                  </button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            @if (!isLoading()) {
+              <tr>
+                <td colspan="5" class="empty-cell">No users found.</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button
+          type="button"
+          class="pagination-btn"
+          [disabled]="!hasPreviousPage()"
+          (click)="goToPreviousPage()"
+        >
+          <span class="pagination-icon">&#8592;</span>
+          Previous
+        </button>
+        <span class="pagination-info">
+          Page {{ currentPage() + 1 }} of {{ totalPages() }}
+          <span class="pagination-total">({{ totalElements() }} users)</span>
+        </span>
+        <button
+          type="button"
+          class="pagination-btn"
+          [disabled]="!hasNextPage()"
+          (click)="goToNextPage()"
+        >
+          Next
+          <span class="pagination-icon">&#8594;</span>
+        </button>
+      </div>
+    }
+  </main>
+</div>

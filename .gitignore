@@ -71,3 +71,7 @@ uploads/
 .gradle/
 build/
 local.properties
+
+# Claude Code temporary working directories
+tmpclaude-*
+nul
