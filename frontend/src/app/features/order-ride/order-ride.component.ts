@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { debounceTime, map, switchMap } from 'rxjs/operators';
 import { MapComponent } from '../map/map.component';
+import { MapMarker } from '../map/models/vehicle.model';
 import { EstimateService, AddressSuggestion } from '../landing/services/estimate-ride.service';
 import { AuthService } from '../../shared/services/auth.service';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
@@ -18,6 +19,10 @@ import {
 } from '../ride-history/services/favorite-routes.service';
 import { ToastService } from '../../shared/services/toast.service';
 import { RideResponseDto } from '../ride-history/models/ride-api.model';
+import {
+  ActiveVehicleMarkersService,
+  ACTIVE_VEHICLE_POLLING_INTERVAL_MS,
+} from '../map/services/active-vehicle-markers.service';
 
 export interface Stop {
   id: string;
@@ -85,6 +90,7 @@ export class OrderRideComponent implements OnInit {
   scheduleHours = signal<number | null>(null);
   scheduleMinutes = signal<number | null>(null);
   routeCoordinates = signal<[number, number][] | undefined>(undefined);
+  vehicleMarkers = signal<MapMarker[]>([]);
   showRoute = signal(false);
   estimateLoading = signal(false);
   estimateError = signal<string | null>(null);
@@ -103,6 +109,7 @@ export class OrderRideComponent implements OnInit {
   private http = inject(HttpClient);
   private auth = inject(AuthService);
   private favoriteRoutesService = inject(FavoriteRoutesService);
+  private activeVehicleMarkersService = inject(ActiveVehicleMarkersService);
   private toastService = inject(ToastService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
@@ -175,6 +182,11 @@ export class OrderRideComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.activeVehicleMarkersService
+      .streamMarkers(ACTIVE_VEHICLE_POLLING_INTERVAL_MS)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((markers) => this.vehicleMarkers.set(markers));
+
     const userId = this.auth.getUserId();
     if (userId != null) {
       this.favoriteRoutesService
