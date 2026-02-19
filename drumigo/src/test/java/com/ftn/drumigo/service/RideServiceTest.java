@@ -288,8 +288,6 @@ class RideServiceTest {
             BigDecimal.valueOf(45.2671),
             BigDecimal.valueOf(19.8335)
         )).thenReturn(Optional.of(stopLocation));
-        when(rideWaypointRepository.findFirstByRideOrderByWaypointOrderDesc(ride))
-            .thenReturn(Optional.of(originalDestinationWaypoint));
         when(rideWaypointRepository.findByRideOrderByWaypointOrderAsc(ride))
             .thenReturn(List.of(pickupWaypoint, originalDestinationWaypoint));
         when(rideRepository.save(any(Ride.class))).thenAnswer(invocation -> invocation.getArgument(0));
