@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/toolbarBtnSignIn"
+        style="@style/Widget.Drumigo.Button.ToolbarSecondary"
+        android:layout_width="wrap_content"
+        android:layout_height="34dp"
+        android:layout_marginEnd="@dimen/spacing_sm"
+        android:minWidth="0dp"
+        android:text="@string/landing_sign_in"
+        android:textAllCaps="false" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/toolbarBtnSignUp"
+        style="@style/Widget.Drumigo.Button.ToolbarPrimary"
+        android:layout_width="wrap_content"
+        android:layout_height="34dp"
+        android:minWidth="0dp"
+        android:text="@string/landing_sign_up"
+        android:textAllCaps="false" />
+
+</LinearLayout>
