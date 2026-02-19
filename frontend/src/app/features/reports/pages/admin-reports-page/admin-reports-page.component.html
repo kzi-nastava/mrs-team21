@@ -1,0 +1,173 @@
+<div class="admin-reports-page">
+  <header class="page-header">
+    <h1 class="page-title">Admin reports</h1>
+    <p class="page-subtitle">View ride statistics by date range and scope (all drivers, all passengers, or one person)</p>
+  </header>
+
+  <section class="filters-bar">
+    <div class="filter-group">
+      <label for="from" class="filter-label">From</label>
+      <input
+        id="from"
+        type="date"
+        class="filter-input"
+        [ngModel]="fromDate()"
+        (ngModelChange)="fromDate.set($event)"
+      />
+    </div>
+    <div class="filter-group">
+      <label for="to" class="filter-label">To</label>
+      <input
+        id="to"
+        type="date"
+        class="filter-input"
+        [ngModel]="toDate()"
+        (ngModelChange)="toDate.set($event)"
+      />
+    </div>
+    <div class="filter-group">
+      <label for="scope" class="filter-label">Scope</label>
+      <select
+        id="scope"
+        class="filter-input filter-input--select"
+        [ngModel]="scope()"
+        (ngModelChange)="scope.set($event)"
+      >
+        <option value="all_drivers">All drivers</option>
+        <option value="all_passengers">All passengers</option>
+        <option value="user">One person</option>
+      </select>
+    </div>
+    @if (scope() === 'user') {
+      <div class="filter-group user-search-wrap">
+        <label for="userEmail" class="filter-label">User (search by email)</label>
+        <div class="user-search-input-wrap">
+          <input
+            id="userEmail"
+            type="text"
+            class="filter-input"
+            placeholder="Type email to search..."
+            autocomplete="off"
+            [ngModel]="emailSearchQuery()"
+            (ngModelChange)="onEmailSearchInput($event)"
+            (focus)="onEmailSearchFocus()"
+            (blur)="onEmailSearchBlur()"
+          />
+          @if (selectedUser()) {
+            <button type="button" class="user-search-clear" (click)="clearSelectedUser()" title="Clear">×</button>
+          }
+          @if (showSuggestions()) {
+            <ul class="user-suggestions" role="listbox">
+              @for (u of userSuggestions(); track u.id) {
+                <li
+                  role="option"
+                  class="user-suggestion-item"
+                  (click)="selectUser(u)"
+                >{{ userLabel(u) }}</li>
+              }
+            </ul>
+          }
+          @if (loadingSuggestions()) {
+            <span class="user-search-loading">Searching...</span>
+          }
+        </div>
+      </div>
+    }
+    <button type="button" class="btn-apply" (click)="onApply()" [disabled]="loading()">
+      {{ loading() ? 'Loading...' : 'Generate report' }}
+    </button>
+  </section>
+
+  @if (error()) {
+    <div class="error-banner">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="loading-banner">Loading report...</div>
+  }
+
+  @if (report(); as r) {
+    <section class="summary-section">
+      <h2 class="summary-heading">Summary ({{ scopeLabel() }})</h2>
+      <div class="summary-table-wrap">
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th class="col-cumulative">Cumulative</th>
+              <th class="col-average">Average per day</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="row-label">Rides</td>
+              <td class="col-cumulative">{{ r.totalRides }}</td>
+              <td class="col-average">{{ r.avgRidesPerDay | number : '1.0-0' }}</td>
+            </tr>
+            <tr>
+              <td class="row-label">Distance (km)</td>
+              <td class="col-cumulative">{{ r.totalDistanceKm }}</td>
+              <td class="col-average">{{ r.avgDistanceKmPerDay | number : '1.2-2' }}</td>
+            </tr>
+            <tr>
+              <td class="row-label">Amount</td>
+              <td class="col-cumulative">{{ r.totalCost | number : '1.2-2' }}</td>
+              <td class="col-average">{{ r.avgCostPerDay | number : '1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="charts-section">
+      <div class="chart-block">
+        <h3 class="chart-title">Rides per day</h3>
+        <div class="chart-container">
+          <apx-chart
+            [series]="chartRides().series"
+            [chart]="chartRides().chart"
+            [xaxis]="chartRides().xaxis"
+            [colors]="chartRides().colors"
+            [plotOptions]="chartRides().plotOptions"
+            [yaxis]="chartYaxisRides"
+            [tooltip]="chartTooltipRides"
+            [dataLabels]="chartDataLabels"
+            [grid]="chartGrid"
+          ></apx-chart>
+        </div>
+      </div>
+      <div class="chart-block">
+        <h3 class="chart-title">Distance (km) per day</h3>
+        <div class="chart-container">
+          <apx-chart
+            [series]="chartKm().series"
+            [chart]="chartKm().chart"
+            [xaxis]="chartKm().xaxis"
+            [colors]="chartKm().colors"
+            [plotOptions]="chartKm().plotOptions"
+            [yaxis]="chartYaxis"
+            [tooltip]="chartTooltipKm"
+            [dataLabels]="chartDataLabels"
+            [grid]="chartGrid"
+          ></apx-chart>
+        </div>
+      </div>
+      <div class="chart-block">
+        <h3 class="chart-title">Amount per day</h3>
+        <div class="chart-container">
+          <apx-chart
+            [series]="chartCost().series"
+            [chart]="chartCost().chart"
+            [xaxis]="chartCost().xaxis"
+            [colors]="chartCost().colors"
+            [plotOptions]="chartCost().plotOptions"
+            [yaxis]="chartYaxis"
+            [tooltip]="chartTooltipCost"
+            [dataLabels]="chartDataLabels"
+            [grid]="chartGrid"
+          ></apx-chart>
+        </div>
+      </div>
+    </section>
+  }
+</div>
