@@ -29,6 +29,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -156,6 +157,38 @@ public class ProfileService {
         file.transferTo(target);
 
         return "/api/uploads/profile/" + filename;
+    }
+
+    /**
+     * Save a temporary profile picture (e.g. for registration before user exists).
+     * File is stored under profile-dir/temp/ with a UUID filename.
+     * Caller should store the returned URL in the user's profilePictureUrl when creating the user.
+     */
+    @Transactional
+    public String saveTempProfilePicture(MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Profile picture file is required");
+        }
+        if (file.getSize() > MAX_PICTURE_SIZE_BYTES) {
+            throw new IllegalArgumentException("Profile picture must be at most 5MB");
+        }
+        String contentType = file.getContentType();
+        if (contentType != null && !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase(Locale.ROOT))) {
+            throw new IllegalArgumentException("Profile picture must be JPEG, PNG, GIF, or WebP");
+        }
+
+        Path dir = Path.of(profileUploadDir).resolve("temp").toAbsolutePath().normalize();
+        Files.createDirectories(dir);
+
+        String extension = getExtensionFromContentTypeOrFilename(contentType, file.getOriginalFilename());
+        String filename = UUID.randomUUID() + extension;
+        Path target = dir.resolve(filename).normalize();
+        if (!target.startsWith(dir)) {
+            throw new IllegalArgumentException("Invalid file path");
+        }
+        file.transferTo(target);
+
+        return "/api/uploads/profile/temp/" + filename;
     }
 
     private static String getExtensionFromContentTypeOrFilename(String contentType, String originalFilename) {
