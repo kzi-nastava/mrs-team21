@@ -25,7 +25,18 @@ import { RideApiService } from './services/ride-api.service';
 import { RideResponseDto } from '../ride-history/models/ride-api.model';
 import { AuthService } from '../../shared/services/auth.service';
 import { ToastService } from '../../shared/services/toast.service';
-import { buildRouteRequestThroughRemainingWaypoints } from './utils/remaining-waypoints.util';
+import {
+  buildRouteRequestPointsFromLastPassed,
+  buildRouteRequestThroughRemainingWaypoints,
+} from './utils/remaining-waypoints.util';
+
+interface RouteCheckpoint {
+  id: string;
+  type: 'start' | 'waypoint' | 'destination';
+  title: string;
+  address: string;
+  passed: boolean;
+}
 
 @Component({
   selector: 'app-ride-tracking',
@@ -59,16 +70,20 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly STATUS_ACTIVE = 'ACTIVE';
   private readonly STATUS_ACCEPTED = 'ACCEPTED';
   private readonly STATUS_PENDING = 'PENDING';
+  private readonly STATUS_FINISHED = 'FINISHED';
+  private readonly destinationReachedRadiusMeters = 40;
 
   private lastRouteRequestAt = 0;
   private routeRequestInFlight = false;
+  private pendingForcedReroute = false;
   private readonly minRerouteIntervalMs = 20000;
-  private lastPassedWaypointOrder = Number.NEGATIVE_INFINITY;
+  private lastPassedWaypointOrder = signal<number>(Number.NEGATIVE_INFINITY);
   private lastBackendLocation: { lat: number; lng: number } | null = null;
   private routeProgressMeters = 0;
   private routeCumulativeDistancesMeters: number[] = [];
   private readonly minForwardMoveMeters = 8;
   private readonly maxForwardMoveMeters = 90;
+  private readonly maxProjectionCatchupMeters = 120;
   private readonly defaultForwardMoveMeters = 20;
   private readonly earthRadiusMeters = 6371000;
 
@@ -93,6 +108,44 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   isRideActive = computed(() => this.activeRide()?.status === this.STATUS_ACTIVE);
   canUsePanic = computed(() => this.isRideActive());
   canReportInconsistency = computed(() => this.isPassengerUser() && this.isRideActive());
+  routeCheckpoints = computed<RouteCheckpoint[]>(() => {
+    const ride = this.activeRide();
+    const route = ride?.route ? [...ride.route].sort((a, b) => a.order - b.order) : [];
+    if (!ride || route.length === 0) {
+      return [];
+    }
+
+    const lastPassedOrder = this.lastPassedWaypointOrder();
+    const currentLoc = this.currentLocation();
+    const destination = route[route.length - 1];
+    const destinationPassed =
+      ride.status === this.STATUS_FINISHED ||
+      (currentLoc
+        ? this.distanceMeters(currentLoc, {
+            lat: destination.lat,
+            lng: destination.lng,
+          }) <= this.destinationReachedRadiusMeters
+        : false);
+
+    return route.map((point, index) => {
+      const isStart = index === 0;
+      const isDestination = index === route.length - 1;
+      const passed = isDestination ? destinationPassed : point.order <= lastPassedOrder;
+      return {
+        id: `${point.order}-${index}`,
+        type: isStart ? 'start' : isDestination ? 'destination' : 'waypoint',
+        title: isStart ? 'Pickup' : isDestination ? 'Destination' : `Checkpoint ${index}`,
+        address:
+          point.address ??
+          (isStart
+            ? ride.startAddress
+            : isDestination
+              ? ride.destinationAddress
+              : `Waypoint ${index}`),
+        passed,
+      };
+    });
+  });
   rideNotStartedMessage = computed(() => {
     if (!this.isPassengerUser()) return null;
     const status = this.activeRide()?.status;
@@ -142,13 +195,17 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   stopRideInfo = computed<StopRideInfo | null>(() => {
     const ride = this.activeRide();
     if (!ride) return null;
+    const current = this.currentLocation();
+    const currentLocationLabel = current
+      ? `${current.lat.toFixed(5)}, ${current.lng.toFixed(5)}`
+      : 'Current location unavailable';
     return {
       passengerName: 'Jovana Dimitrijević', // Mock data - in real app get from passenger service
       passengerRating: 4.9,
       ridesDone: 127,
       pickupLocation: ride.startAddress,
       destinationLocation: ride.destinationAddress,
-      currentLocation: 'Bulevar Kralja Petra I 45, Novi Sad', // Mock data - would be actual current location
+      currentLocation: currentLocationLabel,
       duration: '8 min',
       distance: '2.1 km',
       completionPercent: 65,
@@ -204,7 +261,7 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
             return;
           }
           this.activeRide.set(ride);
-          this.lastPassedWaypointOrder = Number.NEGATIVE_INFINITY;
+          this.lastPassedWaypointOrder.set(Number.NEGATIVE_INFINITY);
           this.currentLocation.set(ride.currentLocation);
           this.lastBackendLocation = ride.currentLocation;
           this.etaSeconds.set(ride.estimatedArrivalTime);
@@ -261,45 +318,72 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
     currentLocation: { lat: number; lng: number },
     force = false,
     fallbackRide?: ActiveRide,
+    waypointDetectionLocation?: { lat: number; lng: number },
   ): void {
-    const now = Date.now();
-    if (this.routeRequestInFlight) {
-      return;
-    }
-    if (!force && now - this.lastRouteRequestAt < this.minRerouteIntervalMs) {
-      return;
-    }
-
-    this.routeRequestInFlight = true;
-    this.lastRouteRequestAt = now;
-
     const ride = fallbackRide ?? this.activeRide();
     if (!ride) {
-      this.routeRequestInFlight = false;
       return;
     }
 
     const routeWaypoints = ride.route && ride.route.length > 0
       ? [...ride.route].sort((a, b) => a.order - b.order)
       : [];
-    const routeRequest = buildRouteRequestThroughRemainingWaypoints(
-      currentLocation,
+    const detectionLocation = waypointDetectionLocation ?? currentLocation;
+    const previousLastPassedWaypointOrder = this.lastPassedWaypointOrder();
+    const detectionResult = buildRouteRequestThroughRemainingWaypoints(
+      detectionLocation,
       routeWaypoints,
-      this.lastPassedWaypointOrder,
+      this.lastPassedWaypointOrder(),
     );
-    this.lastPassedWaypointOrder = routeRequest.lastPassedWaypointOrder;
+    this.lastPassedWaypointOrder.set(detectionResult.lastPassedWaypointOrder);
+    const waypointTransitioned =
+      this.lastPassedWaypointOrder() > previousLastPassedWaypointOrder;
 
-    if (routeRequest.routeRequestPoints.length < 2) {
-      this.routeRequestInFlight = false;
+    const now = Date.now();
+    if (this.routeRequestInFlight) {
+      if (waypointTransitioned) {
+        this.pendingForcedReroute = true;
+      }
+      return;
+    }
+    if (
+      !force &&
+      !waypointTransitioned &&
+      now - this.lastRouteRequestAt < this.minRerouteIntervalMs
+    ) {
+      return;
+    }
+
+    const routeOrigin = this.shouldUsePickupAsRouteOrigin(routeWaypoints)
+      ? { lat: routeWaypoints[0].lat, lng: routeWaypoints[0].lng }
+      : currentLocation;
+    const routeRequestPoints = buildRouteRequestPointsFromLastPassed(
+      routeOrigin,
+      routeWaypoints,
+      this.lastPassedWaypointOrder(),
+    );
+
+    if (routeRequestPoints.length < 2) {
       this.calculateRouteCoordinates(ride);
       return;
     }
 
+    this.routeRequestInFlight = true;
+    this.lastRouteRequestAt = now;
+
     this.directionsService
-      .getRouteWithWaypoints(routeRequest.routeRequestPoints)
+      .getRouteWithWaypoints(routeRequestPoints)
       .pipe(
         finalize(() => {
           this.routeRequestInFlight = false;
+          if (this.pendingForcedReroute) {
+            this.pendingForcedReroute = false;
+            const rideForReroute = this.activeRide();
+            const locForReroute = this.currentLocation();
+            if (rideForReroute && locForReroute) {
+              this.requestRouteFromCurrent(locForReroute, true, rideForReroute, locForReroute);
+            }
+          }
         }),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -336,7 +420,7 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
           }
           const ride = this.activeRide();
           if (ride) {
-            this.requestRouteFromCurrent(displayLocation, false, ride);
+            this.requestRouteFromCurrent(displayLocation, false, ride, backendLocation);
           }
           this.updateMarkers();
           this.updateMapView();
@@ -411,6 +495,15 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.currentLocation();
   }
 
+  private shouldUsePickupAsRouteOrigin(
+    routeWaypoints: Array<{ lat: number; lng: number; order: number }>,
+  ): boolean {
+    return (
+      this.lastPassedWaypointOrder() === Number.NEGATIVE_INFINITY &&
+      routeWaypoints.length >= 2
+    );
+  }
+
   private setRouteCoordinatesAndProgress(coordinates: [number, number][]): void {
     this.routeCoordinates.set(coordinates);
     this.routeCumulativeDistancesMeters = this.buildRouteCumulativeDistances(coordinates);
@@ -472,7 +565,18 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const totalRouteDistance =
       this.routeCumulativeDistancesMeters[this.routeCumulativeDistancesMeters.length - 1] ?? 0;
-    this.routeProgressMeters = Math.min(totalRouteDistance, this.routeProgressMeters + forwardMoveMeters);
+    const projectedAheadDistance = backendProjectedDistance - this.routeProgressMeters;
+    const canCatchUpToProjection =
+      projectedAheadDistance > 0 &&
+      projectedAheadDistance <= this.maxProjectionCatchupMeters;
+    const projectedTarget = canCatchUpToProjection
+      ? backendProjectedDistance
+      : this.routeProgressMeters;
+    const stepTarget = this.routeProgressMeters + forwardMoveMeters;
+    this.routeProgressMeters = Math.min(
+      totalRouteDistance,
+      Math.max(stepTarget, projectedTarget),
+    );
 
     return this.pointAlongRouteAtDistance(
       route,
@@ -837,8 +941,11 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
         next: (response) => {
           console.log('Ride stopped successfully', response);
           // Normalize API response to ActiveRide shape (RideResponseDto is not ActiveRide-compatible).
-          const nextLat = loc.lat;
-          const nextLng = loc.lng;
+          const orderedWaypoints = [...(response.waypoints ?? [])].sort((a, b) => a.order - b.order);
+          const finalWaypoint = orderedWaypoints[orderedWaypoints.length - 1];
+          const nextLat = finalWaypoint?.lat ?? loc.lat;
+          const nextLng = finalWaypoint?.lng ?? loc.lng;
+          const resolvedStopAddress = finalWaypoint?.address ?? stopAddress;
           const current = this.activeRide();
           const normalizedRide: ActiveRide = current
             ? {
@@ -847,15 +954,15 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
                 status: response.status,
                 currentLocation: { lat: nextLat, lng: nextLng },
                 destinationLocation: { lat: nextLat, lng: nextLng },
-                destinationAddress: stopAddress,
+                destinationAddress: resolvedStopAddress,
                 estimatedArrivalTime: 0,
                 route: [],
               }
             : {
                 id: String(response.id),
                 status: response.status,
-                startAddress: stopAddress,
-                destinationAddress: stopAddress,
+                startAddress: resolvedStopAddress,
+                destinationAddress: resolvedStopAddress,
                 startLocation: { lat: nextLat, lng: nextLng },
                 destinationLocation: { lat: nextLat, lng: nextLng },
                 currentLocation: { lat: nextLat, lng: nextLng },

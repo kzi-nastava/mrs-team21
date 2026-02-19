@@ -94,7 +94,12 @@ export class RideTrackingApiService {
       },
       estimatedArrivalTime: etaSec,
       startTime: dto.startTime ? new Date(dto.startTime) : new Date(),
-      route: waypoints.map((w) => ({ lat: w.lat, lng: w.lng, order: w.order })),
+      route: waypoints.map((w) => ({
+        lat: w.lat,
+        lng: w.lng,
+        order: w.order,
+        address: w.address,
+      })),
     };
   }
 

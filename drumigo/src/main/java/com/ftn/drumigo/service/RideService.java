@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -968,51 +969,25 @@ public class RideService {
             throw new BadRequestException("Ride must be ACTIVE to be stopped. Current status: " + ride.getStatus());
         }
 
+        String resolvedStopAddress = resolveStopAddress(request);
+
         // Create or find stop location
         Location stopLocation = locationRepository.findByAddressAndLatAndLng(
-                request.stopAddress(), request.stopLat(), request.stopLng())
+                resolvedStopAddress, request.stopLat(), request.stopLng())
                 .orElse(null);
 
         if (stopLocation == null) {
             stopLocation = new Location();
-            stopLocation.setAddress(request.stopAddress());
+            stopLocation.setAddress(resolvedStopAddress);
             stopLocation.setLat(request.stopLat());
             stopLocation.setLng(request.stopLng());
             stopLocation = locationRepository.save(stopLocation);
         }
 
-        RideWaypoint originalDestination = rideWaypointRepository
-            .findFirstByRideOrderByWaypointOrderDesc(ride)
-            .orElse(null);
-
-        if (originalDestination != null) {
-            // Calculate distance from stop to original destination using MapService
-            EstimateRequest estimateRequest = new EstimateRequest(
-                new LocationDTO(stopLocation.getLat().doubleValue(), stopLocation.getLng().doubleValue(), stopLocation.getAddress()),
-                new LocationDTO(originalDestination.getLocation().getLat().doubleValue(), originalDestination.getLocation().getLng().doubleValue(), originalDestination.getLocation().getAddress()),
-                List.of(),
-                null
-            );
-            try {
-                EstimateResponse estimate = mapService.estimateRide(estimateRequest);
-                BigDecimal remainingDistance = BigDecimal.valueOf(estimate.distanceInKm());
-                BigDecimal remainingCost = remainingDistance.multiply(ride.getPricingPricePerKm());
-
-                // Subtract remaining cost from original total cost
-                BigDecimal newCost = ride.getTotalCost().subtract(remainingCost);
-                ride.setTotalCost(newCost.max(BigDecimal.ZERO)); // Ensure non-negative
-
-                // Update total distance (subtract remaining distance)
-                BigDecimal newDistance = ride.getTotalDistanceKm().subtract(remainingDistance);
-                ride.setTotalDistanceKm(newDistance.max(BigDecimal.ZERO));
-            } catch (Exception ex) {
-                // If Mapbox (via MapService) is unavailable or fails, skip recalculation
-                // and keep existing totalCost and totalDistanceKm to allow ride to be stopped.
-            }
-        }
+        List<RideWaypoint> existingWaypoints = rideWaypointRepository.findByRideOrderByWaypointOrderAsc(ride);
+        recalculateStoppedRideTotals(ride, stopLocation, existingWaypoints);
 
         // Keep pickup waypoint and replace destination with actual stop location so history remains meaningful.
-        List<RideWaypoint> existingWaypoints = rideWaypointRepository.findByRideOrderByWaypointOrderAsc(ride);
         if (existingWaypoints != null && !existingWaypoints.isEmpty()) {
             int pickupOrder = existingWaypoints.get(0).getWaypointOrder();
             int stopOrder = pickupOrder + 1;
@@ -1037,10 +1012,16 @@ public class RideService {
         }
 
         // Update ride
-        ride.setStoppedAt(Instant.now());
+        Instant stopTime = Instant.now();
+        ride.setStoppedAt(stopTime);
         ride.setStopLocation(stopLocation);
-        ride.setEndTime(Instant.now());
-        ride.setPaidAt(Instant.now());
+        ride.setEndTime(stopTime);
+        ride.setPaidAt(stopTime);
+        if (ride.getStartTime() != null) {
+            long elapsedSeconds = Math.max(0, Duration.between(ride.getStartTime(), stopTime).getSeconds());
+            ride.setEstimatedDurationSec((int) elapsedSeconds);
+        }
+        ride.setEstimatedArrivalAt(stopTime);
         ride.setStatus(RideStatus.FINISHED);
 
         // Vehicle availability removed - no longer tracking
@@ -1049,6 +1030,52 @@ public class RideService {
         ride = rideRepository.save(ride);
         eventPublisher.publishEvent(new RideFinishedEvent(ride.getId()));
         return ride;
+    }
+
+    private String resolveStopAddress(RideStopRequest request) {
+        Optional<String> reverseGeocoded = mapService.reverseGeocodeAddress(request.stopLat(), request.stopLng());
+        if (reverseGeocoded.isPresent() && !reverseGeocoded.get().isBlank()) {
+            return reverseGeocoded.get();
+        }
+        return request.stopAddress();
+    }
+
+    private void recalculateStoppedRideTotals(Ride ride, Location stopLocation, List<RideWaypoint> orderedWaypoints) {
+        if (orderedWaypoints == null || orderedWaypoints.isEmpty()) {
+            return;
+        }
+
+        RideWaypoint pickupWaypoint = orderedWaypoints.get(0);
+        EstimateRequest traveledEstimateRequest = new EstimateRequest(
+            new LocationDTO(
+                pickupWaypoint.getLocation().getLat().doubleValue(),
+                pickupWaypoint.getLocation().getLng().doubleValue(),
+                pickupWaypoint.getLocation().getAddress()
+            ),
+            new LocationDTO(
+                stopLocation.getLat().doubleValue(),
+                stopLocation.getLng().doubleValue(),
+                stopLocation.getAddress()
+            ),
+            List.of(),
+            null
+        );
+
+        try {
+            EstimateResponse estimate = mapService.estimateRide(traveledEstimateRequest);
+            BigDecimal traveledDistanceKm = BigDecimal.valueOf(estimate.distanceInKm())
+                .setScale(2, RoundingMode.HALF_UP);
+            BigDecimal startPrice = ride.getPricingStartPrice() != null ? ride.getPricingStartPrice() : BigDecimal.ZERO;
+            BigDecimal pricePerKm = ride.getPricingPricePerKm() != null ? ride.getPricingPricePerKm() : BigDecimal.ZERO;
+            BigDecimal recalculatedCost = startPrice
+                .add(pricePerKm.multiply(traveledDistanceKm))
+                .setScale(2, RoundingMode.HALF_UP);
+
+            ride.setTotalDistanceKm(traveledDistanceKm.max(BigDecimal.ZERO));
+            ride.setTotalCost(recalculatedCost.max(BigDecimal.ZERO));
+        } catch (Exception ex) {
+            // Keep previous totals if estimate fails so stop can still complete.
+        }
     }
     
     private void createCancellationNotifications(Ride ride) {

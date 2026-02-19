@@ -41,6 +41,7 @@ export interface RouteWaypoint {
   lat: number;
   lng: number;
   order: number;
+  address?: string;
 }
 
 export interface RideInconsistencyReport {

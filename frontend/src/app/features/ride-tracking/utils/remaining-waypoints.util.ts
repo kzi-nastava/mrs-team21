@@ -43,12 +43,33 @@ export function buildRouteRequestThroughRemainingWaypoints(
     currentLastPassedWaypointOrder,
     reachedWaypointOrder,
   );
+
+  return {
+    routeRequestPoints: buildRouteRequestPointsFromLastPassed(
+      currentLocation,
+      sortedWaypoints,
+      lastPassedWaypointOrder,
+    ),
+    lastPassedWaypointOrder,
+  };
+}
+
+export function buildRouteRequestPointsFromLastPassed(
+  origin: RoutingPoint,
+  orderedWaypoints: OrderedWaypoint[],
+  lastPassedWaypointOrder: number,
+): RoutingPoint[] {
+  const sortedWaypoints = [...(orderedWaypoints ?? [])].sort((a, b) => a.order - b.order);
+  if (sortedWaypoints.length === 0) {
+    return [origin];
+  }
+
   const remainingWaypoints = sortedWaypoints.filter(
     (waypoint) => waypoint.order > lastPassedWaypointOrder,
   );
   const destination = sortedWaypoints[sortedWaypoints.length - 1];
   const routeRequestPoints = deduplicateConsecutivePoints([
-    currentLocation,
+    origin,
     ...remainingWaypoints.map((waypoint) => ({ lat: waypoint.lat, lng: waypoint.lng })),
   ]);
 
@@ -56,10 +77,7 @@ export function buildRouteRequestThroughRemainingWaypoints(
     routeRequestPoints.push({ lat: destination.lat, lng: destination.lng });
   }
 
-  return {
-    routeRequestPoints: deduplicateConsecutivePoints(routeRequestPoints),
-    lastPassedWaypointOrder,
-  };
+  return deduplicateConsecutivePoints(routeRequestPoints);
 }
 
 export function distanceMeters(a: RoutingPoint, b: RoutingPoint): number {

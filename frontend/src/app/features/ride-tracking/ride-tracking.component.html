@@ -84,6 +84,38 @@
           </div>
         </div>
 
+        @if (routeCheckpoints().length > 0) {
+          <div class="checkpoints-section">
+            <div class="checkpoints-title">Checkpoints</div>
+            @for (checkpoint of routeCheckpoints(); track checkpoint.id) {
+              <div class="checkpoint-item" [class.passed]="checkpoint.passed">
+                <div
+                  class="checkpoint-icon"
+                  [class]="checkpoint.type"
+                  [class.passed]="checkpoint.passed"
+                >
+                  @if (checkpoint.passed) {
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="3"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  }
+                </div>
+                <div class="checkpoint-content">
+                  <div class="checkpoint-label">{{ checkpoint.title }}</div>
+                  <div class="checkpoint-address">{{ checkpoint.address }}</div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
         @if (rideNotStartedMessage()) {
           <div class="ride-status-notice">
             {{ rideNotStartedMessage() }}

@@ -1,4 +1,5 @@
 import {
+  buildRouteRequestPointsFromLastPassed,
   buildRouteRequestThroughRemainingWaypoints,
   DEFAULT_WAYPOINT_REACHED_RADIUS_METERS,
 } from './remaining-waypoints.util';
@@ -38,6 +39,24 @@ describe('remaining-waypoints util', () => {
 
     expect(result.lastPassedWaypointOrder).toBe(1);
     expect(result.routeRequestPoints).toEqual([
+      { lat: 45.255, lng: 19.851 },
+      { lat: 45.261, lng: 19.861 },
+    ]);
+  });
+
+  it('builds route request points from pickup after passed-waypoint update', () => {
+    const points = buildRouteRequestPointsFromLastPassed(
+      { lat: 45.251, lng: 19.845 },
+      [
+        { lat: 45.251, lng: 19.845, order: 0 },
+        { lat: 45.255, lng: 19.851, order: 1 },
+        { lat: 45.261, lng: 19.861, order: 2 },
+      ],
+      0,
+    );
+
+    expect(points).toEqual([
+      { lat: 45.251, lng: 19.845 },
       { lat: 45.255, lng: 19.851 },
       { lat: 45.261, lng: 19.861 },
     ]);

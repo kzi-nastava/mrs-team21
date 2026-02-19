@@ -109,18 +109,16 @@ class RideServiceStopRideUnitTest {
             .thenReturn(List.of(pickupWaypoint, destinationWaypoint));
         lenient().when(rideWaypointRepository.findFirstByRideOrderByWaypointOrderDesc(activeRide))
             .thenReturn(Optional.of(destinationWaypoint));
+        lenient().when(mapService.reverseGeocodeAddress(any(), any())).thenReturn(Optional.empty());
     }
 
     @Test
     void shouldStopRideAndRecalculateCostAndDistance_whenActiveAndDriverAssigned() {
         Location existingStop = createLocation(501L, stopRequest.stopAddress(), stopRequest.stopLat(), stopRequest.stopLng());
-        Location destinationLocation = createLocation(502L, "Destination", new BigDecimal("45.27000000"), new BigDecimal("19.90000000"));
-        RideWaypoint destination = new RideWaypoint(9001L, activeRide, destinationLocation, 2);
 
         when(locationRepository.findByAddressAndLatAndLng(
             stopRequest.stopAddress(), stopRequest.stopLat(), stopRequest.stopLng()
         )).thenReturn(Optional.of(existingStop));
-        when(rideWaypointRepository.findFirstByRideOrderByWaypointOrderDesc(activeRide)).thenReturn(Optional.of(destination));
         when(mapService.estimateRide(any(EstimateRequest.class))).thenReturn(
             new EstimateResponse("poly", List.of(List.of(19.0, 45.0)), 5.0, 10, 500.0)
         );
@@ -158,14 +156,13 @@ class RideServiceStopRideUnitTest {
             saved.setId(777L);
             return saved;
         });
-        when(rideWaypointRepository.findFirstByRideOrderByWaypointOrderDesc(activeRide)).thenReturn(Optional.empty());
 
         Ride stoppedRide = rideService.stopRide(activeRide.getId(), assignedDriver.getId(), stopRequest);
 
         assertNotNull(stoppedRide.getStopLocation());
         assertEquals(777L, stoppedRide.getStopLocation().getId());
         verify(locationRepository).save(any(Location.class));
-        verify(mapService, never()).estimateRide(any(EstimateRequest.class));
+        verify(mapService).estimateRide(any(EstimateRequest.class));
     }
 
     @Test
@@ -175,35 +172,29 @@ class RideServiceStopRideUnitTest {
         activeRide.setPricingPricePerKm(new BigDecimal("200.00"));
 
         Location existingStop = createLocation(501L, stopRequest.stopAddress(), stopRequest.stopLat(), stopRequest.stopLng());
-        Location destinationLocation = createLocation(502L, "Destination", new BigDecimal("45.27000000"), new BigDecimal("19.90000000"));
-        RideWaypoint destination = new RideWaypoint(9001L, activeRide, destinationLocation, 2);
 
         when(locationRepository.findByAddressAndLatAndLng(
             stopRequest.stopAddress(), stopRequest.stopLat(), stopRequest.stopLng()
         )).thenReturn(Optional.of(existingStop));
-        when(rideWaypointRepository.findFirstByRideOrderByWaypointOrderDesc(activeRide)).thenReturn(Optional.of(destination));
         when(mapService.estimateRide(any(EstimateRequest.class))).thenReturn(
             new EstimateResponse("poly", List.of(), 2.0, 5, 100.0)
         );
 
         Ride stoppedRide = rideService.stopRide(activeRide.getId(), assignedDriver.getId(), stopRequest);
 
-        assertEquals(0, stoppedRide.getTotalCost().compareTo(BigDecimal.ZERO));
-        assertEquals(0, stoppedRide.getTotalDistanceKm().compareTo(BigDecimal.ZERO));
+        assertEquals(0, stoppedRide.getTotalCost().compareTo(new BigDecimal("400.00")));
+        assertEquals(0, stoppedRide.getTotalDistanceKm().compareTo(new BigDecimal("2.00")));
     }
 
     @Test
     void shouldStillStopRide_whenMapServiceFails() {
         Location existingStop = createLocation(501L, stopRequest.stopAddress(), stopRequest.stopLat(), stopRequest.stopLng());
-        Location destinationLocation = createLocation(502L, "Destination", new BigDecimal("45.27000000"), new BigDecimal("19.90000000"));
-        RideWaypoint destination = new RideWaypoint(9001L, activeRide, destinationLocation, 2);
         BigDecimal originalCost = activeRide.getTotalCost();
         BigDecimal originalDistance = activeRide.getTotalDistanceKm();
 
         when(locationRepository.findByAddressAndLatAndLng(
             stopRequest.stopAddress(), stopRequest.stopLat(), stopRequest.stopLng()
         )).thenReturn(Optional.of(existingStop));
-        when(rideWaypointRepository.findFirstByRideOrderByWaypointOrderDesc(activeRide)).thenReturn(Optional.of(destination));
         when(mapService.estimateRide(any(EstimateRequest.class))).thenThrow(new RuntimeException("Map provider unavailable"));
 
         Ride stoppedRide = rideService.stopRide(activeRide.getId(), assignedDriver.getId(), stopRequest);
@@ -211,6 +202,42 @@ class RideServiceStopRideUnitTest {
         assertEquals(RideStatus.FINISHED, stoppedRide.getStatus());
         assertEquals(0, stoppedRide.getTotalCost().compareTo(originalCost));
         assertEquals(0, stoppedRide.getTotalDistanceKm().compareTo(originalDistance));
+    }
+
+    @Test
+    void shouldUseReverseGeocodedAddress_whenAvailable() {
+        when(mapService.reverseGeocodeAddress(stopRequest.stopLat(), stopRequest.stopLng()))
+            .thenReturn(Optional.of("Reverse Geocoded Address"));
+        when(locationRepository.findByAddressAndLatAndLng(
+            "Reverse Geocoded Address", stopRequest.stopLat(), stopRequest.stopLng()
+        )).thenReturn(Optional.empty());
+        when(locationRepository.save(any(Location.class))).thenAnswer(invocation -> {
+            Location saved = invocation.getArgument(0);
+            saved.setId(333L);
+            return saved;
+        });
+
+        Ride stoppedRide = rideService.stopRide(activeRide.getId(), assignedDriver.getId(), stopRequest);
+
+        assertEquals("Reverse Geocoded Address", stoppedRide.getStopLocation().getAddress());
+    }
+
+    @Test
+    void shouldFallbackToProvidedStopAddress_whenReverseGeocodingReturnsEmpty() {
+        when(mapService.reverseGeocodeAddress(stopRequest.stopLat(), stopRequest.stopLng()))
+            .thenReturn(Optional.empty());
+        when(locationRepository.findByAddressAndLatAndLng(
+            stopRequest.stopAddress(), stopRequest.stopLat(), stopRequest.stopLng()
+        )).thenReturn(Optional.empty());
+        when(locationRepository.save(any(Location.class))).thenAnswer(invocation -> {
+            Location saved = invocation.getArgument(0);
+            saved.setId(444L);
+            return saved;
+        });
+
+        Ride stoppedRide = rideService.stopRide(activeRide.getId(), assignedDriver.getId(), stopRequest);
+
+        assertEquals(stopRequest.stopAddress(), stoppedRide.getStopLocation().getAddress());
     }
 
     @Test

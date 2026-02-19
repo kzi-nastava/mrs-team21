@@ -20,13 +20,22 @@ import com.mapbox.api.directions.v5.models.DirectionsRoute;
 import com.mapbox.geojson.Point;
 import retrofit2.Response;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MapService {
+    private static final Pattern PLACE_NAME_PATTERN = Pattern.compile("\"place_name\"\\s*:\\s*\"([^\"]+)\"");
 
     @Value("${mapbox.api.key}")
     private String MAPBOX_API_KEY;
@@ -70,6 +79,43 @@ public class MapService {
 
         DirectionsRoute route = getDirectionsRoute(start, destination, waypoints);
         return decodeRouteGeometryToCoordinates(route.geometry());
+    }
+
+    public Optional<String> reverseGeocodeAddress(BigDecimal lat, BigDecimal lng) {
+        if (lat == null || lng == null) {
+            return Optional.empty();
+        }
+        String coordinates = lng + "," + lat;
+        String encodedCoordinates = URLEncoder.encode(coordinates, StandardCharsets.UTF_8);
+        String encodedToken = URLEncoder.encode(MAPBOX_API_KEY, StandardCharsets.UTF_8);
+        String url = "https://api.mapbox.com/geocoding/v5/mapbox.places/"
+            + encodedCoordinates
+            + ".json?limit=1&access_token="
+            + encodedToken;
+
+        try {
+            HttpURLConnection connection = (HttpURLConnection) URI.create(url).toURL().openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+
+            int statusCode = connection.getResponseCode();
+            if (statusCode < 200 || statusCode >= 300) {
+                return Optional.empty();
+            }
+
+            String responseBody = new String(connection.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            Matcher matcher = PLACE_NAME_PATTERN.matcher(responseBody);
+            if (!matcher.find()) {
+                return Optional.empty();
+            }
+            String placeName = matcher.group(1);
+            return placeName == null || placeName.isBlank()
+                ? Optional.empty()
+                : Optional.of(placeName);
+        } catch (Exception ex) {
+            return Optional.empty();
+        }
     }
 
     private DirectionsRoute getDirectionsRoute(EstimateRequest request) {
