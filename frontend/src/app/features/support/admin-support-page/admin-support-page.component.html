@@ -13,20 +13,22 @@
       } @else if (conversations.length === 0) {
         <div class="state-card">No support conversations yet.</div>
       } @else {
-        @for (conversation of conversations; track trackConversation($index, conversation)) {
-          <button
-            type="button"
-            class="conversation-item"
-            [class.conversation-item--active]="conversation.userId === selectedUserId"
-            (click)="selectConversation(conversation.userId)"
-          >
-            <div class="conversation-item__header">
-              <span>{{ conversation.userName }} {{ conversation.userSurname }}</span>
-              <span>{{ formatTime(conversation.lastMessageAt) }}</span>
-            </div>
-            <p>{{ conversation.lastMessage }}</p>
-          </button>
-        }
+        <div class="conversation-list">
+          @for (conversation of conversations; track trackConversation($index, conversation)) {
+            <button
+              type="button"
+              class="conversation-item"
+              [class.conversation-item--active]="conversation.userId === selectedUserId"
+              (click)="selectConversation(conversation.userId)"
+            >
+              <div class="conversation-item__header">
+                <span>{{ conversation.userName }} {{ conversation.userSurname }}</span>
+                <span>{{ formatTime(conversation.lastMessageAt) }}</span>
+              </div>
+              <p>{{ conversation.lastMessage }}</p>
+            </button>
+          }
+        </div>
       }
     </aside>
 

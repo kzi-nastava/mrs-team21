@@ -1,10 +1,11 @@
 <section class="support-page">
-  <header class="support-header">
-    <h1>Support</h1>
-    <p>Chat with our admin support team.</p>
-  </header>
+  <div class="support-page__inner">
+    <header class="support-header">
+      <h1>Support</h1>
+      <p>Chat with our admin support team.</p>
+    </header>
 
-  <div class="chat-shell">
+    <div class="chat-shell">
     @if (isLoading && messages.length === 0) {
       <div class="state-card">Loading support chat...</div>
     }
@@ -46,5 +47,6 @@
     @if (errorMessage) {
       <p class="error">{{ errorMessage }}</p>
     }
+  </div>
   </div>
 </section>
