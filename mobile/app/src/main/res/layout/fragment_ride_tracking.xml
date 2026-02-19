@@ -20,7 +20,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/back"
             android:src="@drawable/ic_arrow_back"
-            android:tint="@color/text_dark" />
+            app:tint="@color/text_dark" />
 
         <LinearLayout
             android:layout_width="0dp"
