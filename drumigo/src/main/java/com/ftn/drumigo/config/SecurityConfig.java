@@ -56,7 +56,6 @@ public class SecurityConfig {
                     "/api/rides/estimate",
                     "/api/vehicles/active",
                     "/api/drivers/*/rides/upcoming",
-                    "/api/users/*/notifications",
                     "/api/passengers",
                     "/api/passengers/activate/**",
                     "/api/activation/**",

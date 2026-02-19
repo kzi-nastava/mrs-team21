@@ -46,7 +46,7 @@ export const NAVIGATION_CONFIG: NavigationConfig = {
     { label: 'Register Driver', icon: 'truck', path: '/register-driver', section: 'management' },
     { label: 'Ride Pricing', icon: 'dollar-sign', path: '/admin/pricing', section: 'management' },
     { label: 'Reports', icon: 'bar-chart', path: '/admin/reports', section: 'management' },
-    { label: 'All Notifications', icon: 'bell', path: '/admin/notifications', section: 'management', disabled: true },
+    { label: 'All Notifications', icon: 'bell', path: '/admin/notifications', section: 'management' },
 
     // Account Section (profile is reached by clicking the user block at bottom)
   ],

@@ -1,0 +1,119 @@
+<div class="admin-notifications-page">
+  <header class="page-header">
+    <h1 class="page-title">All Notifications</h1>
+    <p class="page-subtitle">Select a user to view their notification history (drivers, passengers, or admins).</p>
+  </header>
+
+  <section class="user-picker-bar">
+    <div class="filter-group user-search-wrap">
+      <label for="userEmail" class="filter-label">User (search by email)</label>
+      <div class="user-search-input-wrap">
+        <input
+          id="userEmail"
+          type="text"
+          class="filter-input"
+          placeholder="Type email to search..."
+          autocomplete="off"
+          [ngModel]="emailSearchQuery()"
+          (ngModelChange)="onEmailSearchInput($event)"
+          (focus)="onEmailSearchFocus()"
+          (blur)="onEmailSearchBlur()"
+        />
+        @if (selectedUser()) {
+          <button type="button" class="user-search-clear" (click)="clearSelectedUser()" title="Clear">×</button>
+        }
+        @if (showSuggestions()) {
+          <ul class="user-suggestions" role="listbox">
+            @for (u of userSuggestions(); track u.id) {
+              <li
+                role="option"
+                class="user-suggestion-item"
+                (click)="selectUser(u)"
+              >{{ userLabel(u) }}</li>
+            }
+          </ul>
+        }
+        @if (loadingSuggestions()) {
+          <span class="user-search-loading">Searching...</span>
+        }
+      </div>
+    </div>
+  </section>
+
+  @if (selectedUser()) {
+    <p class="selected-user-label">Showing notifications for: <strong>{{ userLabel(selectedUser()!) }}</strong></p>
+
+    @if (notificationsError()) {
+      <div class="error-banner">{{ notificationsError() }}</div>
+    }
+
+    @if (loadingNotifications()) {
+      <div class="loading-banner">Loading notifications...</div>
+    } @else {
+      @if (notifications().length === 0) {
+        <p class="empty-message">No notifications for this user.</p>
+      } @else {
+        <div class="notifications-section">
+          <div class="table-wrap">
+            <table class="notifications-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Message</th>
+                  <th>Created</th>
+                  <th>Read</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (n of notifications(); track n.id) {
+                  <tr>
+                    <td class="col-type">{{ typeLabel(n.type) }}</td>
+                    <td class="col-message">{{ n.message }}</td>
+                    <td class="col-date">{{ formatDate(n.createdAt) }}</td>
+                    <td class="col-read">{{ n.readAt ? formatDate(n.readAt) : '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination-bar">
+            <div class="pagination-info">
+              {{ totalElements() }} total
+              @if (totalElements() > 0) {
+                · Page {{ currentPage() + 1 }} of {{ totalPages() }}
+              }
+            </div>
+            <div class="pagination-controls">
+              <label for="pageSize" class="page-size-label">Per page</label>
+              <select
+                id="pageSize"
+                class="filter-input filter-input--select page-size-select"
+                [ngModel]="pageSize()"
+                (ngModelChange)="setPageSize(+$event)"
+              >
+                @for (opt of pageSizeOptions; track opt) {
+                  <option [value]="opt">{{ opt }}</option>
+                }
+              </select>
+              <button
+                type="button"
+                class="btn-pagination"
+                [disabled]="!hasPrev()"
+                (click)="prevPage()"
+              >Previous</button>
+              <button
+                type="button"
+                class="btn-pagination"
+                [disabled]="!hasNext()"
+                (click)="nextPage()"
+              >Next</button>
+            </div>
+          </div>
+        </div>
+      }
+    }
+  } @else {
+    <p class="hint-message">Search and select a user above to view their notifications.</p>
+  }
+</div>

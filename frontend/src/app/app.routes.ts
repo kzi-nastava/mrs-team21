@@ -234,8 +234,8 @@ export const routes: Routes = [
           {
             path: 'notifications',
             loadComponent: () =>
-              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
-                (m) => m.PlaceholderFeatureComponent,
+              import('./features/admin/pages/admin-notifications-page/admin-notifications-page.component').then(
+                (m) => m.AdminNotificationsPageComponent,
               ),
             data: { featureName: 'All Notifications' },
           },
