@@ -1,8 +1,9 @@
-import { Component, Input, OnChanges, OnInit, SimpleChanges, inject } from '@angular/core';
+import { Component, OnInit, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { NAVIGATION_CONFIG, SECTION_LABELS, NavItem } from '../../config/navbar.config';
 import { AuthService } from '../../../shared/services/auth.service';
+import { CurrentUserService } from '../../services/current-user.service';
 
 export type UserType = 'passenger' | 'driver' | 'admin';
 
@@ -21,32 +22,32 @@ export interface UserProfile {
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss'],
 })
-export class NavbarComponent implements OnInit, OnChanges {
-  @Input() user!: UserProfile;
-
+export class NavbarComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  readonly currentUserService = inject(CurrentUserService);
 
   navItems: NavItem[] = [];
   groupedNavItems: Map<string, NavItem[]> = new Map();
   sectionLabels = SECTION_LABELS;
 
+  constructor() {
+    effect(() => {
+      this.currentUserService.user();
+      this.applyUserType();
+    });
+  }
+
   ngOnInit(): void {
     this.applyUserType();
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['user'] && !changes['user'].firstChange) {
-      this.applyUserType();
-    }
-  }
-
   private applyUserType(): void {
-    if (!this.user?.type) {
-      console.error('User type is required for navbar');
+    const user = this.currentUserService.user();
+    if (!user?.type) {
       return;
     }
-    this.navItems = NAVIGATION_CONFIG[this.user.type] || [];
+    this.navItems = NAVIGATION_CONFIG[user.type] || [];
     this.groupNavItems();
   }
 
@@ -90,7 +91,9 @@ export class NavbarComponent implements OnInit, OnChanges {
   }
 
   getSectionKeys(): string[] {
-    return Array.from(this.groupedNavItems.keys());
+    return Array.from(this.groupedNavItems.keys()).filter(
+      (key) => (this.groupedNavItems.get(key)?.length ?? 0) > 0,
+    );
   }
 
   logout(): void {

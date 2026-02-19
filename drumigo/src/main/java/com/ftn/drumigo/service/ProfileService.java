@@ -1,28 +1,51 @@
 package com.ftn.drumigo.service;
 
+import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.Vehicle;
+import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.domain.users.Driver;
 import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.dto.profile.request.ProfileUpdateRequest;
+import com.ftn.drumigo.dto.profile.response.ActiveHoursResponse;
 import com.ftn.drumigo.dto.profile.response.ProfileResponse;
 import com.ftn.drumigo.dto.profile.response.VehicleInfoResponse;
 import com.ftn.drumigo.exception.ConflictException;
 import com.ftn.drumigo.exception.ResourceNotFoundException;
+import com.ftn.drumigo.repository.RideRepository;
 import com.ftn.drumigo.repository.UserRepository;
 import com.ftn.drumigo.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ProfileService {
-    
+
+    private static final long MAX_PICTURE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of("image/jpeg", "image/png", "image/gif", "image/webp");
+
+    @Value("${app.uploads.profile-dir:uploads/profile}")
+    private String profileUploadDir;
+
+    private static final int MAX_DRIVING_HOURS_PER_24H = 8;
+
     private final UserRepository userRepository;
     private final VehicleRepository vehicleRepository;
+    private final RideRepository rideRepository;
     
     public ProfileResponse getProfile(Long userId) {
         User user = userRepository.findById(userId)
@@ -60,6 +83,8 @@ public class ProfileService {
                 vehicleInfo.setPetFriendly(vehicle.getPetFriendly());
                 response.setVehicle(vehicleInfo);
             }
+
+            response.setActiveHoursLast24h(computeActiveHoursLast24h(driver));
         }
         
         return response;
@@ -100,5 +125,81 @@ public class ProfileService {
         
         // Return updated profile
         return getProfile(userId);
+    }
+
+    /**
+     * Save profile picture file to disk and return the URL path to store in DB.
+     * Caller should then call updateProfile with that URL.
+     */
+    @Transactional
+    public String saveProfilePicture(Long userId, MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Profile picture file is required");
+        }
+        if (file.getSize() > MAX_PICTURE_SIZE_BYTES) {
+            throw new IllegalArgumentException("Profile picture must be at most 5MB");
+        }
+        String contentType = file.getContentType();
+        if (contentType != null && !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase(Locale.ROOT))) {
+            throw new IllegalArgumentException("Profile picture must be JPEG, PNG, GIF, or WebP");
+        }
+
+        Path dir = Path.of(profileUploadDir).toAbsolutePath().normalize();
+        Files.createDirectories(dir);
+
+        String extension = getExtensionFromContentTypeOrFilename(contentType, file.getOriginalFilename());
+        String filename = userId + extension;
+        Path target = dir.resolve(filename).normalize();
+        if (!target.startsWith(dir)) {
+            throw new IllegalArgumentException("Invalid file path");
+        }
+        file.transferTo(target);
+
+        return "/api/uploads/profile/" + filename;
+    }
+
+    private static String getExtensionFromContentTypeOrFilename(String contentType, String originalFilename) {
+        if (contentType != null) {
+            String lower = contentType.toLowerCase(Locale.ROOT);
+            if (lower.contains("png")) return ".png";
+            if (lower.contains("gif")) return ".gif";
+            if (lower.contains("webp")) return ".webp";
+            if (lower.contains("jpeg") || lower.contains("jpg")) return ".jpg";
+        }
+        if (originalFilename != null) {
+            String name = originalFilename.toLowerCase(Locale.ROOT);
+            if (name.endsWith(".png")) return ".png";
+            if (name.endsWith(".gif")) return ".gif";
+            if (name.endsWith(".webp")) return ".webp";
+        }
+        return ".jpg";
+    }
+
+    /**
+     * Computes how many hours the driver has been driving in the last 24 hours
+     * (ACTIVE and FINISHED rides only), for the 8h daily limit.
+     */
+    private ActiveHoursResponse computeActiveHoursLast24h(Driver driver) {
+        Instant now = Instant.now();
+        Instant windowStart = now.minus(24, ChronoUnit.HOURS);
+        List<Ride> rides = rideRepository.findDriverRidesWithActivitySince(driver, windowStart);
+
+        long totalSeconds = 0;
+        for (Ride r : rides) {
+            if (r.getStatus() != RideStatus.ACTIVE && r.getStatus() != RideStatus.FINISHED) {
+                continue;
+            }
+            Instant start = r.getStartTime();
+            if (start == null) continue;
+            Instant end = r.getEndTime() != null ? r.getEndTime() : now;
+            if (end.isBefore(windowStart)) continue;
+
+            Instant effectiveStart = start.isBefore(windowStart) ? windowStart : start;
+            Instant effectiveEnd = end.isAfter(now) ? now : end;
+            totalSeconds += Duration.between(effectiveStart, effectiveEnd).getSeconds();
+        }
+
+        double hoursWorked = totalSeconds / 3600.0;
+        return new ActiveHoursResponse(hoursWorked, MAX_DRIVING_HOURS_PER_24H);
     }
 }

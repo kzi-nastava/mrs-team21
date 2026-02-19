@@ -21,7 +21,6 @@ export const NAVIGATION_CONFIG: NavigationConfig = {
     { label: 'Ride History', icon: 'file-text', path: '/ride-history', section: 'main' },
 
     // Account Section
-    { label: 'Profile', icon: 'user', path: '/profile', section: 'account' },
     { label: 'Support', icon: 'message-circle', path: '/support', section: 'account', disabled: true },
   ],
 
@@ -31,7 +30,6 @@ export const NAVIGATION_CONFIG: NavigationConfig = {
     { label: 'Ride History', icon: 'file-text', path: '/driver/ride-history', section: 'main' },
 
     // Account Section
-    { label: 'Profile', icon: 'user', path: '/profile', section: 'account' },
     { label: 'Support', icon: 'message-circle', path: '/support', section: 'account', disabled: true },
   ],
 
@@ -52,8 +50,7 @@ export const NAVIGATION_CONFIG: NavigationConfig = {
     { label: 'Reports', icon: 'bar-chart', path: '/admin/reports', section: 'management', disabled: true },
     { label: 'All Notifications', icon: 'bell', path: '/admin/notifications', section: 'management', disabled: true },
 
-    // Account Section
-    { label: 'Profile', icon: 'user', path: '/profile', section: 'account' },
+    // Account Section (profile is reached by clicking the user block at bottom)
   ],
 };
 

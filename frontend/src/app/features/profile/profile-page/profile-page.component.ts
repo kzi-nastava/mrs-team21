@@ -14,6 +14,7 @@ import { NotificationApiService } from '../services/notification-api.service';
 import { UserNotification } from '../models/notification.model';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../shared/services/auth.service';
+import { CurrentUserService } from '../../../layout/services/current-user.service';
 
 @Component({
   selector: 'app-profile-page',
@@ -29,6 +30,7 @@ export class ProfilePageComponent implements OnInit {
   private readonly notificationService = inject(NotificationApiService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly authService = inject(AuthService);
+  private readonly currentUserService = inject(CurrentUserService);
 
   readonly profile = signal<ProfileData | null>(null);
   readonly profileLoading = signal<boolean>(true);
@@ -148,34 +150,39 @@ export class ProfilePageComponent implements OnInit {
   /**
    * Handle file selection from shared component.
    * File is already cropped to 1:1 by the component.
+   * Uploads file to backend, then updates profile with returned URL.
    */
   onPhotoSelected(file: File): void {
     this.selectedFile = file;
-    console.log('Photo selected (auto-cropped to 1:1):', file.name, file.size, 'bytes');
+    const p = this.profile();
+    if (!p) return;
 
-    // For now, use FileReader to convert to base64 data URL for backend storage
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      const p = this.profile();
-      if (!p) return;
-
-      // Update profile with new picture
-      this.profileService
-        .updateProfile({ profilePictureUrl: dataUrl })
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (updatedProfile) => {
-            this.profile.set(updatedProfile);
-            this.showSuccess('Profile photo updated successfully');
-          },
-          error: (err) => {
-            console.error('Upload failed:', err);
-            this.showSuccess('Failed to update profile photo');
-          },
-        });
-    };
-    reader.readAsDataURL(file);
+    this.profileService
+      .uploadProfilePicture(file)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.profileService
+            .updateProfile({ profilePictureUrl: res.url })
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: (updatedProfile) => {
+                this.profile.set(updatedProfile);
+                this.currentUserService.setFromProfile(updatedProfile);
+                this.showSuccess('Profile photo updated successfully');
+              },
+              error: (err) => {
+                console.error('Failed to update profile with picture URL:', err);
+                this.showSuccess('Failed to update profile photo');
+              },
+            });
+        },
+        error: (err) => {
+          console.error('Upload failed:', err);
+          const message = err?.error?.error ?? err?.message ?? 'Upload failed';
+          this.showSuccess(typeof message === 'string' ? message : 'Failed to update profile photo');
+        },
+      });
   }
 
   /**
@@ -256,6 +263,7 @@ export class ProfilePageComponent implements OnInit {
       .subscribe({
         next: (updatedProfile) => {
           this.profile.set(updatedProfile);
+          this.currentUserService.setFromProfile(updatedProfile);
           this.showSuccess('Your profile has been updated successfully!');
           console.log('Passenger profile updated:', values);
         },
