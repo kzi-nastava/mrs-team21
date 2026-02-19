@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -132,7 +133,7 @@ class RideServiceStopRideUnitTest {
         assertNotNull(stoppedRide.getStoppedAt());
         assertNotNull(stoppedRide.getEndTime());
         assertNotNull(stoppedRide.getPaidAt());
-        assertEquals(false, assignedDriver.isBusy());
+        assertFalse(Boolean.TRUE.equals(assignedDriver.getBusy()));
 
         verify(locationRepository, never()).save(any(Location.class));
         verify(rideWaypointRepository).deleteByRideAndWaypointOrderGreaterThan(activeRide, 2);

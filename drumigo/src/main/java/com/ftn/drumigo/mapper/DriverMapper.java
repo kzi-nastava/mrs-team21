@@ -22,7 +22,7 @@ public class DriverMapper {
             driver.getProfilePictureUrl(),
             driver.getBlocked(),
             driver.getActiveDriver(),
-            driver.isBusy(),
+            driver.getBusy(),
             driver.getLastStateChangeAt(),
             driver.getCreatedAt(),
             driver.getUpdatedAt()

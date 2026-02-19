@@ -36,7 +36,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class RideControllerCreateRideIntegrationTest {
+class
+
+
+
+RideControllerCreateRideIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
