@@ -100,6 +100,7 @@
     <string name="open_navigation">Open navigation</string>
     <string name="nav_ride_history">Ride History</string>
     <string name="nav_active_vehicles">Active Vehicles</string>
+    <string name="nav_home">Home</string>
     <string name="mapbox_token_missing">Mapbox token missing. Add it to mobile/secrets.properties.</string>
     <string name="active_vehicles_load_failed">Unable to load active vehicles</string>
     <string name="back">Back</string>
@@ -133,6 +134,51 @@
     <string name="login_success">Login successful!</string>
     <string name="login_failed">Login failed. Please try again.</string>
     <string name="login_error_invalid_credentials">Invalid email or password</string>
+
+    <!-- Landing -->
+    <string name="landing_title">Estimate your ride</string>
+    <string name="landing_pickup_hint">Pickup location</string>
+    <string name="landing_destination_hint">Destination</string>
+    <string name="landing_calculate_estimate">Calculate estimate</string>
+    <string name="landing_open_estimate_panel">Estimate a ride</string>
+    <string name="landing_sign_in">Sign in</string>
+    <string name="landing_sign_up">Sign up</string>
+    <string name="landing_toggle_estimate_panel">Open estimate panel</string>
+    <string name="landing_collapse_estimate_panel">Collapse estimate panel</string>
+    <string name="landing_close_estimate_panel">Close estimate panel</string>
+    <string name="landing_vehicle_type_hint">Vehicle type</string>
+    <string name="landing_estimate_summary">Route calculated</string>
+    <string name="landing_signup_cta">Sign up to book</string>
+    <string name="landing_cta_title">Ready to book this ride?</string>
+    <string name="landing_cta_description">Create a free account to book rides, track your driver in real-time, and enjoy seamless travel.</string>
+    <string name="landing_estimate_note">This is an estimate only. Actual price may vary based on traffic, route changes, and selected vehicle type.</string>
+    <string name="landing_estimate_time_label">Est. Time</string>
+    <string name="landing_estimate_price_label">Est. Price</string>
+    <string name="landing_estimate_distance_label">Distance</string>
+    <string name="landing_estimate_eta_value_format">~%1$d min</string>
+    <string name="landing_estimate_price_value_format">~%1$.0f RSD</string>
+    <string name="landing_estimate_distance_value_format">%1$.1f km</string>
+    <string name="landing_route_start_label">Pickup</string>
+    <string name="landing_route_end_label">Destination</string>
+    <string name="landing_locations_required">Enter both pickup and destination</string>
+    <string name="landing_geocode_failed">Unable to find one of the addresses</string>
+    <string name="landing_estimate_failed">Unable to calculate ride estimate</string>
+    <string name="landing_active_vehicles_count">%1$d active vehicles nearby</string>
+    <string name="landing_active_vehicles_count_placeholder">-- active vehicles nearby</string>
+    <string name="landing_estimate_eta_format">Estimated time: ~%1$d min</string>
+    <string name="landing_estimate_price_format">Estimated price: ~%.0f RSD</string>
+    <string name="landing_estimate_distance_format">Distance: %.1f km</string>
+
+    <string-array name="landing_vehicle_type_labels">
+        <item>Standard</item>
+        <item>Luxury</item>
+        <item>Van</item>
+    </string-array>
+    <string-array name="landing_vehicle_type_values">
+        <item>STANDARD</item>
+        <item>LUXURY</item>
+        <item>VAN</item>
+    </string-array>
 
 
     <!-- Validation Messages -->

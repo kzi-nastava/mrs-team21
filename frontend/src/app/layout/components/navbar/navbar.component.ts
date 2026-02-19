@@ -1,6 +1,7 @@
-import { Component, OnInit, inject, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, OnInit, OnDestroy, inject, effect } from '@angular/core';
+import { CommonModule, NgTemplateOutlet } from '@angular/common';
+import { Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { NAVIGATION_CONFIG, SECTION_LABELS, NavItem } from '../../config/navbar.config';
 import { AuthService } from '../../../shared/services/auth.service';
 import { CurrentUserService } from '../../services/current-user.service';
@@ -18,11 +19,11 @@ export interface UserProfile {
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, NgTemplateOutlet],
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss'],
 })
-export class NavbarComponent implements OnInit {
+export class NavbarComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   readonly currentUserService = inject(CurrentUserService);
@@ -31,15 +32,38 @@ export class NavbarComponent implements OnInit {
   groupedNavItems: Map<string, NavItem[]> = new Map();
   sectionLabels = SECTION_LABELS;
 
+  /** Drawer open state for mobile menu (hamburger). */
+  drawerOpen = false;
+
+  private readonly boundEscape = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && this.drawerOpen) this.closeDrawer();
+  };
+
   constructor() {
     effect(() => {
       this.currentUserService.user();
       this.applyUserType();
     });
+    this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe(() => this.closeDrawer());
   }
 
   ngOnInit(): void {
     this.applyUserType();
+    window.addEventListener('keydown', this.boundEscape);
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('keydown', this.boundEscape);
+  }
+
+  toggleDrawer(): void {
+    this.drawerOpen = !this.drawerOpen;
+  }
+
+  closeDrawer(): void {
+    this.drawerOpen = false;
   }
 
   private applyUserType(): void {
@@ -85,6 +109,8 @@ export class NavbarComponent implements OnInit {
       'bar-chart':
         '<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>',
       bell: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+      'dollar-sign':
+        '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
     };
 
     return icons[icon] || icons['file-text'];

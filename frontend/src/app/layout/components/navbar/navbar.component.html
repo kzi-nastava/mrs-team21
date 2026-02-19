@@ -1,4 +1,30 @@
+<!-- Desktop: fixed sidebar (hidden on small screens via CSS) -->
 <aside class="sidebar">
+  <ng-container *ngTemplateOutlet="sidebarContent" />
+</aside>
+
+<!-- Mobile: floating hamburger, top-left -->
+<button
+  type="button"
+  class="hamburger"
+  (click)="toggleDrawer()"
+  [attr.aria-expanded]="drawerOpen"
+  aria-label="Open menu"
+>
+  <span class="hamburger-line"></span>
+  <span class="hamburger-line"></span>
+  <span class="hamburger-line"></span>
+</button>
+
+<!-- Mobile: drawer overlay + panel (same content as sidebar) -->
+@if (drawerOpen) {
+  <div class="drawer-backdrop" (click)="closeDrawer()" aria-hidden="true"></div>
+  <div class="drawer-panel" role="dialog" aria-label="Navigation menu">
+    <ng-container *ngTemplateOutlet="sidebarContent" />
+  </div>
+}
+
+<ng-template #sidebarContent>
   <div class="sidebar-scroll">
     <!-- Logo -->
     <a routerLink="/" class="logo" aria-label="Drumigo Home">
@@ -68,4 +94,4 @@
       Log out
     </button>
   </div>
-</aside>
+</ng-template>

@@ -3,7 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/activeVehiclesMapFragment">
+    app:startDestination="@id/landingFragment">
+
+    <fragment
+        android:id="@+id/landingFragment"
+        android:name="com.drumigo.mobile.ui.landing.LandingFragment"
+        android:label="@string/nav_home"
+        tools:layout="@layout/fragment_landing" />
 
     <fragment
         android:id="@+id/activeVehiclesMapFragment"
