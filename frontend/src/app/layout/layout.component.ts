@@ -1,11 +1,12 @@
-import { Component, OnDestroy, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
-import { NavbarComponent, UserProfile } from './components/navbar/navbar.component';
+import { NavbarComponent } from './components/navbar/navbar.component';
 import { ProfileApiService } from '../features/profile/services/profile-api.service';
 import { AuthService } from '../shared/services/auth.service';
 import { DriverLocationPingService } from '../shared/services/driver-location-ping.service';
+import { CurrentUserService } from './services/current-user.service';
 
 @Component({
   selector: 'app-layout',
@@ -15,19 +16,11 @@ import { DriverLocationPingService } from '../shared/services/driver-location-pi
   styleUrls: ['./layout.component.scss'],
 })
 export class LayoutComponent implements OnInit, OnDestroy {
-
   private profileService = inject(ProfileApiService);
   private readonly authService = inject(AuthService);
   private readonly driverLocationPingService = inject(DriverLocationPingService);
-  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly currentUserService = inject(CurrentUserService);
   private readonly destroy$ = new Subject<void>();
-
-  user: UserProfile = {
-    name: 'User',
-    initials: 'US',
-    role: 'Passenger',
-    type: 'passenger',
-  };
 
   ngOnInit(): void {
     this.loadUserFromToken();
@@ -49,67 +42,21 @@ export class LayoutComponent implements OnInit, OnDestroy {
     const role = this.authService.getRole();
 
     if (userId && role) {
-      const roleData = this.mapRole(role);
-      // Set role/type immediately from token so navbar shows correct items (driver vs passenger) before profile loads
-      this.user = {
-        ...this.user,
-        role: roleData.label,
-        type: roleData.type,
-      };
+      this.currentUserService.setRoleFromToken(role, email ?? undefined);
       this.profileService.getProfile().subscribe({
         next: (profile) => {
-          const fullName = `${profile.firstName} ${profile.lastName}`;
-          this.user = {
-            ...this.user,
-            name: fullName,
-            initials: this.getInitials(fullName),
-            avatarUrl: profile.avatarUrl,
-          };
-          this.cdr.detectChanges();
+          this.currentUserService.setFromProfile(profile);
         },
         error: (err) => {
           console.error('Failed to load profile:', err);
-          if (email) {
-            this.user = {
-              ...this.user,
-              name: email,
-              initials: this.getInitials(email),
-            };
-            this.cdr.detectChanges();
-          }
+          this.currentUserService.updateAvatar(null);
         },
       });
       return;
     }
 
-    if (email && role && this.user.name === 'User') {
-      const roleData = this.mapRole(role);
-      this.user = {
-        name: email,
-        initials: this.getInitials(email),
-        role: roleData.label,
-        type: roleData.type,
-      };
+    if (email && role) {
+      this.currentUserService.setRoleFromToken(role, email);
     }
-  }
-
-  private mapRole(role: 'DRIVER' | 'PASSENGER' | 'ADMIN'): { label: string; type: UserProfile['type'] } {
-    const r = (role ?? '').toUpperCase();
-    if (r === 'DRIVER') {
-      return { label: 'Driver', type: 'driver' };
-    }
-    if (r === 'ADMIN') {
-      return { label: 'Admin', type: 'admin' };
-    }
-    return { label: 'Passenger', type: 'passenger' };
-  }
-
-  private getInitials(name: string): string {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
   }
 }

@@ -1,67 +1,69 @@
 <aside class="sidebar">
-  <!-- Logo -->
-  <a routerLink="/" class="logo" aria-label="Drumigo Home">
-    <div class="logo-icon">
-      <img src="/images/logo/logo-blue-v2.svg" alt="Drumigo" />
-    </div>
-    <span class="logo-text">Drumigo</span>
-  </a>
-
-  <!-- Navigation Sections -->
-  @for (sectionKey of getSectionKeys(); track sectionKey) {
-    <nav class="nav-section">
-      <div class="nav-label">{{ sectionLabels[sectionKey] }}</div>
-      <div class="nav-items">
-        @for (item of groupedNavItems.get(sectionKey); track $index) {
-          @if (!item.disabled && item.path !== '#') {
-            <a [routerLink]="item.path" routerLinkActive="active" class="nav-item">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                [innerHTML]="getIconSvg(item.icon)"
-              ></svg>
-              {{ item.label }}
-            </a>
-          } @else {
-            <span
-              class="nav-item nav-item--disabled"
-              [title]="item.disabled ? 'Not yet implemented – route reserved' : ''"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                [innerHTML]="getIconSvg(item.icon)"
-              ></svg>
-              {{ item.label }}
-            </span>
-          }
-        }
+  <div class="sidebar-scroll">
+    <!-- Logo -->
+    <a routerLink="/" class="logo" aria-label="Drumigo Home">
+      <div class="logo-icon">
+        <img src="/images/logo/logo-blue-v2.svg" alt="Drumigo" />
       </div>
-    </nav>
-  }
+      <span class="logo-text">Drumigo</span>
+    </a>
 
-  <!-- Spacer -->
-  <div class="nav-spacer"></div>
-
-  <!-- User Profile -->
-  <div class="user-profile">
-    @if (user.avatarUrl) {
-      <img [src]="user.avatarUrl" alt="{{ user.name }}" class="user-avatar-img" />
-    } @else {
-      <img src="images/default-avatar.svg" [alt]="user.name" class="user-avatar-img" />
+    <!-- Navigation Sections -->
+    @for (sectionKey of getSectionKeys(); track sectionKey) {
+      <nav class="nav-section">
+        <div class="nav-label">{{ sectionLabels[sectionKey] }}</div>
+        <div class="nav-items">
+          @for (item of groupedNavItems.get(sectionKey); track $index) {
+            @if (!item.disabled && item.path !== '#') {
+              <a [routerLink]="item.path" routerLinkActive="active" class="nav-item">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  [innerHTML]="getIconSvg(item.icon)"
+                ></svg>
+                {{ item.label }}
+              </a>
+            } @else {
+              <span
+                class="nav-item nav-item--disabled"
+                [title]="item.disabled ? 'Not yet implemented – route reserved' : ''"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  [innerHTML]="getIconSvg(item.icon)"
+                ></svg>
+                {{ item.label }}
+              </span>
+            }
+          }
+        </div>
+      </nav>
     }
-    <div class="user-info">
-      <div class="user-name">{{ user.name }}</div>
-      <div class="user-role">{{ user.role }}</div>
-    </div>
+  </div>
+
+  <!-- User block: clickable to go to profile; logout button separate -->
+  @let user = currentUserService.user();
+  <div class="user-profile">
+    <a routerLink="/profile" class="user-profile-link" aria-label="Go to profile">
+      @if (user.avatarUrl) {
+        <img [src]="user.avatarUrl" alt="{{ user.name }}" class="user-avatar-img" />
+      } @else {
+        <img src="images/default-avatar.svg" [alt]="user.name" class="user-avatar-img" />
+      }
+      <div class="user-info">
+        <div class="user-name">{{ user.name }}</div>
+        <div class="user-role">{{ user.role }}</div>
+      </div>
+    </a>
     <button type="button" class="logout-btn" (click)="logout()" aria-label="Log out">
       Log out
     </button>
