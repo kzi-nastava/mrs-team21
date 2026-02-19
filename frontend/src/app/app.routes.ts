@@ -94,6 +94,16 @@ export const routes: Routes = [
             (m) => m.RideTrackingComponent,
           ),
       },
+      // Reports (passenger and driver)
+      {
+        path: 'reports',
+        canActivate: [roleGuard],
+        data: { roles: ['PASSENGER', 'DRIVER'], featureName: 'Reports', specRef: '2.10' },
+        loadComponent: () =>
+          import('./features/reports/pages/user-reports-page/user-reports-page.component').then(
+            (m) => m.UserReportsPageComponent,
+          ),
+      },
       // Passenger only
       {
         path: 'ride-history',
@@ -208,8 +218,8 @@ export const routes: Routes = [
           {
             path: 'reports',
             loadComponent: () =>
-              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
-                (m) => m.PlaceholderFeatureComponent,
+              import('./features/reports/pages/admin-reports-page/admin-reports-page.component').then(
+                (m) => m.AdminReportsPageComponent,
               ),
             data: { featureName: 'Reports', specRef: '2.10' },
           },

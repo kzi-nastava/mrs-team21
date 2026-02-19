@@ -19,6 +19,7 @@ export const NAVIGATION_CONFIG: NavigationConfig = {
     { label: 'Order a Ride', icon: 'clock', path: '/order-ride', section: 'main' },
     { label: 'Ride Tracking', icon: 'map-pin', path: '/ride-tracking', section: 'main' },
     { label: 'Ride History', icon: 'file-text', path: '/ride-history', section: 'main' },
+    { label: 'Reports', icon: 'bar-chart', path: '/reports', section: 'main' },
 
     // Account Section
     { label: 'Support', icon: 'message-circle', path: '/support', section: 'account' },
@@ -28,6 +29,7 @@ export const NAVIGATION_CONFIG: NavigationConfig = {
     // Main Section
     { label: 'Ride Tracking', icon: 'map-pin', path: '/ride-tracking', section: 'main' },
     { label: 'Ride History', icon: 'file-text', path: '/driver/ride-history', section: 'main' },
+    { label: 'Reports', icon: 'bar-chart', path: '/reports', section: 'main' },
 
     // Account Section
     { label: 'Support', icon: 'message-circle', path: '/support', section: 'account' },
@@ -47,7 +49,7 @@ export const NAVIGATION_CONFIG: NavigationConfig = {
     { label: 'Register Driver', icon: 'truck', path: '/register-driver', section: 'management' },
     { label: 'Drivers', icon: 'truck', path: '/admin/drivers', section: 'management', disabled: true },
     { label: 'Passengers', icon: 'users', path: '/admin/passengers', section: 'management', disabled: true },
-    { label: 'Reports', icon: 'bar-chart', path: '/admin/reports', section: 'management', disabled: true },
+    { label: 'Reports', icon: 'bar-chart', path: '/admin/reports', section: 'management' },
     { label: 'All Notifications', icon: 'bell', path: '/admin/notifications', section: 'management', disabled: true },
 
     // Account Section (profile is reached by clicking the user block at bottom)
