@@ -44,6 +44,8 @@ Potrebno je realizovati jedinične testove klijentskog sloja (Angular aplikacija
 
 ## E2E testiranje
 
+**Preduslovi:** E2E testovi zahtevaju da backend (Spring Boot) i frontend (Angular na `http://localhost:4200`) budu pokrenuti, i da baza bude popunjena seed podacima (`mysql-seed.sql`). Lozinka za sve seed korisnike je `Password12345`. Bez pokrenutog backend-a, prijavljivanje u testovima neće uspeti.
+
 Sledeće funkcionalnosti je potrebno testirati upotrebom Selenium alata:
 
 - **Student 1:**
