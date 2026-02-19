@@ -34,10 +34,19 @@ public interface RideRepository extends JpaRepository<Ride, Long> {
     List<Ride> findDriverRidesWithActivitySince(@Param("driver") Driver driver, @Param("since") Instant since);
     
     @Query("SELECT r FROM Ride r WHERE r.driver = :driver AND r.requestedAt BETWEEN :from AND :to")
-    Page<Ride> findByDriverAndRequestedAtBetween(@Param("driver") Driver driver, 
-                                                   @Param("from") Instant from, 
-                                                   @Param("to") Instant to, 
+    Page<Ride> findByDriverAndRequestedAtBetween(@Param("driver") Driver driver,
+                                                   @Param("from") Instant from,
+                                                   @Param("to") Instant to,
                                                    Pageable pageable);
+
+    /**
+     * Finished rides for a driver whose end time falls within the date range (for chart reports).
+     */
+    @Query("SELECT r FROM Ride r WHERE r.driver = :driver AND r.status = :status AND r.endTime IS NOT NULL AND r.endTime >= :from AND r.endTime <= :to")
+    List<Ride> findByDriverAndStatusAndEndTimeBetween(@Param("driver") Driver driver,
+                                                       @Param("status") RideStatus status,
+                                                       @Param("from") Instant from,
+                                                       @Param("to") Instant to);
     
     @Query("SELECT r FROM Ride r WHERE r.driver.name LIKE CONCAT('%', :name, '%') OR r.driver.surname LIKE CONCAT('%', :name, '%')")
     List<Ride> findByDriverNameContaining(@Param("name") String name);
@@ -46,6 +55,14 @@ public interface RideRepository extends JpaRepository<Ride, Long> {
     List<Ride> findByStatusAndRequestedAtBetween(@Param("status") RideStatus status,
                                                    @Param("from") Instant from,
                                                    @Param("to") Instant to);
+
+    /**
+     * Finished rides whose report date (endTime or requestedAt) falls in range.
+     */
+    @Query("SELECT r FROM Ride r WHERE r.status = :status AND COALESCE(r.endTime, r.requestedAt) >= :from AND COALESCE(r.endTime, r.requestedAt) <= :to")
+    List<Ride> findFinishedRidesByReportDateBetween(@Param("status") RideStatus status,
+                                                      @Param("from") Instant from,
+                                                      @Param("to") Instant to);
     
     @Query("SELECT r FROM Ride r WHERE r.status = :status AND r.requestedAt >= :from AND r.requestedAt <= :to " +
            "AND (r.orderingPassenger.id = :userId OR EXISTS " +
@@ -55,6 +72,21 @@ public interface RideRepository extends JpaRepository<Ride, Long> {
                                                           @Param("passengerEmail") String passengerEmail,
                                                           @Param("from") Instant from,
                                                           @Param("to") Instant to);
+
+    /**
+     * Finished rides for a passenger where report date (endTime or requestedAt) falls in range.
+     */
+    @Query("""
+           SELECT r FROM Ride r WHERE r.status = :status
+             AND (r.orderingPassenger.id = :userId OR EXISTS
+                 (SELECT rp FROM RidePassenger rp WHERE rp.ride = r AND rp.passengerEmail = :passengerEmail))
+             AND COALESCE(r.endTime, r.requestedAt) >= :from AND COALESCE(r.endTime, r.requestedAt) <= :to
+           """)
+    List<Ride> findFinishedPassengerRidesByReportDateBetween(@Param("status") RideStatus status,
+                                                              @Param("userId") Long userId,
+                                                              @Param("passengerEmail") String passengerEmail,
+                                                              @Param("from") Instant from,
+                                                              @Param("to") Instant to);
 
     @Query("""
            SELECT DISTINCT r

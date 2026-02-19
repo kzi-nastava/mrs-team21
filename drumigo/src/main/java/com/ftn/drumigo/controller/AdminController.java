@@ -4,11 +4,15 @@ import com.ftn.drumigo.domain.DriverProfileChangeRequest;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RideWaypoint;
 import com.ftn.drumigo.domain.enums.RideStatus;
+import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.dto.*;
 import com.ftn.drumigo.dto.history.request.RideHistoryRequest;
+import com.ftn.drumigo.dto.ReportChartResponse;
 import com.ftn.drumigo.dto.ride.response.RideResponse;
+import com.ftn.drumigo.dto.UserSearchItemDto;
 import com.ftn.drumigo.mapper.DriverProfileChangeRequestMapper;
 import com.ftn.drumigo.mapper.RideMapper;
+import com.ftn.drumigo.repository.UserRepository;
 import com.ftn.drumigo.security.CustomUserDetails;
 import com.ftn.drumigo.service.DriverProfileChangeRequestService;
 import com.ftn.drumigo.service.ReportService;
@@ -21,6 +25,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,13 +35,15 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
-    
+
     private final RideService rideService;
     private final RideMapper rideMapper;
     private final DriverProfileChangeRequestService profileChangeRequestService;
     private final DriverProfileChangeRequestMapper profileChangeRequestMapper;
     private final ReportService reportService;
+    private final UserRepository userRepository;
     
     @GetMapping("/profile-change-requests")
     public ResponseEntity<Page<DriverProfileChangeRequestResponse>> getProfileChangeRequests(
@@ -73,11 +80,36 @@ public class AdminController {
     }
     
     @GetMapping("/reports")
-    public ResponseEntity<ReportResponse> getAdminReport(
+    public ResponseEntity<?> getAdminReport(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @RequestParam(required = false) String scope,
+            @RequestParam(required = false) Long userId) {
+        if (scope != null && !scope.isBlank()) {
+            ReportChartResponse chart = reportService.getChartReportForAdmin(from, to, scope.trim(), userId);
+            return ResponseEntity.ok(chart);
+        }
         ReportResponse report = reportService.getAdminReport(from, to);
         return ResponseEntity.ok(report);
+    }
+
+    /**
+     * Search users by email (for report "one person" picker). Returns at most 15 suggestions.
+     */
+    @GetMapping("/users/search")
+    public ResponseEntity<List<UserSearchItemDto>> searchUsersByEmail(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "15") int limit) {
+        if (q == null || q.isBlank()) {
+            return ResponseEntity.ok(List.of());
+        }
+        int size = Math.min(Math.max(1, limit), 50);
+        Pageable pageable = PageRequest.of(0, size, Sort.by("email").ascending());
+        return ResponseEntity.ok(
+                userRepository.findByEmailContainingIgnoreCase(q.trim(), pageable)
+                        .stream()
+                        .map(u -> new UserSearchItemDto(u.getId(), u.getEmail(), u.getName(), u.getSurname()))
+                        .toList());
     }
 
     @GetMapping("/rides/history")
