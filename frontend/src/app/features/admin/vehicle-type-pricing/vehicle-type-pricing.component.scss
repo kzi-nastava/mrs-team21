@@ -1,0 +1,153 @@
+// Vehicle type pricing - uses global CSS variables from styles.scss
+
+:host {
+  display: block;
+  min-height: 100vh;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg-cream);
+  color: var(--text-dark);
+}
+
+.admin-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.admin-header {
+  margin-bottom: 40px;
+}
+
+.header-content {
+  text-align: center;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+
+  svg {
+    color: var(--primary);
+  }
+
+  h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-dark);
+    letter-spacing: -0.5px;
+    margin: 0;
+  }
+}
+
+.header-subtitle {
+  font-size: 15px;
+  color: var(--text-light);
+  margin: 0;
+}
+
+.admin-main {
+  margin-top: 0;
+}
+
+.state-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  text-align: center;
+  color: var(--text-light);
+  box-shadow: var(--shadow-md);
+}
+
+.pricing-cards {
+  display: grid;
+  gap: 24px;
+}
+
+.pricing-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 24px;
+  border: 1px solid var(--border);
+}
+
+.pricing-card__title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0 0 20px;
+}
+
+.pricing-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-medium);
+  }
+
+  input {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-family: inherit;
+
+    &:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+      border-color: var(--primary);
+    }
+
+    &.ng-invalid.ng-touched {
+      border-color: var(--error, #dc2626);
+    }
+  }
+}
+
+.form-error {
+  font-size: 12px;
+  color: var(--error, #dc2626);
+}
+
+.btn-save {
+  align-self: flex-start;
+  padding: 10px 20px;
+  background: var(--primary);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover:not(:disabled) {
+    background: var(--primary-hover, #6d5fd9);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}

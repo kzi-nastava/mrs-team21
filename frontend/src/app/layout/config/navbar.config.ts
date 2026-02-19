@@ -47,6 +47,7 @@ export const NAVIGATION_CONFIG: NavigationConfig = {
 
     // Management Section
     { label: 'Register Driver', icon: 'truck', path: '/register-driver', section: 'management' },
+    { label: 'Ride Pricing', icon: 'dollar-sign', path: '/admin/pricing', section: 'management' },
     { label: 'Drivers', icon: 'truck', path: '/admin/drivers', section: 'management', disabled: true },
     { label: 'Passengers', icon: 'users', path: '/admin/passengers', section: 'management', disabled: true },
     { label: 'Reports', icon: 'bar-chart', path: '/admin/reports', section: 'management' },

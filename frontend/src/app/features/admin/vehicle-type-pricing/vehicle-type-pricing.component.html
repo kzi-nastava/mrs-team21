@@ -1,0 +1,75 @@
+<div class="admin-container">
+  <header class="admin-header">
+    <div class="header-content">
+      <div class="header-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <h1>Ride pricing</h1>
+      </div>
+      <p class="header-subtitle">Set start price and price per km for each vehicle type (RSD).</p>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    @if (loading) {
+      <div class="state-card">Loading vehicle types...</div>
+    } @else if (vehicleTypes.length === 0) {
+      <div class="state-card">No vehicle types found.</div>
+    } @else {
+      <div class="pricing-cards">
+        @for (vt of vehicleTypes; track vt.id) {
+          @let form = getForm(vt.id);
+          @if (form) {
+            <div class="pricing-card">
+              <h2 class="pricing-card__title">{{ vt.name }}</h2>
+              <form class="pricing-form" [formGroup]="form" (ngSubmit)="save(vt.id)">
+                <div class="form-row">
+                  <label [for]="'start-' + vt.id">Start price (RSD)</label>
+                  <input
+                    [id]="'start-' + vt.id"
+                    type="number"
+                    min="0"
+                    step="1"
+                    formControlName="startPrice"
+                    placeholder="0"
+                  />
+                  @if (form.get('startPrice')?.invalid && form.get('startPrice')?.touched) {
+                    <span class="form-error">Required, must be ≥ 0</span>
+                  }
+                </div>
+                <div class="form-row">
+                  <label [for]="'perkm-' + vt.id">Price per km (RSD)</label>
+                  <input
+                    [id]="'perkm-' + vt.id"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    formControlName="pricePerKm"
+                    placeholder="0"
+                  />
+                  @if (form.get('pricePerKm')?.invalid && form.get('pricePerKm')?.touched) {
+                    <span class="form-error">Required, must be ≥ 0</span>
+                  }
+                </div>
+                <button
+                  type="submit"
+                  class="btn-save"
+                  [disabled]="form.invalid || savingId !== null"
+                >
+                  {{ savingId === vt.id ? 'Saving...' : 'Save' }}
+                </button>
+              </form>
+            </div>
+          }
+        }
+      </div>
+    }
+  </main>
+</div>

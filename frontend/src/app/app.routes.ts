@@ -200,6 +200,14 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'pricing',
+            loadComponent: () =>
+              import('./features/admin/vehicle-type-pricing/vehicle-type-pricing.component').then(
+                (m) => m.VehicleTypePricingComponent,
+              ),
+            data: { featureName: 'Ride Pricing', specRef: '2.14' },
+          },
+          {
             path: 'drivers',
             loadComponent: () =>
               import('./shared/components/placeholder-feature/placeholder-feature.component').then(
