@@ -64,6 +64,9 @@ target/
 # Local Spring Boot dev config
 **/application-dev.properties
 
+# Backend uploads (profile pictures, etc.)
+uploads/
+
 # Gradle (for mobile)
 .gradle/
 build/
