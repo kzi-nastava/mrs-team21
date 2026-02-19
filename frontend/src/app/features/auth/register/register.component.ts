@@ -108,7 +108,7 @@ export class RegisterComponent implements OnInit {
     }
 
     const formValue = this.registerForm.value;
-    const basePayload: Omit<PassengerRegisterRequest, 'profilePicture'> = {
+    const basePayload: Omit<PassengerRegisterRequest, 'profilePictureUrl'> = {
       firstName: formValue.firstName,
       lastName: formValue.lastName,
       email: formValue.email,
@@ -120,15 +120,18 @@ export class RegisterComponent implements OnInit {
 
     const file = this.selectedPhotoFile;
     if (!file) {
-      this.submitWithPayload({ ...basePayload, profilePicture: undefined });
+      this.submitWithPayload({ ...basePayload, profilePictureUrl: undefined });
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      this.submitWithPayload({ ...basePayload, profilePicture: dataUrl });
-    };
-    reader.readAsDataURL(file);
+    this.registerService.uploadProfilePicture(file).subscribe({
+      next: (res) => {
+        this.submitWithPayload({ ...basePayload, profilePictureUrl: res.url });
+      },
+      error: (err) => {
+        console.error('Profile picture upload failed:', err);
+        this.submitWithPayload({ ...basePayload, profilePictureUrl: undefined });
+      },
+    });
   }
 }
