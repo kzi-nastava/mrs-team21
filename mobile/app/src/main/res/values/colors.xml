@@ -24,6 +24,8 @@
     <color name="success">#22C55E</color>
     <color name="success_bg">#F0FDF4</color>
     <color name="error">#EF4444</color>
+    <color name="marker_available">#22C55E</color>
+    <color name="marker_busy">#F97316</color>
     <!-- danger is an alias used across code; keep for compatibility -->
     <color name="danger">#EF4444</color>
 

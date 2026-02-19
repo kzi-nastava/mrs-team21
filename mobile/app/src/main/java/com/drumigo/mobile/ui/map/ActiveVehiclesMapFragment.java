@@ -7,13 +7,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
 
 import com.drumigo.mobile.BuildConfig;
@@ -268,35 +265,28 @@ public class ActiveVehiclesMapFragment extends Fragment {
 
     private Bitmap getAvailableIcon() {
         if (availableIcon == null) {
-            availableIcon = createTintedMarker(R.color.success);
+            availableIcon = createVehicleMarker(R.color.marker_available);
         }
         return availableIcon;
     }
 
     private Bitmap getBusyIcon() {
         if (busyIcon == null) {
-            busyIcon = createTintedMarker(R.color.error);
+            busyIcon = createVehicleMarker(R.color.marker_busy);
         }
         return busyIcon;
     }
 
-    private Bitmap createTintedMarker(int colorResId) {
+    private Bitmap createVehicleMarker(int markerColorResId) {
         if (getContext() == null) {
             return null;
         }
-        Drawable drawable = ContextCompat.getDrawable(requireContext(), R.drawable.ic_car);
-        if (drawable == null) {
-            return null;
-        }
-        Drawable wrapped = DrawableCompat.wrap(drawable.mutate());
-        DrawableCompat.setTint(wrapped, ContextCompat.getColor(requireContext(), colorResId));
-        int width = wrapped.getIntrinsicWidth() > 0 ? wrapped.getIntrinsicWidth() : 48;
-        int height = wrapped.getIntrinsicHeight() > 0 ? wrapped.getIntrinsicHeight() : 48;
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        wrapped.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-        wrapped.draw(canvas);
-        return bitmap;
+        return VehicleMarkerBitmapFactory.createStatusPin(
+            requireContext(),
+            R.drawable.ic_car,
+            ContextCompat.getColor(requireContext(), markerColorResId),
+            ContextCompat.getColor(requireContext(), R.color.white)
+        );
     }
 
     private String buildDriverName(String firstName, String lastName) {
