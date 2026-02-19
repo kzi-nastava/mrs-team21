@@ -35,9 +35,12 @@ import com.mapbox.geojson.Point;
 import com.mapbox.maps.CameraOptions;
 import com.mapbox.maps.MapView;
 import com.mapbox.maps.plugin.annotation.AnnotationPlugin;
+import com.mapbox.maps.plugin.annotation.AnnotationsUtils;
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager;
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManagerKt;
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions;
 import com.mapbox.maps.plugin.annotation.generated.PolylineAnnotationManager;
+import com.mapbox.maps.plugin.annotation.generated.PolylineAnnotationManagerKt;
 import com.mapbox.maps.plugin.annotation.generated.PolylineAnnotationOptions;
 import com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor;
 
@@ -474,12 +477,12 @@ public class RideTrackingFragment extends Fragment {
         if (mapView == null) {
             return;
         }
-        AnnotationPlugin annotationPlugin = mapView.getAnnotations();
+        AnnotationPlugin annotationPlugin = AnnotationsUtils.getAnnotations(mapView);
         if (pointAnnotationManager == null) {
-            pointAnnotationManager = annotationPlugin.createPointAnnotationManager();
+            pointAnnotationManager = PointAnnotationManagerKt.createPointAnnotationManager(annotationPlugin, null);
         }
         if (polylineAnnotationManager == null) {
-            polylineAnnotationManager = annotationPlugin.createPolylineAnnotationManager();
+            polylineAnnotationManager = PolylineAnnotationManagerKt.createPolylineAnnotationManager(annotationPlugin, null);
         }
     }
 
