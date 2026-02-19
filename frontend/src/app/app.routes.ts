@@ -123,11 +123,12 @@ export const routes: Routes = [
       },
       {
         path: 'support',
+        canActivate: [roleGuard],
+        data: { roles: ['PASSENGER', 'DRIVER'] },
         loadComponent: () =>
-          import('./shared/components/placeholder-feature/placeholder-feature.component').then(
-            (m) => m.PlaceholderFeatureComponent,
+          import('./features/support/support-page/support-page.component').then(
+            (m) => m.SupportPageComponent,
           ),
-        data: { featureName: 'Support', specRef: '2.11' },
       },
       // Driver only
       {
@@ -184,10 +185,9 @@ export const routes: Routes = [
           {
             path: 'support',
             loadComponent: () =>
-              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
-                (m) => m.PlaceholderFeatureComponent,
+              import('./features/support/admin-support-page/admin-support-page.component').then(
+                (m) => m.AdminSupportPageComponent,
               ),
-            data: { featureName: 'Live Support / Chat', specRef: '2.11' },
           },
           {
             path: 'drivers',

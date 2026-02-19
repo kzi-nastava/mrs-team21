@@ -5,4 +5,14 @@
 .main-content {
   margin-left: 260px;
   min-height: 100vh;
+  padding: 1.5rem 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  box-sizing: border-box;
+
+  @media (max-width: 900px) {
+    margin-left: 0;
+    padding: 1rem;
+  }
 }

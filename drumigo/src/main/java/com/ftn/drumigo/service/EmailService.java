@@ -1,6 +1,4 @@
 package com.ftn.drumigo.service;
-
-import com.ftn.drumigo.exception.EmailSendException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +22,7 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    private void sendEmail(String email, String subject, String body) {
+    private boolean sendEmail(String email, String subject, String body) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(email);
@@ -36,10 +34,12 @@ public class EmailService {
 
             mailSender.send(message);
             log.info("Email successfully sent to {} with subject '{}'", email, subject);
+            return true;
 
         } catch (Exception e) {
-            log.error("Failed to send email to {}: {}", email, e.getMessage(), e);
-            throw new EmailSendException("Failed to send email", e);
+            // Email delivery must never break core business flows. Persisted domain data remains intact.
+            log.warn("Failed to send email to {}: {}", email, e.getMessage());
+            return false;
         }
     }
 

@@ -1,5 +1,6 @@
 package com.ftn.drumigo.repository;
 
+import com.ftn.drumigo.domain.enums.UserRole;
 import com.ftn.drumigo.domain.users.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -10,5 +11,6 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
+    Optional<User> findFirstByRoleOrderByIdAsc(UserRole role);
 }
 

@@ -1,0 +1,238 @@
+.support-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  padding: 0 0.5rem;
+  box-sizing: border-box;
+}
+
+.support-page__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 720px;
+  width: 100%;
+  max-height: min(calc(100vh - 4rem), 800px);
+  min-height: 0;
+}
+
+.support-header {
+  flex-shrink: 0;
+  padding-top: 0.25rem;
+
+  h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+
+  p {
+    margin: 0.35rem 0 0;
+    font-size: 0.9375rem;
+    color: var(--text-light);
+    font-weight: 400;
+  }
+}
+
+@media (max-width: 600px) {
+  .support-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .support-page__inner {
+    max-height: min(calc(100vh - 3rem), 90vh);
+  }
+
+  .message {
+    max-width: 92%;
+  }
+
+  .messages {
+    padding: 1rem;
+  }
+
+  .composer {
+    padding: 0.75rem 1rem 1rem;
+  }
+}
+
+.chat-shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem 1.25rem 1rem;
+  background: var(--bg-cream);
+}
+
+.message {
+  max-width: 82%;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  align-self: flex-start;
+  border: 1px solid var(--border);
+  background: var(--white);
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+    background: var(--primary);
+    opacity: 0.35;
+  }
+}
+
+.message--mine {
+  align-self: flex-end;
+  background: rgba(91, 76, 219, 0.06);
+  border-color: rgba(91, 76, 219, 0.2);
+
+  &::before {
+    left: auto;
+    right: 0;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    opacity: 0.5;
+  }
+}
+
+.message__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.message__author {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-light);
+}
+
+.message--mine .message__author {
+  color: var(--primary);
+}
+
+.message__time {
+  font-size: 0.6875rem;
+  color: var(--text-light);
+  font-weight: 500;
+}
+
+.message__content {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--text-dark);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.composer {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem 1.25rem;
+  background: var(--white);
+  border-top: 1px solid var(--border);
+}
+
+.composer textarea {
+  width: 100%;
+  min-height: 72px;
+  padding: 0.875rem 1rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9375rem;
+  color: var(--text-dark);
+  background: var(--bg-warm);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  resize: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &::placeholder {
+    color: var(--text-light);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(91, 76, 219, 0.08);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.composer button {
+  align-self: flex-end;
+  padding: 0.5rem 1.25rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--white);
+  background: var(--primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--primary-dark);
+  }
+
+  &:disabled {
+    background: var(--text-light);
+    cursor: not-allowed;
+  }
+}
+
+.state-card {
+  padding: 1.25rem 1.25rem;
+  font-size: 0.9375rem;
+  color: var(--text-light);
+  background: var(--bg-warm);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.error {
+  margin: 0;
+  padding: 0 1.25rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--danger);
+}
