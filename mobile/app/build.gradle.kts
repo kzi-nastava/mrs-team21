@@ -11,8 +11,13 @@ val secretsProperties = Properties().apply {
     }
 }
 
-val mapboxAccessToken = secretsProperties.getProperty("MAPBOX_ACCESS_TOKEN") ?: "MAPBOX_API_KEY"
-val apiBaseUrl = secretsProperties.getProperty("API_BASE_URL") ?: "http://localhost:8080/api"
+val mapboxAccessToken = (
+    secretsProperties.getProperty("MAPBOX_ACCESS_TOKEN")
+        ?: secretsProperties.getProperty("MAPBOX_PUBLIC_TOKEN")
+        ?: secretsProperties.getProperty("MAPBOX_SECRET_KEY")
+        ?: "MAPBOX_API_KEY"
+).trim()
+val apiBaseUrl = (secretsProperties.getProperty("API_BASE_URL") ?: "http://localhost:8080/api").trim()
 
 android {
     namespace = "com.drumigo.mobile"
@@ -32,7 +37,7 @@ android {
         if (secretsFile.exists()) {
             secretsFile.inputStream().use { secretsProps.load(it) }
         }
-        val apiBaseUrl = secretsProps.getProperty("API_BASE_URL", "").trim()
+        val apiBaseUrl = secretsProps.getProperty("API_BASE_URL", "http://localhost:8080/api").trim()
 
         buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxAccessToken}\"")
         buildConfigField("String", "API_BASE_URL", "\"${apiBaseUrl}\"")
@@ -77,7 +82,6 @@ dependencies {
 
     // Maps (Mapbox)
     implementation(libs.mapbox.maps)
-    implementation(libs.mapbox.annotation)
     implementation(libs.play.services.location)
 
     // Testing
