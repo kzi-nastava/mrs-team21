@@ -15,7 +15,6 @@ import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.dto.RideCreateRequest;
 import com.ftn.drumigo.dto.ride.response.EstimateResponse;
 import com.ftn.drumigo.exception.BadRequestException;
-import com.ftn.drumigo.exception.ResourceNotFoundException;
 import com.ftn.drumigo.repository.DriverRepository;
 import com.ftn.drumigo.repository.LocationRepository;
 import com.ftn.drumigo.repository.NotificationRepository;
@@ -96,9 +95,22 @@ class RideServiceCreateRideTest {
     void create_whenPassengerHasActiveRide_throwsBadRequest() {
         Passenger passenger = passenger(10L, "orderer@mail.com");
         RideCreateRequest request = validRequest(VehicleTypeName.STANDARD, null, List.of(), false, false);
+        VehicleType vehicleType = vehicleType(1L, VehicleTypeName.STANDARD);
+        Ride activeRide = new Ride();
+        activeRide.setStatus(RideStatus.ACTIVE);
+        activeRide.setStartTime(Instant.now().minusSeconds(120));
+        activeRide.setEstimatedDurationSec(900);
+
         when(passengerRepository.findById(10L)).thenReturn(Optional.of(passenger));
+        when(vehicleTypeRepository.findByName(VehicleTypeName.STANDARD)).thenReturn(Optional.of(vehicleType));
+        when(mapService.estimateRide(any())).thenReturn(new EstimateResponse("polyline", List.of(), 6.5, 12, 900.0));
         when(rideRepository.existsActiveRideForPassenger(10L, "orderer@mail.com",
             List.of(RideStatus.PENDING, RideStatus.ACCEPTED, RideStatus.ACTIVE))).thenReturn(true);
+        when(rideRepository.findActiveRidesForPassenger(
+            10L,
+            "orderer@mail.com",
+            List.of(RideStatus.PENDING, RideStatus.ACCEPTED, RideStatus.ACTIVE)
+        )).thenReturn(List.of(activeRide));
 
         BadRequestException ex = assertThrows(BadRequestException.class, () -> rideService.create(10L, request));
 
@@ -118,7 +130,6 @@ class RideServiceCreateRideTest {
             null
         );
         when(passengerRepository.findById(11L)).thenReturn(Optional.of(passenger));
-        when(rideRepository.existsActiveRideForPassenger(any(), any(), anyList())).thenReturn(false);
 
         BadRequestException ex = assertThrows(BadRequestException.class, () -> rideService.create(11L, request));
 
@@ -131,7 +142,6 @@ class RideServiceCreateRideTest {
         Instant tooLate = Instant.now().plusSeconds(6 * 3600);
         RideCreateRequest request = validRequest(VehicleTypeName.STANDARD, tooLate, List.of(), false, false);
         when(passengerRepository.findById(12L)).thenReturn(Optional.of(passenger));
-        when(rideRepository.existsActiveRideForPassenger(any(), any(), anyList())).thenReturn(false);
 
         BadRequestException ex = assertThrows(BadRequestException.class, () -> rideService.create(12L, request));
 
@@ -139,16 +149,26 @@ class RideServiceCreateRideTest {
     }
 
     @Test
-    void create_whenVehicleTypeMissing_throwsResourceNotFound() {
+    void create_whenVehicleTypeMissing_createsDefaultTypeAndContinues() {
         Passenger passenger = passenger(13L, "orderer@mail.com");
         RideCreateRequest request = validRequest(VehicleTypeName.STANDARD, null, List.of(), false, false);
+        VehicleType createdType = vehicleType(99L, VehicleTypeName.STANDARD);
         when(passengerRepository.findById(13L)).thenReturn(Optional.of(passenger));
-        when(rideRepository.existsActiveRideForPassenger(any(), any(), anyList())).thenReturn(false);
+        when(rideRepository.existsActiveRideForPassenger(eq(passenger.getId()), eq(passenger.getEmail()), anyList()))
+            .thenReturn(false);
+        when(mapService.estimateRide(any())).thenReturn(new EstimateResponse("polyline", List.of(), 6.5, 12, 900.0));
         when(vehicleTypeRepository.findByName(VehicleTypeName.STANDARD)).thenReturn(Optional.empty());
+        when(vehicleTypeRepository.save(any(VehicleType.class))).thenReturn(createdType);
+        when(rideRepository.save(any(Ride.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(locationRepository.findByAddressAndLatAndLng(any(), any(), any())).thenReturn(Optional.empty());
+        when(locationRepository.save(any(Location.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(rideWaypointRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(driverRepository.findByActiveDriverTrue()).thenReturn(List.of());
 
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> rideService.create(13L, request));
+        Ride result = rideService.create(13L, request);
 
-        assertEquals("Vehicle type not found: STANDARD", ex.getMessage());
+        assertEquals(RideStatus.REJECTED, result.getStatus());
+        verify(vehicleTypeRepository).save(any(VehicleType.class));
     }
 
     @Test
@@ -210,6 +230,64 @@ class RideServiceCreateRideTest {
 
         assertEquals(RideStatus.ACCEPTED, result.getStatus());
         verify(driverRepository, never()).save(driver);
+    }
+
+    @Test
+    void create_whenExistingFutureScheduledRideDoesNotOverlap_allowsImmediateRide() {
+        Passenger passenger = passenger(160L, "orderer@mail.com");
+        RideCreateRequest request = validRequest(VehicleTypeName.STANDARD, null, List.of(), false, false);
+        VehicleType vehicleType = vehicleType(1L, VehicleTypeName.STANDARD);
+        Driver driver = driver(161L, true, false);
+        Vehicle vehicle = vehicle(driver, vehicleType, true, true, BigDecimal.valueOf(45.255), BigDecimal.valueOf(19.845));
+        Ride futureRide = new Ride();
+        futureRide.setStatus(RideStatus.ACCEPTED);
+        futureRide.setScheduledFor(Instant.now().plusSeconds(2 * 3600));
+        futureRide.setEstimatedDurationSec(900);
+
+        configureCreateBase(passenger, vehicleType);
+        when(rideRepository.existsActiveRideForPassenger(passenger.getId(), passenger.getEmail(),
+            List.of(RideStatus.PENDING, RideStatus.ACCEPTED, RideStatus.ACTIVE))).thenReturn(true);
+        when(rideRepository.findActiveRidesForPassenger(
+            passenger.getId(),
+            passenger.getEmail(),
+            List.of(RideStatus.PENDING, RideStatus.ACCEPTED, RideStatus.ACTIVE)
+        )).thenReturn(List.of(futureRide));
+        when(driverRepository.findByActiveDriverTrue()).thenReturn(List.of(driver));
+        when(rideRepository.findDriverRidesWithActivitySince(eq(driver), any())).thenReturn(List.of());
+        when(vehicleRepository.findByDriver(driver)).thenReturn(Optional.of(vehicle));
+        when(rideRepository.findByDriverAndStatusIn(eq(driver), anyList())).thenReturn(List.of());
+
+        Ride result = rideService.create(passenger.getId(), request);
+
+        assertEquals(RideStatus.ACCEPTED, result.getStatus());
+        assertEquals(driver.getId(), result.getDriver().getId());
+    }
+
+    @Test
+    void create_whenExistingScheduledRideOverlaps_throwsBadRequest() {
+        Passenger passenger = passenger(170L, "orderer@mail.com");
+        RideCreateRequest request = validRequest(VehicleTypeName.STANDARD, null, List.of(), false, false);
+        VehicleType vehicleType = vehicleType(1L, VehicleTypeName.STANDARD);
+        Ride overlappingScheduledRide = new Ride();
+        overlappingScheduledRide.setStatus(RideStatus.ACCEPTED);
+        overlappingScheduledRide.setScheduledFor(Instant.now().plusSeconds(5 * 60));
+        overlappingScheduledRide.setEstimatedDurationSec(20 * 60);
+
+        when(passengerRepository.findById(passenger.getId())).thenReturn(Optional.of(passenger));
+        when(vehicleTypeRepository.findByName(VehicleTypeName.STANDARD)).thenReturn(Optional.of(vehicleType));
+        when(mapService.estimateRide(any())).thenReturn(new EstimateResponse("polyline", List.of(), 6.5, 12, 900.0));
+        when(rideRepository.existsActiveRideForPassenger(passenger.getId(), passenger.getEmail(),
+            List.of(RideStatus.PENDING, RideStatus.ACCEPTED, RideStatus.ACTIVE))).thenReturn(true);
+        when(rideRepository.findActiveRidesForPassenger(
+            passenger.getId(),
+            passenger.getEmail(),
+            List.of(RideStatus.PENDING, RideStatus.ACCEPTED, RideStatus.ACTIVE)
+        )).thenReturn(List.of(overlappingScheduledRide));
+
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> rideService.create(passenger.getId(), request));
+
+        assertEquals("Cannot create a new ride while you have an active ride. Please wait until your current ride is finished.", ex.getMessage());
+        verify(rideRepository, never()).save(any(Ride.class));
     }
 
     @Test

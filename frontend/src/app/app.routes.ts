@@ -1,12 +1,14 @@
 import { Routes } from '@angular/router';
 import { LayoutComponent } from './layout/layout.component';
 import { authGuard } from './shared/guards/auth.guard';
+import { defaultRouteGuard } from './shared/guards/default-route.guard';
 import { roleGuard } from './shared/guards/role.guard';
 
 export const routes: Routes = [
-  // Landing page (root - no layout)
+  // Landing page (root - no layout). Authenticated users are redirected to their default page.
   {
     path: '',
+    canActivate: [defaultRouteGuard],
     loadComponent: () =>
       import('./features/landing/landing-page/landing-page.component').then(
         (m) => m.LandingPageComponent,
@@ -76,6 +78,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/profile/profile-page/profile-page.component').then(
             (m) => m.ProfilePageComponent,
+          ),
+      },
+      {
+        path: 'ride-tracking',
+        loadComponent: () =>
+          import('./features/ride-tracking/ride-tracking-landing.component').then(
+            (m) => m.RideTrackingLandingComponent,
           ),
       },
       {

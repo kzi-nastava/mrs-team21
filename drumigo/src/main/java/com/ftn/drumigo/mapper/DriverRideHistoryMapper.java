@@ -27,15 +27,8 @@ public class DriverRideHistoryMapper {
         List<RidePassenger> ridePassengers = ridePassengerRepository.findByRide(ride);
         boolean panicOccurred = !panicEventRepository.findByRide(ride).isEmpty();
         
-        RideWaypoint startWaypoint = waypoints.stream()
-            .filter(wp -> wp.getWaypointOrder() == 0)
-            .findFirst()
-            .orElse(null);
-        
-        RideWaypoint endWaypoint = waypoints.stream()
-            .filter(wp -> wp.getWaypointOrder() == waypoints.size() - 1)
-            .findFirst()
-            .orElse(null);
+        RideWaypoint startWaypoint = waypoints.isEmpty() ? null : waypoints.get(0);
+        RideWaypoint endWaypoint = waypoints.isEmpty() ? null : waypoints.get(waypoints.size() - 1);
         
         DriverRideHistoryItemResponse.LocationInfo startLocation = null;
         DriverRideHistoryItemResponse.LocationInfo endLocation = null;

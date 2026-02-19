@@ -58,16 +58,8 @@ export class LoginComponent implements OnInit {
       next: (response) => {
         console.log('Login successful:', response);
         this.authService.setToken(response.token);
-        // Navigate based on role
-        if (response.role === 'PASSENGER') {
-          this.router.navigate(['/order-ride']);
-        } else if (response.role === 'DRIVER') {
-          this.router.navigate(['/driver/ride-history']);
-        } else if (response.role === 'ADMIN') {
-          this.router.navigate(['/admin/ride-history']);
-        } else {
-          this.router.navigate(['/']);
-        }
+        const defaultRoute = this.authService.getDefaultRouteForRole(response.role);
+        this.router.navigate([defaultRoute]);
       },
       error: (error) => {
         console.error('Login failed:', error);

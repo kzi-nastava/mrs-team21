@@ -25,6 +25,8 @@ export interface MapMarker {
   status: 'available' | 'busy';
   driverName?: string;
   vehicleType?: 'car' | 'van' | 'motorcycle';
+  kind?: 'vehicle' | 'start' | 'waypoint' | 'destination';
+  label?: string;
 }
 
 /**
@@ -50,5 +52,6 @@ export function vehicleToMapMarker(vehicle: VehicleResponse): MapMarker {
     status: vehicle.available ? 'available' : 'busy',
     driverName: `${vehicle.driverName} ${vehicle.driverSurname}`,
     vehicleType: VEHICLE_TYPE_MAP[typeKey] ?? 'car',
+    kind: 'vehicle',
   };
 }

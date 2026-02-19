@@ -151,19 +151,21 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
     this.markerInstances = [];
 
     this.markers().forEach((marker) => {
+      const markerKind = marker.kind ?? 'vehicle';
       const el = this.createMarkerElement(marker);
-      const isCarIcon = this.useCarIcon() && marker.status === 'busy';
+      const isCarIcon =
+        markerKind === 'vehicle' && this.useCarIcon() && marker.status === 'busy';
 
       const mapboxMarker = new mapboxgl.Marker({
         element: el,
-        anchor: isCarIcon ? 'center' : 'bottom',
+        anchor: isCarIcon ? 'center' : markerKind === 'vehicle' ? 'bottom' : 'center',
       })
         .setLngLat([marker.lng, marker.lat])
         .addTo(this.map);
 
       // Add popup with driver info if available (using DOM methods to prevent XSS)
       // Skip popup for car icon to keep it clean
-      if (marker.driverName && !isCarIcon) {
+      if (marker.driverName && !isCarIcon && markerKind === 'vehicle') {
         const popupContent = document.createElement('div');
         popupContent.className = 'popup-content';
 
@@ -190,6 +192,11 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
   }
 
   private createMarkerElement(marker: MapMarker): HTMLElement {
+    const markerKind = marker.kind ?? 'vehicle';
+    if (markerKind !== 'vehicle') {
+      return this.createRoutePointIcon(markerKind, marker.label);
+    }
+
     // Use car icon if enabled and this is the vehicle marker (status: busy)
     if (this.useCarIcon() && marker.status === 'busy') {
       return this.createCarIcon(this.carBearing());
@@ -222,6 +229,39 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
     markerPin.appendChild(pulseRing);
     el.appendChild(markerPin);
 
+    return el;
+  }
+
+  private createRoutePointIcon(
+    kind: 'start' | 'waypoint' | 'destination',
+    label?: string,
+  ): HTMLElement {
+    const el = document.createElement('div');
+    el.className = `route-point-marker route-point-${kind}`;
+    if (label) {
+      el.setAttribute('title', label);
+      el.setAttribute('aria-label', label);
+    }
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+
+    const shape = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    if (kind === 'start') {
+      shape.setAttribute('d', 'M8 6l8 6-8 6z');
+    } else if (kind === 'destination') {
+      shape.setAttribute('d', 'M7 7h10v10H7z');
+    } else {
+      shape.setAttribute('d', 'M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8');
+    }
+
+    svg.appendChild(shape);
+    el.appendChild(svg);
     return el;
   }
 
@@ -258,7 +298,12 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
     // Update bearing for car icon markers
     this.markerInstances.forEach((marker, index) => {
       const markerData = this.markers()[index];
-      if (markerData && markerData.status === 'busy' && this.useCarIcon()) {
+      if (
+        markerData &&
+        (markerData.kind ?? 'vehicle') === 'vehicle' &&
+        markerData.status === 'busy' &&
+        this.useCarIcon()
+      ) {
         const element = marker.getElement();
         if (element) {
           const icon = element.querySelector('.car-icon-svg') as HTMLElement | null;

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, timer, map, switchMap, takeWhile, of, tap, catchError } from 'rxjs';
+import { Observable, timer, map, switchMap, takeWhile, of } from 'rxjs';
 import { RideApiService } from './ride-api.service';
 import { ActiveRide, LocationUpdate, RideInconsistencyReport } from '../models/active-ride.model';
 
@@ -18,14 +18,7 @@ export class RideTrackingApiService {
     if (!Number.isInteger(id)) {
       return of(null);
     }
-    return this.rideApi.getRideForTracking(id).pipe(
-      tap((dto) => {
-        if (dto.status === 'ACTIVE' && dto.waypoints?.length >= 2) {
-          this.rideApi.startTrackingDemo(id).pipe(catchError(() => of(void 0))).subscribe();
-        }
-      }),
-      map((dto) => this.mapToActiveRide(dto)),
-    );
+    return this.rideApi.getRideForTracking(id).pipe(map((dto) => this.mapToActiveRide(dto)));
   }
 
   getVehicleLocationUpdates(rideId: string): Observable<LocationUpdate> {
@@ -69,16 +62,21 @@ export class RideTrackingApiService {
     const waypoints = (dto.waypoints ?? []).slice().sort((a, b) => a.order - b.order);
     const start = waypoints[0];
     const dest = waypoints[waypoints.length - 1];
-    const startLocation = start ? { lat: start.lat, lng: start.lng } : { lat: 0, lng: 0 };
-    const destinationLocation = dest ? { lat: dest.lat, lng: dest.lng } : { lat: 0, lng: 0 };
-    const currentLat = dto.vehicleCurrentLat ?? start?.lat ?? startLocation.lat;
-    const currentLng = dto.vehicleCurrentLng ?? start?.lng ?? startLocation.lng;
+    const fallbackLat = dto.vehicleCurrentLat ?? start?.lat ?? 0;
+    const fallbackLng = dto.vehicleCurrentLng ?? start?.lng ?? 0;
+    const startLocation = start ? { lat: start.lat, lng: start.lng } : { lat: fallbackLat, lng: fallbackLng };
+    const destinationLocation = dest
+      ? { lat: dest.lat, lng: dest.lng }
+      : { lat: fallbackLat, lng: fallbackLng };
+    const currentLat = dto.vehicleCurrentLat ?? startLocation.lat;
+    const currentLng = dto.vehicleCurrentLng ?? startLocation.lng;
     const etaSec = dto.estimatedDurationSec ?? 0;
 
     return {
       id: String(dto.id),
-      startAddress: start?.address ?? 'Pickup',
-      destinationAddress: dest?.address ?? 'Destination',
+      status: dto.status,
+      startAddress: start?.address ?? 'Current location',
+      destinationAddress: dest?.address ?? (dto.status === 'FINISHED' ? 'Ride finished' : 'Destination'),
       startLocation,
       destinationLocation,
       currentLocation: { lat: currentLat, lng: currentLng },
@@ -96,7 +94,12 @@ export class RideTrackingApiService {
       },
       estimatedArrivalTime: etaSec,
       startTime: dto.startTime ? new Date(dto.startTime) : new Date(),
-      route: waypoints.map((w) => ({ lat: w.lat, lng: w.lng, order: w.order })),
+      route: waypoints.map((w) => ({
+        lat: w.lat,
+        lng: w.lng,
+        order: w.order,
+        address: w.address,
+      })),
     };
   }
 

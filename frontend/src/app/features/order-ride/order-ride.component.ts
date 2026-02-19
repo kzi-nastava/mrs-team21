@@ -6,9 +6,10 @@ import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { debounceTime, map, switchMap } from 'rxjs/operators';
 import { MapComponent } from '../map/map.component';
+import { MapMarker } from '../map/models/vehicle.model';
 import { EstimateService, AddressSuggestion } from '../landing/services/estimate-ride.service';
 import { AuthService } from '../../shared/services/auth.service';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { VehicleTypeName } from '../landing/models/estimate.model';
 import { LocationDTO } from '../landing/models/estimate.model';
@@ -16,6 +17,12 @@ import {
   FavoriteRoutesService,
   FavoriteRouteDto,
 } from '../ride-history/services/favorite-routes.service';
+import { ToastService } from '../../shared/services/toast.service';
+import { RideResponseDto } from '../ride-history/models/ride-api.model';
+import {
+  ActiveVehicleMarkersService,
+  ACTIVE_VEHICLE_POLLING_INTERVAL_MS,
+} from '../map/services/active-vehicle-markers.service';
 
 export interface Stop {
   id: string;
@@ -83,6 +90,7 @@ export class OrderRideComponent implements OnInit {
   scheduleHours = signal<number | null>(null);
   scheduleMinutes = signal<number | null>(null);
   routeCoordinates = signal<[number, number][] | undefined>(undefined);
+  vehicleMarkers = signal<MapMarker[]>([]);
   showRoute = signal(false);
   estimateLoading = signal(false);
   estimateError = signal<string | null>(null);
@@ -101,6 +109,8 @@ export class OrderRideComponent implements OnInit {
   private http = inject(HttpClient);
   private auth = inject(AuthService);
   private favoriteRoutesService = inject(FavoriteRoutesService);
+  private activeVehicleMarkersService = inject(ActiveVehicleMarkersService);
+  private toastService = inject(ToastService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
   private apiUrl = environment.apiBaseUrl;
@@ -172,6 +182,11 @@ export class OrderRideComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.activeVehicleMarkersService
+      .streamMarkers(ACTIVE_VEHICLE_POLLING_INTERVAL_MS)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((markers) => this.vehicleMarkers.set(markers));
+
     const userId = this.auth.getUserId();
     if (userId != null) {
       this.favoriteRoutesService
@@ -400,7 +415,7 @@ export class OrderRideComponent implements OnInit {
           this.estimateLoading.set(false);
         },
         error: (err) => {
-          this.estimateError.set(err?.message ?? 'Failed to get estimate');
+          this.estimateError.set(err?.error?.message ?? err?.message ?? 'Failed to get estimate');
           this.estimateLoading.set(false);
         },
       });
@@ -438,13 +453,32 @@ export class OrderRideComponent implements OnInit {
       scheduledFor,
     };
     this.http
-      .post<{ id: number }>(`${this.apiUrl}/rides?orderingPassengerId=${userId}`, body)
+      .post<RideResponseDto>(`${this.apiUrl}/rides?orderingPassengerId=${userId}`, body)
       .subscribe({
         next: (ride) => {
+          if (ride.status === 'REJECTED') {
+            const message = 'No drivers are currently available. Please try again shortly.';
+            this.estimateError.set(null);
+            this.toastService.error(message);
+            return;
+          }
           this.router.navigate(['/ride-tracking', ride.id]);
         },
-        error: (err) => {
-          this.estimateError.set(err?.error?.message ?? err?.message ?? 'Failed to create ride');
+        error: (err: HttpErrorResponse) => {
+          const backendMessage = err?.error?.message ?? err?.message ?? 'Failed to create ride';
+          const isOverlappingRideRejection =
+            typeof backendMessage === 'string' &&
+            backendMessage.includes('Cannot create a new ride while you have an active ride');
+
+          if (isOverlappingRideRejection) {
+            const friendlyMessage =
+              'You already have an active or scheduled ride. You can schedule a new ride once that one is finished.';
+            this.estimateError.set(null);
+            this.toastService.warning(friendlyMessage);
+            return;
+          }
+
+          this.estimateError.set(backendMessage);
         },
       });
   }

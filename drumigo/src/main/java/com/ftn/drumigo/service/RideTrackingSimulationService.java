@@ -4,15 +4,17 @@ import com.ftn.drumigo.domain.Location;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RideWaypoint;
 import com.ftn.drumigo.domain.enums.RideStatus;
+import com.ftn.drumigo.dto.map.LocationDTO;
 import com.ftn.drumigo.dto.VehicleLocationUpdateRequest;
 import com.ftn.drumigo.exception.BadRequestException;
-import com.ftn.drumigo.exception.ResourceNotFoundException;
+import com.ftn.drumigo.repository.RideWaypointRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -26,11 +28,16 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class RideTrackingSimulationService {
 
-    private static final double PROGRESS_PER_TICK = 0.12;
     private static final int TICK_INTERVAL_MS = 3000;
+    private static final double DEFAULT_SIM_DURATION_SEC = 120.0;
+    private static final double MIN_METERS_PER_TICK = 5.0;
+    private static final double MAX_METERS_PER_TICK = 120.0;
+    private static final double EARTH_RADIUS_M = 6_371_000.0;
 
     private final RideService rideService;
     private final VehicleService vehicleService;
+    private final RideWaypointRepository rideWaypointRepository;
+    private final MapService mapService;
 
     private final ConcurrentHashMap<Long, SimulationState> simulatedRides = new ConcurrentHashMap<>();
 
@@ -46,12 +53,31 @@ public class RideTrackingSimulationService {
         if (ride.getDriver() == null || ride.getVehicle() == null) {
             throw new BadRequestException("Ride must have an assigned driver and vehicle.");
         }
-        List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
+        List<RideWaypoint> waypoints = rideWaypointRepository.findByRideWithLocationOrderByWaypointOrderAsc(ride);
         if (waypoints == null || waypoints.size() < 2) {
             throw new BadRequestException("Ride must have at least 2 waypoints for tracking demo.");
         }
-        simulatedRides.put(rideId, new SimulationState(0, 0.0));
-        log.info("Started tracking demo for ride {}", rideId);
+
+        List<RoutePoint> routePoints = resolveRoutePoints(waypoints);
+        List<Double> cumulativeDistances = buildCumulativeDistances(routePoints);
+        double totalDistanceMeters = cumulativeDistances.get(cumulativeDistances.size() - 1);
+        double metersPerTick = calculateMetersPerTick(totalDistanceMeters, ride.getEstimatedDurationSec());
+
+        SimulationState newState = new SimulationState(
+            routePoints,
+            cumulativeDistances,
+            totalDistanceMeters,
+            0.0,
+            metersPerTick
+        );
+
+        updateVehicleLocation(ride, BigDecimal.valueOf(routePoints.get(0).lat()), BigDecimal.valueOf(routePoints.get(0).lng()));
+        SimulationState previousState = simulatedRides.put(rideId, newState);
+        if (previousState == null) {
+            log.info("Started tracking demo for ride {} ({} route points)", rideId, routePoints.size());
+        } else {
+            log.info("Restarted tracking demo for ride {} ({} route points)", rideId, routePoints.size());
+        }
     }
 
     /**
@@ -80,38 +106,29 @@ public class RideTrackingSimulationService {
 
     private void advanceSimulation(Long rideId, SimulationState state) {
         Ride ride = rideService.getById(rideId);
-        List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
-        if (waypoints == null || waypoints.size() < 2) {
+        if (ride.getStatus() != RideStatus.ACTIVE) {
             simulatedRides.remove(rideId);
             return;
         }
-        int segmentCount = waypoints.size() - 1;
-        int step = state.currentStepIndex();
-        double progress = state.progressInStep();
-
-        progress += PROGRESS_PER_TICK;
-        if (progress >= 1.0) {
-            step++;
-            progress = 0.0;
+        if (state.routePoints() == null || state.routePoints().size() < 2) {
+            simulatedRides.remove(rideId);
+            return;
         }
 
-        if (step >= segmentCount) {
-            // Reached destination: set position to last waypoint and stop simulation
-            Location last = waypoints.get(waypoints.size() - 1).getLocation();
-            updateVehicleLocation(ride, last.getLat(), last.getLng());
+        double nextDistanceMeters = Math.min(
+            state.totalDistanceMeters(),
+            state.distanceTraveledMeters() + state.metersPerTick()
+        );
+        RoutePoint nextPoint = resolvePointAtDistance(state.routePoints(), state.cumulativeDistancesMeters(), nextDistanceMeters);
+        updateVehicleLocation(ride, BigDecimal.valueOf(nextPoint.lat()), BigDecimal.valueOf(nextPoint.lng()));
+
+        if (nextDistanceMeters >= state.totalDistanceMeters()) {
             simulatedRides.remove(rideId);
             log.info("Tracking demo finished for ride {} (reached destination)", rideId);
             return;
         }
 
-        // Interpolate between waypoints[step] and waypoints[step+1]
-        Location from = waypoints.get(step).getLocation();
-        Location to = waypoints.get(step + 1).getLocation();
-        double lat = from.getLat().doubleValue() + (to.getLat().doubleValue() - from.getLat().doubleValue()) * progress;
-        double lng = from.getLng().doubleValue() + (to.getLng().doubleValue() - from.getLng().doubleValue()) * progress;
-
-        updateVehicleLocation(ride, BigDecimal.valueOf(lat), BigDecimal.valueOf(lng));
-        simulatedRides.put(rideId, new SimulationState(step, progress));
+        simulatedRides.put(rideId, state.withDistanceTraveled(nextDistanceMeters));
     }
 
     private void updateVehicleLocation(Ride ride, BigDecimal lat, BigDecimal lng) {
@@ -119,5 +136,122 @@ public class RideTrackingSimulationService {
         vehicleService.updateCurrentDriverLocation(driverUserId, new VehicleLocationUpdateRequest(lat, lng));
     }
 
-    private record SimulationState(int currentStepIndex, double progressInStep) {}
+    private List<RoutePoint> resolveRoutePoints(List<RideWaypoint> waypoints) {
+        List<LocationDTO> orderedWaypoints = waypoints.stream()
+            .map(waypoint -> {
+                Location location = waypoint.getLocation();
+                return new LocationDTO(
+                    location.getLat().doubleValue(),
+                    location.getLng().doubleValue(),
+                    location.getAddress()
+                );
+            })
+            .toList();
+
+        try {
+            List<List<Double>> routeCoordinates = mapService.getRouteCoordinatesForOrderedWaypoints(orderedWaypoints);
+            List<RoutePoint> points = routeCoordinates.stream()
+                .filter(coord -> coord != null && coord.size() >= 2)
+                .map(coord -> new RoutePoint(coord.get(1), coord.get(0)))
+                .toList();
+            if (points.size() >= 2) {
+                return points;
+            }
+            log.warn("Mapbox returned insufficient route coordinates, falling back to straight waypoint path");
+        } catch (Exception ex) {
+            log.warn("Failed to load Mapbox route geometry for simulation, using waypoint fallback: {}", ex.getMessage());
+        }
+
+        return waypoints.stream()
+            .map(waypoint -> new RoutePoint(
+                waypoint.getLocation().getLat().doubleValue(),
+                waypoint.getLocation().getLng().doubleValue()
+            ))
+            .toList();
+    }
+
+    private List<Double> buildCumulativeDistances(List<RoutePoint> points) {
+        if (points == null || points.size() < 2) {
+            throw new BadRequestException("Simulation route must contain at least 2 points.");
+        }
+        List<Double> cumulative = new ArrayList<>();
+        cumulative.add(0.0);
+        double runningDistance = 0.0;
+        for (int i = 1; i < points.size(); i++) {
+            runningDistance += distanceMeters(points.get(i - 1), points.get(i));
+            cumulative.add(runningDistance);
+        }
+        return cumulative;
+    }
+
+    private RoutePoint resolvePointAtDistance(List<RoutePoint> points, List<Double> cumulativeDistances, double targetDistanceMeters) {
+        if (targetDistanceMeters <= 0) {
+            return points.get(0);
+        }
+        double total = cumulativeDistances.get(cumulativeDistances.size() - 1);
+        if (targetDistanceMeters >= total) {
+            return points.get(points.size() - 1);
+        }
+
+        for (int i = 1; i < cumulativeDistances.size(); i++) {
+            double segmentEndDistance = cumulativeDistances.get(i);
+            if (targetDistanceMeters > segmentEndDistance) {
+                continue;
+            }
+            double segmentStartDistance = cumulativeDistances.get(i - 1);
+            double segmentLength = segmentEndDistance - segmentStartDistance;
+            double ratio = segmentLength <= 0 ? 0.0 : (targetDistanceMeters - segmentStartDistance) / segmentLength;
+            RoutePoint from = points.get(i - 1);
+            RoutePoint to = points.get(i);
+            double lat = from.lat() + (to.lat() - from.lat()) * ratio;
+            double lng = from.lng() + (to.lng() - from.lng()) * ratio;
+            return new RoutePoint(lat, lng);
+        }
+
+        return points.get(points.size() - 1);
+    }
+
+    private double calculateMetersPerTick(double totalDistanceMeters, Integer estimatedDurationSec) {
+        if (totalDistanceMeters <= 0) {
+            return 0;
+        }
+        double durationSec = estimatedDurationSec != null && estimatedDurationSec > 0
+            ? estimatedDurationSec
+            : DEFAULT_SIM_DURATION_SEC;
+        double ticks = Math.max(1.0, (durationSec * 1000.0) / TICK_INTERVAL_MS);
+        double rawMetersPerTick = totalDistanceMeters / ticks;
+        return Math.min(MAX_METERS_PER_TICK, Math.max(MIN_METERS_PER_TICK, rawMetersPerTick));
+    }
+
+    private double distanceMeters(RoutePoint from, RoutePoint to) {
+        double lat1 = Math.toRadians(from.lat());
+        double lat2 = Math.toRadians(to.lat());
+        double dLat = lat2 - lat1;
+        double dLng = Math.toRadians(to.lng() - from.lng());
+        double sinLat = Math.sin(dLat / 2);
+        double sinLng = Math.sin(dLng / 2);
+        double a = sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLng * sinLng;
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return EARTH_RADIUS_M * c;
+    }
+
+    private record RoutePoint(double lat, double lng) {}
+
+    private record SimulationState(
+        List<RoutePoint> routePoints,
+        List<Double> cumulativeDistancesMeters,
+        double totalDistanceMeters,
+        double distanceTraveledMeters,
+        double metersPerTick
+    ) {
+        private SimulationState withDistanceTraveled(double nextDistanceTraveledMeters) {
+            return new SimulationState(
+                routePoints,
+                cumulativeDistancesMeters,
+                totalDistanceMeters,
+                nextDistanceTraveledMeters,
+                metersPerTick
+            );
+        }
+    }
 }

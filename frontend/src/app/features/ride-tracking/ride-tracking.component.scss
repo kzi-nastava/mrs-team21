@@ -203,6 +203,99 @@
   line-height: 1.5;
 }
 
+.checkpoints-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.checkpoints-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.checkpoint-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  &.passed {
+    .checkpoint-label,
+    .checkpoint-address {
+      color: #64748b;
+      text-decoration: line-through;
+      text-decoration-color: #94a3b8;
+    }
+  }
+}
+
+.checkpoint-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #fff;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  &.start {
+    border-color: #10b981;
+  }
+
+  &.waypoint {
+    border-color: #3b82f6;
+  }
+
+  &.destination {
+    border-color: #f97316;
+  }
+
+  &.passed.start {
+    background: #10b981;
+  }
+
+  &.passed.waypoint {
+    background: #3b82f6;
+  }
+
+  &.passed.destination {
+    background: #f97316;
+  }
+}
+
+.checkpoint-content {
+  min-width: 0;
+}
+
+.checkpoint-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 2px;
+}
+
+.checkpoint-address {
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.35;
+}
+
 // Action Section
 .action-section {
   margin-top: auto;
@@ -211,6 +304,25 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.ride-status-notice {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 13px;
+  border: 1px solid #bfdbfe;
+}
+
+.action-hint {
+  font-size: 12px;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  line-height: 1.4;
 }
 
 .post-ride-error {
@@ -327,6 +439,54 @@
     width: 20px;
     height: 20px;
   }
+}
+
+.btn-panic--disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-start-ride {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(22, 163, 74, 0.35);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.btn-stop-ride--disabled {
+  opacity: 0.65;
 }
 
 .btn-stop-ride {

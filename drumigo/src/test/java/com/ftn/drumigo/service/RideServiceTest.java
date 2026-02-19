@@ -1,8 +1,12 @@
 package com.ftn.drumigo.service;
 
 import com.ftn.drumigo.domain.Ride;
+import com.ftn.drumigo.domain.RideWaypoint;
+import com.ftn.drumigo.domain.Location;
 import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.domain.users.Driver;
+import com.ftn.drumigo.domain.users.Passenger;
+import com.ftn.drumigo.dto.ride.request.RideStopRequest;
 import com.ftn.drumigo.event.RideFinishedEvent;
 import com.ftn.drumigo.exception.BadRequestException;
 import com.ftn.drumigo.exception.ResourceNotFoundException;
@@ -27,7 +31,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -203,6 +210,105 @@ class RideServiceTest {
         verify(eventPublisher).publishEvent(any(RideFinishedEvent.class));
     }
 
+    @Test
+    void getMyActiveRide_passenger_ignoresFutureScheduledRide() {
+        Passenger passenger = passenger(100L, "ana.petrovic@example.com");
+        Ride futureAcceptedRide = ride(200L, RideStatus.ACCEPTED, null);
+        futureAcceptedRide.setScheduledFor(Instant.now().plusSeconds(3 * 60 * 60));
+
+        when(passengerRepository.findById(100L)).thenReturn(Optional.of(passenger));
+        when(rideRepository.findActiveRidesForPassenger(
+            100L,
+            "ana.petrovic@example.com",
+            List.of(RideStatus.PENDING, RideStatus.ACCEPTED, RideStatus.ACTIVE)
+        )).thenReturn(List.of(futureAcceptedRide));
+
+        Optional<Ride> result = rideService.getMyActiveRide(100L, "PASSENGER");
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void getMyActiveRide_passenger_returnsTrackableRideAndSkipsFutureScheduled() {
+        Passenger passenger = passenger(101L, "ana.petrovic@example.com");
+        Ride futureAcceptedRide = ride(201L, RideStatus.ACCEPTED, null);
+        futureAcceptedRide.setScheduledFor(Instant.now().plusSeconds(2 * 60 * 60));
+        Ride activeRide = ride(202L, RideStatus.ACTIVE, null);
+        activeRide.setScheduledFor(Instant.now().plusSeconds(2 * 60 * 60));
+
+        when(passengerRepository.findById(101L)).thenReturn(Optional.of(passenger));
+        when(rideRepository.findActiveRidesForPassenger(
+            101L,
+            "ana.petrovic@example.com",
+            List.of(RideStatus.PENDING, RideStatus.ACCEPTED, RideStatus.ACTIVE)
+        )).thenReturn(List.of(futureAcceptedRide, activeRide));
+
+        Optional<Ride> result = rideService.getMyActiveRide(101L, "PASSENGER");
+
+        assertTrue(result.isPresent());
+        assertEquals(202L, result.get().getId());
+    }
+
+    @Test
+    void getMyActiveRide_driver_ignoresFutureScheduledAcceptedRide() {
+        Driver driver = driver(110L, false);
+        Ride futureAcceptedRide = ride(210L, RideStatus.ACCEPTED, driver);
+        futureAcceptedRide.setScheduledFor(Instant.now().plusSeconds(4 * 60 * 60));
+
+        when(driverRepository.findById(110L)).thenReturn(Optional.of(driver));
+        when(rideRepository.findByDriverAndStatusIn(
+            driver,
+            List.of(RideStatus.ACCEPTED, RideStatus.ACTIVE)
+        )).thenReturn(List.of(futureAcceptedRide));
+
+        Optional<Ride> result = rideService.getMyActiveRide(110L, "DRIVER");
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void stopRide_keepsPickupAndStoresStopAsDestinationForHistory() {
+        Driver driver = driver(120L, true);
+        Ride ride = ride(220L, RideStatus.ACTIVE, driver);
+        Location pickupLocation = location(1L, "Pickup address");
+        Location originalDestinationLocation = location(2L, "Original destination");
+        Location stopLocation = location(3L, "Stopped here");
+        RideWaypoint pickupWaypoint = waypoint(ride, pickupLocation, 1);
+        RideWaypoint originalDestinationWaypoint = waypoint(ride, originalDestinationLocation, 2);
+
+        RideStopRequest request = new RideStopRequest(
+            "Stopped here",
+            BigDecimal.valueOf(45.2671),
+            BigDecimal.valueOf(19.8335)
+        );
+
+        when(rideRepository.findById(220L)).thenReturn(Optional.of(ride));
+        when(locationRepository.findByAddressAndLatAndLng(
+            "Stopped here",
+            BigDecimal.valueOf(45.2671),
+            BigDecimal.valueOf(19.8335)
+        )).thenReturn(Optional.of(stopLocation));
+        when(rideWaypointRepository.findFirstByRideOrderByWaypointOrderDesc(ride))
+            .thenReturn(Optional.of(originalDestinationWaypoint));
+        when(rideWaypointRepository.findByRideOrderByWaypointOrderAsc(ride))
+            .thenReturn(List.of(pickupWaypoint, originalDestinationWaypoint));
+        when(rideRepository.save(any(Ride.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(driverRepository.save(any(Driver.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Ride result = rideService.stopRide(220L, 120L, request);
+
+        assertEquals(RideStatus.FINISHED, result.getStatus());
+        assertEquals(stopLocation, result.getStopLocation());
+        verify(rideWaypointRepository).deleteByRideAndWaypointOrderGreaterThan(ride, 2);
+
+        ArgumentCaptor<RideWaypoint> stopWaypointCaptor = ArgumentCaptor.forClass(RideWaypoint.class);
+        verify(rideWaypointRepository).save(stopWaypointCaptor.capture());
+        RideWaypoint savedStopWaypoint = stopWaypointCaptor.getValue();
+        assertEquals(ride.getId(), savedStopWaypoint.getRide().getId());
+        assertEquals(stopLocation, savedStopWaypoint.getLocation());
+        assertEquals(2, savedStopWaypoint.getWaypointOrder());
+    }
+
     private static Ride ride(Long id, RideStatus status, Driver driver) {
         Ride ride = new Ride();
         ride.setId(id);
@@ -216,5 +322,29 @@ class RideServiceTest {
         driver.setId(id);
         driver.setBusy(busy);
         return driver;
+    }
+
+    private static Passenger passenger(Long id, String email) {
+        Passenger passenger = new Passenger();
+        passenger.setId(id);
+        passenger.setEmail(email);
+        return passenger;
+    }
+
+    private static Location location(Long id, String address) {
+        Location location = new Location();
+        location.setId(id);
+        location.setAddress(address);
+        location.setLat(BigDecimal.valueOf(45.2));
+        location.setLng(BigDecimal.valueOf(19.8));
+        return location;
+    }
+
+    private static RideWaypoint waypoint(Ride ride, Location location, int order) {
+        RideWaypoint waypoint = new RideWaypoint();
+        waypoint.setRide(ride);
+        waypoint.setLocation(location);
+        waypoint.setWaypointOrder(order);
+        return waypoint;
     }
 }

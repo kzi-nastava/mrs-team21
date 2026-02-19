@@ -17,7 +17,7 @@ export const NAVIGATION_CONFIG: NavigationConfig = {
   passenger: [
     // Main Section
     { label: 'Order a Ride', icon: 'clock', path: '/order-ride', section: 'main' },
-    { label: 'Ride Tracking', icon: 'map-pin', path: '/ride-tracking/1', section: 'main' },
+    { label: 'Ride Tracking', icon: 'map-pin', path: '/ride-tracking', section: 'main' },
     { label: 'Ride History', icon: 'file-text', path: '/ride-history', section: 'main' },
 
     // Account Section
@@ -26,7 +26,7 @@ export const NAVIGATION_CONFIG: NavigationConfig = {
 
   driver: [
     // Main Section
-    { label: 'Ride Tracking', icon: 'map-pin', path: '/ride-tracking/1', section: 'main' },
+    { label: 'Ride Tracking', icon: 'map-pin', path: '/ride-tracking', section: 'main' },
     { label: 'Ride History', icon: 'file-text', path: '/driver/ride-history', section: 'main' },
 
     // Account Section

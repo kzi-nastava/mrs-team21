@@ -4,6 +4,7 @@
 
 export interface ActiveRide {
   id: string;
+  status: string;
   startAddress: string;
   destinationAddress: string;
   startLocation: {
@@ -40,6 +41,7 @@ export interface RouteWaypoint {
   lat: number;
   lng: number;
   order: number;
+  address?: string;
 }
 
 export interface RideInconsistencyReport {
