@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Universal default avatar (matches frontend default-avatar.svg: circle + person silhouette) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    <path
+        android:pathData="M60,60m-60,0a60,60 0,1 1,120 0a60,60 0,1 1,-120 0"
+        android:fillColor="#E8E4DD"/>
+    <path
+        android:pathData="M60,45m-20,0a20,20 0,1 1,40 0a20,20 0,1 1,-40 0"
+        android:fillColor="#B8B4AD"/>
+    <path
+        android:pathData="M20,105c0,-22.091 17.909,-40 40,-40s40,17.909 40,40"
+        android:fillColor="#B8B4AD"/>
+</vector>

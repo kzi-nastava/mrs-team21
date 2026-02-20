@@ -10,19 +10,21 @@
         android:id="@+id/toolbarBtnSignIn"
         style="@style/Widget.Drumigo.Button.ToolbarSecondary"
         android:layout_width="wrap_content"
-        android:layout_height="34dp"
+        android:layout_height="44dp"
         android:layout_marginEnd="@dimen/spacing_sm"
         android:minWidth="0dp"
         android:text="@string/landing_sign_in"
+        android:textSize="15sp"
         android:textAllCaps="false" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/toolbarBtnSignUp"
         style="@style/Widget.Drumigo.Button.ToolbarPrimary"
         android:layout_width="wrap_content"
-        android:layout_height="34dp"
+        android:layout_height="44dp"
         android:minWidth="0dp"
         android:text="@string/landing_sign_up"
+        android:textSize="15sp"
         android:textAllCaps="false" />
 
 </LinearLayout>

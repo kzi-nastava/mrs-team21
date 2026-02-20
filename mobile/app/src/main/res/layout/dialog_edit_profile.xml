@@ -74,6 +74,25 @@
 
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- Email Input -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/emailLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/spacing_md"
+        style="@style/Widget.Drumigo.TextInputLayout"
+        android:hint="@string/label_email">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textEmailAddress"
+            style="@style/Widget.Drumigo.TextInputEditText"
+            tools:text="user@example.com" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
     <!-- Phone Number Input -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/phoneLayout"
