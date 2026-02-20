@@ -3,6 +3,7 @@ package com.ftn.drumigo.controller;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RideInconsistency;
 import com.ftn.drumigo.domain.RideWaypoint;
+import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.dto.PanicEventResponse;
 import com.ftn.drumigo.dto.PassengerResponse;
@@ -25,6 +26,7 @@ import com.ftn.drumigo.mapper.RideMapper;
 import com.ftn.drumigo.mapper.VehicleMapper;
 import com.ftn.drumigo.repository.UserRepository;
 import com.ftn.drumigo.security.CustomUserDetails;
+import com.ftn.drumigo.service.MapService;
 import com.ftn.drumigo.service.RideService;
 import com.ftn.drumigo.service.RideTrackingSimulationService;
 import jakarta.validation.Valid;
@@ -34,7 +36,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -43,6 +47,7 @@ import java.util.stream.Collectors;
 public class RideController {
     
     private final RideService rideService;
+    private final MapService mapService;
     private final RideMapper rideMapper;
     private final RideInconsistencyMapper rideInconsistencyMapper;
     private final ReviewMapper reviewMapper;
@@ -107,7 +112,32 @@ public class RideController {
     public ResponseEntity<RideTrackingResponse> getRide(@PathVariable Long id) {
         Ride ride = rideService.getById(id);
         List<RideWaypoint> waypoints = rideService.getRideWaypoints(ride);
-        return ResponseEntity.ok(rideMapper.toTrackingResponse(ride, waypoints));
+
+        Integer overrideDurationSec = null;
+        Instant overrideArrivalAt = null;
+        if (ride.getStatus() == RideStatus.ACTIVE
+                && ride.getVehicle() != null
+                && ride.getVehicle().getCurrentLat() != null
+                && ride.getVehicle().getCurrentLng() != null
+                && waypoints != null
+                && waypoints.size() >= 2) {
+            RideWaypoint destinationWaypoint = waypoints.get(waypoints.size() - 1);
+            if (destinationWaypoint.getLocation() != null
+                    && destinationWaypoint.getLocation().getLat() != null
+                    && destinationWaypoint.getLocation().getLng() != null) {
+                Optional<Integer> remainingSec = mapService.getRemainingDurationSeconds(
+                        ride.getVehicle().getCurrentLat().doubleValue(),
+                        ride.getVehicle().getCurrentLng().doubleValue(),
+                        destinationWaypoint.getLocation().getLat().doubleValue(),
+                        destinationWaypoint.getLocation().getLng().doubleValue());
+                if (remainingSec.isPresent()) {
+                    overrideDurationSec = remainingSec.get();
+                    overrideArrivalAt = Instant.now().plusSeconds(overrideDurationSec);
+                }
+            }
+        }
+
+        return ResponseEntity.ok(rideMapper.toTrackingResponse(ride, waypoints, overrideDurationSec, overrideArrivalAt));
     }
 
     /**

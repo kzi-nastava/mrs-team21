@@ -105,6 +105,7 @@ export class RideTrackingComponent implements OnInit, AfterViewInit, OnDestroy {
   upcomingRides = signal<RideResponseDto[]>([]);
   isDriverUser = computed(() => this.authService.isDriver());
   isPassengerUser = computed(() => this.authService.isPassenger());
+  isAdminUser = computed(() => this.authService.isAdmin());
   isRideActive = computed(() => this.activeRide()?.status === this.STATUS_ACTIVE);
   canUsePanic = computed(() => this.isRideActive());
   canReportInconsistency = computed(() => this.isPassengerUser() && this.isRideActive());

@@ -6,6 +6,7 @@ import com.ftn.drumigo.mapper.NotificationMapper;
 import com.ftn.drumigo.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -20,6 +21,7 @@ public class NotificationController {
     private final NotificationService notificationService;
     private final NotificationMapper notificationMapper;
     
+    @PreAuthorize("isAuthenticated() and (#userId == authentication.principal.userId or hasRole('ADMIN'))")
     @GetMapping("/users/{userId}/notifications")
     public ResponseEntity<Page<NotificationResponse>> getUserNotifications(
             @PathVariable Long userId,

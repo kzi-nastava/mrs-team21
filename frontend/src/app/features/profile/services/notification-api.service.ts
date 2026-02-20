@@ -4,7 +4,7 @@ import { map, Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { UserNotification } from '../models/notification.model';
 
-interface PageResponse<T> {
+export interface NotificationPageResponse<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
@@ -19,10 +19,23 @@ export class NotificationApiService {
   getUserNotifications(userId: number, page = 0, size = 10): Observable<UserNotification[]> {
     const params = new HttpParams().set('page', page).set('size', size);
     return this.http
-      .get<PageResponse<UserNotification>>(
+      .get<NotificationPageResponse<UserNotification>>(
         `${environment.apiBaseUrl}/users/${userId}/notifications`,
         { params },
       )
       .pipe(map((response) => response.content));
+  }
+
+  /** Returns full page (for admin or when pagination UI is needed). */
+  getUserNotificationsPage(
+    userId: number,
+    page = 0,
+    size = 10
+  ): Observable<NotificationPageResponse<UserNotification>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<NotificationPageResponse<UserNotification>>(
+      `${environment.apiBaseUrl}/users/${userId}/notifications`,
+      { params }
+    );
   }
 }

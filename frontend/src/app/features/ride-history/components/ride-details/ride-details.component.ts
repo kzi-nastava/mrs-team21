@@ -12,6 +12,8 @@ export interface RideDetailsConfig {
   showRatings: boolean;
   /** Show the rating action button (for passengers only) */
   showRatingAction: boolean;
+  /** Show "Track ride" button for in-progress (ACTIVE) rides (e.g. admin) */
+  showTrackRideButton?: boolean;
 }
 
 /**
@@ -40,7 +42,10 @@ export class RideDetailsComponent {
   });
 
   close = output<void>();
-  
+
+  /** Emits when user wants to track the ride (admin: navigate to ride-tracking page) */
+  trackRide = output<Ride>();
+
   /** Emits when user wants to rate the ride */
   rateRide = output<Ride>();
 
@@ -111,5 +116,9 @@ export class RideDetailsComponent {
     if (ride && this.canRateRide()) {
       this.rateRide.emit(ride);
     }
+  }
+
+  onTrackRideClick(ride: Ride): void {
+    this.trackRide.emit(ride);
   }
 }

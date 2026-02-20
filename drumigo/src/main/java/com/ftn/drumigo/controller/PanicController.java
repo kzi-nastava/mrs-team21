@@ -11,18 +11,18 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
 
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class PanicController {
-    
+
     private final PanicService panicService;
     private final PanicEventMapper panicEventMapper;
-    
+
     @PostMapping("/rides/{rideId}/panic")
     public ResponseEntity<Void> createPanic(
             @PathVariable Long rideId,
@@ -31,7 +31,8 @@ public class PanicController {
         panicService.create(rideId, userDetails.getUserId());
         return ResponseEntity.status(201).build();
     }
-    
+
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/panic-events")
     public ResponseEntity<Page<PanicEventResponse>> getAllPanicEvents(
             @RequestParam(defaultValue = "0") int page,
