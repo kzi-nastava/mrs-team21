@@ -17,6 +17,7 @@ import com.drumigo.mobile.data.api.DriverApiService;
 import com.drumigo.mobile.data.model.Ride;
 import com.drumigo.mobile.data.model.history.DriverRideHistoryItemResponse;
 import com.drumigo.mobile.data.model.history.PageResponse;
+import com.drumigo.mobile.session.SessionManager;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -34,7 +35,6 @@ import retrofit2.Response;
 public class RideHistoryActivity extends AppCompatActivity {
 
     private static final String TAG = "RideHistoryActivity";
-    private static final long DRIVER_ID = 7001L;
     private static final int DEFAULT_PAGE = 0;
     private static final int DEFAULT_PAGE_SIZE = 10;
     private static final String DEFAULT_SORT = "requestedAt,desc";
@@ -46,6 +46,7 @@ public class RideHistoryActivity extends AppCompatActivity {
     private Calendar fromDate, toDate;
     private SimpleDateFormat dateFormat;
     private DriverApiService driverApiService;
+    private SessionManager sessionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +63,12 @@ public class RideHistoryActivity extends AppCompatActivity {
             initializeViews();
             setupRecyclerView();
             setupDatePickers();
+            sessionManager = SessionManager.getInstance(this);
+            if (!sessionManager.isAuthenticated()) {
+                Toast.makeText(this, "Please sign in to view ride history.", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
             driverApiService = ApiClient.getDriverApiService();
             loadRideHistory();
         } catch (Exception e) {
@@ -154,8 +161,15 @@ public class RideHistoryActivity extends AppCompatActivity {
 
         String from = toIsoStartOfDay(fromDate);
         String to = toIsoEndOfDay(toDate);
+        long driverId = sessionManager == null ? -1L : sessionManager.getUserId();
+        if (driverId <= 0) {
+            showHistoryLoadError();
+            updateHistoryResults(new ArrayList<>());
+            return;
+        }
+
         driverApiService.getDriverRideHistory(
-            DRIVER_ID,
+            driverId,
             from,
             to,
             DEFAULT_PAGE,
