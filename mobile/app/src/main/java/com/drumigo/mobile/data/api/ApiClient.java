@@ -28,6 +28,14 @@ public class ApiClient {
         return getRetrofit().create(DriverApiService.class);
     }
 
+    public static PassengerApiService getPassengerApiService() {
+        return getRetrofit().create(PassengerApiService.class);
+    }
+
+    public static AdminApiService getAdminApiService() {
+        return getRetrofit().create(AdminApiService.class);
+    }
+
     private static Retrofit getRetrofit() {
         if (retrofit == null) {
             retrofit = new Retrofit.Builder()

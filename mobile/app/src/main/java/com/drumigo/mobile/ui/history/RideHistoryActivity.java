@@ -4,20 +4,31 @@ import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.drumigo.mobile.R;
+import com.drumigo.mobile.data.api.AdminApiService;
 import com.drumigo.mobile.data.api.ApiClient;
 import com.drumigo.mobile.data.api.DriverApiService;
+import com.drumigo.mobile.data.api.PassengerApiService;
 import com.drumigo.mobile.data.model.Ride;
 import com.drumigo.mobile.data.model.history.DriverRideHistoryItemResponse;
 import com.drumigo.mobile.data.model.history.PageResponse;
+import com.drumigo.mobile.data.model.history.PassengerRideHistoryItemResponse;
+import com.drumigo.mobile.data.model.ride.RideResponse;
 import com.drumigo.mobile.session.SessionManager;
+
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -26,27 +37,54 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class RideHistoryActivity extends AppCompatActivity {
+public class RideHistoryActivity extends AppCompatActivity implements RideHistoryAdapter.OnRideClickListener {
 
     private static final String TAG = "RideHistoryActivity";
+    private static final String ROLE_DRIVER = "DRIVER";
+    private static final String ROLE_PASSENGER = "PASSENGER";
+    private static final String ROLE_ADMIN = "ADMIN";
+
     private static final int DEFAULT_PAGE = 0;
-    private static final int DEFAULT_PAGE_SIZE = 10;
+    private static final int DEFAULT_PAGE_SIZE = 100;
     private static final String DEFAULT_SORT = "requestedAt,desc";
 
     private RecyclerView recyclerView;
     private RideHistoryAdapter adapter;
-    private TextView fromDateText, toDateText, resultsCountText;
+    private TextView fromDateText;
+    private TextView toDateText;
+    private TextView resultsCountText;
+    private Spinner sortSpinner;
     private Button applyFilterButton;
-    private Calendar fromDate, toDate;
+
+    private Calendar fromDate;
+    private Calendar toDate;
     private SimpleDateFormat dateFormat;
+
     private DriverApiService driverApiService;
+    private PassengerApiService passengerApiService;
+    private AdminApiService adminApiService;
     private SessionManager sessionManager;
+
+    private String currentRole = ROLE_DRIVER;
+    private final List<Ride> fetchedRides = new ArrayList<>();
+    private SortOption selectedSort = SortOption.NEWEST_FIRST;
+
+    private enum SortOption {
+        NEWEST_FIRST,
+        OLDEST_FIRST,
+        AMOUNT_DESC,
+        AMOUNT_ASC,
+        STATUS_ASC
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,39 +94,44 @@ public class RideHistoryActivity extends AppCompatActivity {
 
             dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.ENGLISH);
             fromDate = Calendar.getInstance();
-            fromDate.set(2024, 0, 1);
+            fromDate.set(2024, Calendar.JANUARY, 1);
             toDate = Calendar.getInstance();
 
             setupToolbar();
             initializeViews();
             setupRecyclerView();
             setupDatePickers();
+            setupSortControl();
+
             sessionManager = SessionManager.getInstance(this);
             if (!sessionManager.isAuthenticated()) {
                 Toast.makeText(this, "Please sign in to view ride history.", Toast.LENGTH_SHORT).show();
                 finish();
                 return;
             }
+
+            currentRole = resolveCurrentRole();
             driverApiService = ApiClient.getDriverApiService();
+            passengerApiService = ApiClient.getPassengerApiService();
+            adminApiService = ApiClient.getAdminApiService();
+
             loadRideHistory();
         } catch (Exception e) {
-            // Log and show a toast instead of crashing so we can diagnose in logs
-            Log.e(TAG, "Error in onCreate: ", e);
-            Toast.makeText(this, "Unable to open Ride History (see logs)", Toast.LENGTH_LONG).show();
+            Log.e(TAG, "Error while opening ride history", e);
+            Toast.makeText(this, "Unable to open ride history", Toast.LENGTH_LONG).show();
         }
     }
 
     private void setupToolbar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
-        if (toolbar != null) {
-            setSupportActionBar(toolbar);
-
-            if (getSupportActionBar() != null) {
-                getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-                getSupportActionBar().setDisplayShowHomeEnabled(true);
-            }
-        } else {
+        if (toolbar == null) {
             Log.w(TAG, "Toolbar not found in layout");
+            return;
+        }
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
     }
 
@@ -97,127 +140,386 @@ public class RideHistoryActivity extends AppCompatActivity {
         fromDateText = findViewById(R.id.fromDateText);
         toDateText = findViewById(R.id.toDateText);
         resultsCountText = findViewById(R.id.resultsCountText);
+        sortSpinner = findViewById(R.id.sortSpinner);
         applyFilterButton = findViewById(R.id.applyFilterButton);
 
-        if (fromDateText != null) fromDateText.setText(dateFormat.format(fromDate.getTime()));
-        if (toDateText != null) toDateText.setText(dateFormat.format(toDate.getTime()));
+        if (fromDateText != null) {
+            fromDateText.setText(dateFormat.format(fromDate.getTime()));
+        }
+        if (toDateText != null) {
+            toDateText.setText(dateFormat.format(toDate.getTime()));
+        }
 
         if (applyFilterButton != null) {
-            applyFilterButton.setOnClickListener(v -> applyFilter());
-        } else {
-            Log.w(TAG, "applyFilterButton not found in layout");
+            applyFilterButton.setOnClickListener(v -> loadRideHistory());
         }
     }
 
     private void setupRecyclerView() {
-        adapter = new RideHistoryAdapter(new ArrayList<>(), this);
+        adapter = new RideHistoryAdapter(new ArrayList<>(), this, this);
         if (recyclerView != null) {
             recyclerView.setLayoutManager(new LinearLayoutManager(this));
             recyclerView.setAdapter(adapter);
-        } else {
-            Log.w(TAG, "RecyclerView not found in layout");
         }
     }
 
     private void setupDatePickers() {
-        if (fromDateText != null) fromDateText.setOnClickListener(v -> showDatePicker(true));
-        if (toDateText != null) toDateText.setOnClickListener(v -> showDatePicker(false));
+        if (fromDateText != null) {
+            fromDateText.setOnClickListener(v -> showDatePicker(true));
+        }
+        if (toDateText != null) {
+            toDateText.setOnClickListener(v -> showDatePicker(false));
+        }
+    }
+
+    private void setupSortControl() {
+        if (sortSpinner == null) {
+            return;
+        }
+        ArrayAdapter<CharSequence> sortAdapter = ArrayAdapter.createFromResource(
+            this,
+            R.array.ride_history_sort_options,
+            android.R.layout.simple_spinner_item
+        );
+        sortAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        sortSpinner.setAdapter(sortAdapter);
+        sortSpinner.setSelection(0);
+        sortSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, android.view.View view, int position, long id) {
+                selectedSort = mapSortOption(position);
+                renderSortedResults();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                selectedSort = SortOption.NEWEST_FIRST;
+                renderSortedResults();
+            }
+        });
+    }
+
+    private SortOption mapSortOption(int position) {
+        if (position == 1) {
+            return SortOption.OLDEST_FIRST;
+        }
+        if (position == 2) {
+            return SortOption.AMOUNT_DESC;
+        }
+        if (position == 3) {
+            return SortOption.AMOUNT_ASC;
+        }
+        if (position == 4) {
+            return SortOption.STATUS_ASC;
+        }
+        return SortOption.NEWEST_FIRST;
     }
 
     private void showDatePicker(boolean isFromDate) {
-        Calendar calendar = isFromDate ? fromDate : toDate;
+        Calendar target = isFromDate ? fromDate : toDate;
 
         DatePickerDialog datePickerDialog = new DatePickerDialog(
-                this,
-                0,
-                (view, year, month, dayOfMonth) -> {
-                    calendar.set(year, month, dayOfMonth);
-                    if (isFromDate) {
-                        if (fromDateText != null) fromDateText.setText(dateFormat.format(calendar.getTime()));
-                    } else {
-                        if (toDateText != null) toDateText.setText(dateFormat.format(calendar.getTime()));
-                    }
-                },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
+            this,
+            0,
+            (view, year, month, dayOfMonth) -> {
+                target.set(year, month, dayOfMonth);
+                if (isFromDate && fromDateText != null) {
+                    fromDateText.setText(dateFormat.format(target.getTime()));
+                }
+                if (!isFromDate && toDateText != null) {
+                    toDateText.setText(dateFormat.format(target.getTime()));
+                }
+            },
+            target.get(Calendar.YEAR),
+            target.get(Calendar.MONTH),
+            target.get(Calendar.DAY_OF_MONTH)
         );
 
         datePickerDialog.show();
     }
 
-    private void applyFilter() {
-        loadRideHistory();
+    private void loadRideHistory() {
+        if (ROLE_DRIVER.equals(currentRole)) {
+            loadDriverRideHistory();
+            return;
+        }
+        if (ROLE_PASSENGER.equals(currentRole)) {
+            loadPassengerRideHistory();
+            return;
+        }
+        if (ROLE_ADMIN.equals(currentRole)) {
+            loadAdminRideHistory();
+            return;
+        }
+
+        showHistoryLoadError();
+        updateHistoryResults(Collections.emptyList());
     }
 
-    private void loadRideHistory() {
-        if (driverApiService == null) {
-            driverApiService = ApiClient.getDriverApiService();
-        }
+    private void loadDriverRideHistory() {
         if (driverApiService == null) {
             showHistoryLoadError();
             return;
         }
 
-        String from = toIsoStartOfDay(fromDate);
-        String to = toIsoEndOfDay(toDate);
         long driverId = sessionManager == null ? -1L : sessionManager.getUserId();
         if (driverId <= 0) {
             showHistoryLoadError();
-            updateHistoryResults(new ArrayList<>());
+            updateHistoryResults(Collections.emptyList());
             return;
         }
 
-        driverApiService.getDriverRideHistory(
+        loadDriverRideHistoryPage(
             driverId,
-            from,
-            to,
+            toIsoStartOfDay(fromDate),
+            toIsoEndOfDay(toDate),
             DEFAULT_PAGE,
-            DEFAULT_PAGE_SIZE,
-            DEFAULT_SORT
-        ).enqueue(new Callback<PageResponse<DriverRideHistoryItemResponse>>() {
-            @Override
-            public void onResponse(
-                Call<PageResponse<DriverRideHistoryItemResponse>> call,
-                Response<PageResponse<DriverRideHistoryItemResponse>> response
-            ) {
-                if (!response.isSuccessful() || response.body() == null || response.body().content == null) {
-                    showHistoryLoadError();
-                    updateHistoryResults(new ArrayList<>());
-                    return;
-                }
-                List<Ride> rides = new ArrayList<>();
-                for (DriverRideHistoryItemResponse item : response.body().content) {
-                    Ride mapped = DriverRideHistoryMapper.toRide(item);
-                    if (mapped != null) {
-                        rides.add(mapped);
-                    }
-                }
-                updateHistoryResults(rides);
-            }
+            new ArrayList<>()
+        );
+    }
 
-            @Override
-            public void onFailure(
-                Call<PageResponse<DriverRideHistoryItemResponse>> call,
-                Throwable t
-            ) {
-                showHistoryLoadError();
-                updateHistoryResults(new ArrayList<>());
-            }
-        });
+    private void loadDriverRideHistoryPage(
+        long driverId,
+        String from,
+        String to,
+        int page,
+        List<Ride> accumulated
+    ) {
+        driverApiService.getDriverRideHistory(driverId, from, to, page, DEFAULT_PAGE_SIZE, DEFAULT_SORT)
+            .enqueue(new Callback<PageResponse<DriverRideHistoryItemResponse>>() {
+                @Override
+                public void onResponse(
+                    @NonNull Call<PageResponse<DriverRideHistoryItemResponse>> call,
+                    @NonNull Response<PageResponse<DriverRideHistoryItemResponse>> response
+                ) {
+                    if (!response.isSuccessful() || response.body() == null || response.body().content == null) {
+                        showHistoryLoadError();
+                        updateHistoryResults(Collections.emptyList());
+                        return;
+                    }
+
+                    for (DriverRideHistoryItemResponse item : response.body().content) {
+                        Ride mapped = DriverRideHistoryMapper.toRide(item);
+                        if (mapped != null) {
+                            accumulated.add(mapped);
+                        }
+                    }
+
+                    PageResponse<DriverRideHistoryItemResponse> body = response.body();
+                    int nextPage = body.number + 1;
+                    if (nextPage < body.totalPages) {
+                        loadDriverRideHistoryPage(driverId, from, to, nextPage, accumulated);
+                        return;
+                    }
+
+                    updateHistoryResults(accumulated);
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<PageResponse<DriverRideHistoryItemResponse>> call, @NonNull Throwable t) {
+                    showHistoryLoadError();
+                    updateHistoryResults(Collections.emptyList());
+                }
+            });
+    }
+
+    private void loadPassengerRideHistory() {
+        if (passengerApiService == null) {
+            showHistoryLoadError();
+            return;
+        }
+
+        long passengerId = sessionManager == null ? -1L : sessionManager.getUserId();
+        if (passengerId <= 0) {
+            showHistoryLoadError();
+            updateHistoryResults(Collections.emptyList());
+            return;
+        }
+
+        loadPassengerRideHistoryPage(
+            passengerId,
+            toIsoStartOfDay(fromDate),
+            toIsoEndOfDay(toDate),
+            DEFAULT_PAGE,
+            new ArrayList<>()
+        );
+    }
+
+    private void loadPassengerRideHistoryPage(
+        long passengerId,
+        String from,
+        String to,
+        int page,
+        List<Ride> accumulated
+    ) {
+        passengerApiService.getPassengerRideHistory(passengerId, from, to, page, DEFAULT_PAGE_SIZE, DEFAULT_SORT)
+            .enqueue(new Callback<PageResponse<PassengerRideHistoryItemResponse>>() {
+                @Override
+                public void onResponse(
+                    @NonNull Call<PageResponse<PassengerRideHistoryItemResponse>> call,
+                    @NonNull Response<PageResponse<PassengerRideHistoryItemResponse>> response
+                ) {
+                    if (!response.isSuccessful() || response.body() == null || response.body().content == null) {
+                        showHistoryLoadError();
+                        updateHistoryResults(Collections.emptyList());
+                        return;
+                    }
+
+                    for (PassengerRideHistoryItemResponse item : response.body().content) {
+                        Ride mapped = PassengerRideHistoryMapper.toRide(item);
+                        if (mapped != null) {
+                            accumulated.add(mapped);
+                        }
+                    }
+
+                    PageResponse<PassengerRideHistoryItemResponse> body = response.body();
+                    int nextPage = body.number + 1;
+                    if (nextPage < body.totalPages) {
+                        loadPassengerRideHistoryPage(passengerId, from, to, nextPage, accumulated);
+                        return;
+                    }
+
+                    updateHistoryResults(accumulated);
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<PageResponse<PassengerRideHistoryItemResponse>> call, @NonNull Throwable t) {
+                    showHistoryLoadError();
+                    updateHistoryResults(Collections.emptyList());
+                }
+            });
+    }
+
+    private void loadAdminRideHistory() {
+        if (adminApiService == null) {
+            showHistoryLoadError();
+            return;
+        }
+
+        loadAdminRideHistoryPage(
+            toIsoStartOfDay(fromDate),
+            toIsoEndOfDay(toDate),
+            DEFAULT_PAGE,
+            new ArrayList<>()
+        );
+    }
+
+    private void loadAdminRideHistoryPage(
+        String from,
+        String to,
+        int page,
+        List<Ride> accumulated
+    ) {
+        adminApiService.getAdminRideHistory(from, to, page, DEFAULT_PAGE_SIZE, DEFAULT_SORT)
+            .enqueue(new Callback<PageResponse<RideResponse>>() {
+                @Override
+                public void onResponse(
+                    @NonNull Call<PageResponse<RideResponse>> call,
+                    @NonNull Response<PageResponse<RideResponse>> response
+                ) {
+                    if (!response.isSuccessful() || response.body() == null || response.body().content == null) {
+                        showHistoryLoadError();
+                        updateHistoryResults(Collections.emptyList());
+                        return;
+                    }
+
+                    for (RideResponse item : response.body().content) {
+                        Ride mapped = AdminRideHistoryMapper.toRide(item);
+                        if (mapped != null) {
+                            accumulated.add(mapped);
+                        }
+                    }
+
+                    PageResponse<RideResponse> body = response.body();
+                    int nextPage = body.number + 1;
+                    if (nextPage < body.totalPages) {
+                        loadAdminRideHistoryPage(from, to, nextPage, accumulated);
+                        return;
+                    }
+
+                    updateHistoryResults(accumulated);
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<PageResponse<RideResponse>> call, @NonNull Throwable t) {
+                    showHistoryLoadError();
+                    updateHistoryResults(Collections.emptyList());
+                }
+            });
     }
 
     private void updateHistoryResults(List<Ride> rides) {
+        fetchedRides.clear();
+        if (rides != null) {
+            fetchedRides.addAll(rides);
+        }
+        renderSortedResults();
+    }
+
+    private void renderSortedResults() {
+        List<Ride> sorted = new ArrayList<>(fetchedRides);
+        sorted.sort(buildComparator(selectedSort));
+
         if (adapter != null) {
-            adapter.updateRides(rides);
+            adapter.updateRides(sorted);
         }
         if (resultsCountText != null) {
-            resultsCountText.setText("Showing " + (rides == null ? 0 : rides.size()) + " rides");
+            resultsCountText.setText(getString(R.string.ride_history_results_count, sorted.size()));
         }
+    }
+
+    private Comparator<Ride> buildComparator(SortOption option) {
+        Comparator<Ride> tieBreaker = (a, b) -> Long.compare(
+            b == null ? 0L : b.getSortTimestampEpochMs(),
+            a == null ? 0L : a.getSortTimestampEpochMs()
+        );
+
+        if (option == SortOption.OLDEST_FIRST) {
+            return Comparator.comparingLong(ride -> ride == null ? 0L : ride.getSortTimestampEpochMs());
+        }
+        if (option == SortOption.AMOUNT_DESC) {
+            return (a, b) -> {
+                int amountCompare = Double.compare(
+                    b == null ? 0.0d : b.getAmountValue(),
+                    a == null ? 0.0d : a.getAmountValue()
+                );
+                return amountCompare != 0 ? amountCompare : tieBreaker.compare(a, b);
+            };
+        }
+        if (option == SortOption.AMOUNT_ASC) {
+            return (a, b) -> {
+                int amountCompare = Double.compare(
+                    a == null ? 0.0d : a.getAmountValue(),
+                    b == null ? 0.0d : b.getAmountValue()
+                );
+                return amountCompare != 0 ? amountCompare : tieBreaker.compare(a, b);
+            };
+        }
+        if (option == SortOption.STATUS_ASC) {
+            return (a, b) -> {
+                String statusA = a == null || a.getStatus() == null ? "" : a.getStatus();
+                String statusB = b == null || b.getStatus() == null ? "" : b.getStatus();
+                int statusCompare = statusA.compareToIgnoreCase(statusB);
+                return statusCompare != 0 ? statusCompare : tieBreaker.compare(a, b);
+            };
+        }
+
+        return tieBreaker;
     }
 
     private void showHistoryLoadError() {
         Toast.makeText(this, "Failed to load ride history", Toast.LENGTH_SHORT).show();
+    }
+
+    private String resolveCurrentRole() {
+        if (sessionManager == null) {
+            return ROLE_DRIVER;
+        }
+        String role = sessionManager.getRole();
+        if (role == null || role.trim().isEmpty()) {
+            return ROLE_DRIVER;
+        }
+        return role.trim().toUpperCase(Locale.ENGLISH);
     }
 
     private String toIsoStartOfDay(Calendar calendar) {
@@ -242,6 +544,14 @@ public class RideHistoryActivity extends AppCompatActivity {
             .toLocalDate();
         ZonedDateTime end = localDate.atTime(LocalTime.MAX).atZone(zone);
         return end.toInstant().toString();
+    }
+
+    @Override
+    public void onRideSelected(Ride ride) {
+        if (ride == null) {
+            return;
+        }
+        RideHistoryDetailsBottomSheet.show(this, ride);
     }
 
     @Override
