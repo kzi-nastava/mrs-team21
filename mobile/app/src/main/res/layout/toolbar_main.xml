@@ -5,6 +5,7 @@
     android:id="@+id/toolbar"
     android:layout_width="match_parent"
     android:layout_height="?attr/actionBarSize"
+    android:minHeight="64dp"
     android:background="@drawable/bg_gradient_primary"
     android:elevation="4dp"
     app:contentInsetStart="@dimen/spacing_md"

@@ -30,10 +30,11 @@
         <!-- Outline -->
         <item name="colorOutline">@color/border</item>
         
-        <!-- Status bar -->
-        <item name="android:statusBarColor">@color/primary</item>
+        <!-- Status bar: transparent so toolbar (purple) extends under it and camera sits on purple -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@color/bg_cream</item>
         <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 
     <!-- Splash Theme -->
@@ -42,8 +43,8 @@
         <item name="android:statusBarColor">@color/primary</item>
     </style>
     
-    <!-- Auth Theme (for login, register, etc.) -->
+    <!-- Auth Theme (for login, register, main activity – same as base, purple under status bar) -->
     <style name="Theme.Drumigo.Auth" parent="Theme.Drumigo">
-        <item name="android:statusBarColor">@color/primary</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
 </resources>

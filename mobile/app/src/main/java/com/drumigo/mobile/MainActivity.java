@@ -5,14 +5,19 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.WindowManager;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.graphics.drawable.Drawable;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -22,11 +27,13 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.navigation.NavController;
@@ -147,9 +154,37 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void setupEdgeToEdge() {
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            WindowManager.LayoutParams attrs = getWindow().getAttributes();
+            attrs.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            getWindow().setAttributes(attrs);
+        }
         ViewCompat.setOnApplyWindowInsetsListener(binding.main, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom);
+            View toolbarView = binding.main.findViewById(R.id.toolbar);
+            if (toolbarView != null) {
+                // Padding so toolbar content is below status bar and clear of cutout
+                toolbarView.setPadding(
+                    systemBars.left,
+                    systemBars.top,
+                    systemBars.right,
+                    toolbarView.getPaddingBottom()
+                );
+                TypedValue tv = new TypedValue();
+                if (getTheme().resolveAttribute(android.R.attr.actionBarSize, tv, true)) {
+                    int actionBarSize = TypedValue.complexToDimensionPixelSize(tv.data, getResources().getDisplayMetrics());
+                    int totalHeight = actionBarSize + systemBars.top;
+                    toolbarView.setMinimumHeight(totalHeight);
+                    // Force toolbar to actually use that height (parent is LinearLayout)
+                    ViewGroup.LayoutParams lp = toolbarView.getLayoutParams();
+                    if (lp != null) {
+                        lp.height = totalHeight;
+                        toolbarView.setLayoutParams(lp);
+                    }
+                }
+            }
             return insets;
         });
     }
@@ -300,7 +335,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
         if (isUserAuthenticated()) {
             drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, GravityCompat.START);
-            toolbar.setNavigationIcon(R.drawable.ic_menu);
+            setNavigationIconLarge(toolbar, R.drawable.ic_menu);
             toolbar.setNavigationOnClickListener(v -> openDrawer());
             toolbar.setNavigationContentDescription(R.string.nav_drawer_open);
             return;
@@ -394,7 +429,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
 
         toolbar.setVisibility(View.VISIBLE);
-        toolbar.setTitle("");
+        if (destinationId == R.id.profileFragment) {
+            if (getSupportActionBar() != null) getSupportActionBar().setDisplayShowTitleEnabled(true);
+            toolbar.setTitle(R.string.profile_title);
+        } else {
+            if (getSupportActionBar() != null) getSupportActionBar().setDisplayShowTitleEnabled(false);
+            toolbar.setTitle("");
+        }
         if (destinationId == R.id.landingFragment && !isUserAuthenticated()) {
             if (toolbarLandingLogo != null) {
                 toolbarLandingLogo.setVisibility(View.VISIBLE);
@@ -408,6 +449,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private int dpToPx(int dp) {
         return Math.round(dp * getResources().getDisplayMetrics().density);
+    }
+
+    /** Set a larger navigation icon (32dp) so the menu is easier to tap and see. */
+    private void setNavigationIconLarge(MaterialToolbar toolbar, int drawableResId) {
+        Drawable d = AppCompatResources.getDrawable(this, drawableResId);
+        if (d != null) {
+            d = d.mutate();
+            d.setTint(android.graphics.Color.WHITE);
+            int size = dpToPx(32);
+            d.setBounds(0, 0, size, size);
+            toolbar.setNavigationIcon(d);
+        } else {
+            toolbar.setNavigationIcon(drawableResId);
+        }
     }
 
     @Override
