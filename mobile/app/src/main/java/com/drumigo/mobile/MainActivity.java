@@ -2,9 +2,7 @@ package com.drumigo.mobile;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -12,8 +10,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -39,6 +39,7 @@ import com.drumigo.mobile.data.api.DriverApiService;
 import com.drumigo.mobile.data.api.RideApiService;
 import com.drumigo.mobile.data.model.DriverLocationUpdateRequest;
 import com.drumigo.mobile.data.model.ride.RideResponse;
+import com.drumigo.mobile.session.SessionManager;
 import com.drumigo.mobile.ui.ride.RideTrackingConfig;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -54,19 +55,22 @@ import retrofit2.Callback;
 import retrofit2.Response;
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     private static final String TAG = "MainActivity";
-    private static final String AUTH_PREFS = "auth";
+    private static final String ROLE_PASSENGER = "PASSENGER";
     private static final String ROLE_DRIVER = "DRIVER";
+    private static final String ROLE_ADMIN = "ADMIN";
     private static final long DRIVER_LOCATION_PING_INTERVAL_MS = 5_000L;
 
     private ActivityMainBinding binding;
     private NavController navController;
     private DrawerLayout drawerLayout;
     private MaterialToolbar toolbar;
+    private ImageView toolbarLandingLogo;
     private View toolbarAuthActions;
     private MaterialButton toolbarSignInButton;
     private MaterialButton toolbarSignUpButton;
     private RideApiService rideApiService;
     private DriverApiService driverApiService;
+    private SessionManager sessionManager;
     private FusedLocationProviderClient fusedLocationClient;
     private final Handler ridePollingHandler = new Handler(Looper.getMainLooper());
     private final Runnable ridePollingRunnable = new Runnable() {
@@ -115,19 +119,27 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         rideApiService = ApiClient.getRideApiService();
         driverApiService = ApiClient.getDriverApiService();
+        sessionManager = SessionManager.getInstance(this);
+        sessionManager.getToken();
+        updateDrawerMenuForCurrentUser();
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        startRideAutoTracking();
+        showSessionExpiredNoticeIfNeeded();
+        redirectAuthenticatedUserAwayFromLanding();
+        updateToolbarForDestination(getCurrentDestinationId());
+        updateDrawerMenuForCurrentUser();
+        updateDrawerAvailabilityForCurrentUser();
+        updateToolbarAuthActions(getCurrentDestinationId());
+        enforceAuthenticationForProtectedDestination();
         startDriverLocationPingsIfNeeded();
     }
 
     @Override
     protected void onStop() {
-        stopRideAutoTracking();
         stopDriverLocationPings();
         super.onStop();
     }
@@ -143,12 +155,24 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void setupToolbar() {
         toolbar = binding.getRoot().findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        }
+        toolbar.setTitle("");
+        toolbar.setNavigationIcon(null);
+        toolbar.setNavigationOnClickListener(null);
 
-        // Ensure the hamburger icon is visible (set after setSupportActionBar)
-        toolbar.setNavigationIcon(R.drawable.ic_menu);
-
-        // Handle navigation icon (hamburger menu) clicks
-        toolbar.setNavigationOnClickListener(v -> openDrawer());
+        toolbarLandingLogo = new ImageView(this);
+        toolbarLandingLogo.setImageResource(R.drawable.ic_logo_white);
+        toolbarLandingLogo.setScaleType(ImageView.ScaleType.FIT_START);
+        Toolbar.LayoutParams logoLayoutParams = new Toolbar.LayoutParams(
+            dpToPx(120),
+            dpToPx(28),
+            Gravity.START | Gravity.CENTER_VERTICAL
+        );
+        logoLayoutParams.setMarginStart(dpToPx(8));
+        toolbar.addView(toolbarLandingLogo, logoLayoutParams);
+        toolbarLandingLogo.setVisibility(View.GONE);
 
         toolbarAuthActions = getLayoutInflater().inflate(R.layout.toolbar_auth_actions, toolbar, false);
         Toolbar.LayoutParams layoutParams = new Toolbar.LayoutParams(
@@ -156,6 +180,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             Toolbar.LayoutParams.WRAP_CONTENT,
             Gravity.END | Gravity.CENTER_VERTICAL
         );
+        layoutParams.setMarginEnd(dpToPx(12));
         toolbar.addView(toolbarAuthActions, layoutParams);
         toolbarSignInButton = toolbarAuthActions.findViewById(R.id.toolbarBtnSignIn);
         toolbarSignUpButton = toolbarAuthActions.findViewById(R.id.toolbarBtnSignUp);
@@ -173,8 +198,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             navController = navHostFragment.getNavController();
             
             navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
+                if (redirectAuthenticatedUserAwayFromLanding()) {
+                    return;
+                }
+                updateToolbarForDestination(destination.getId());
+                updateDrawerMenuForCurrentUser();
+                updateDrawerAvailabilityForCurrentUser();
                 updateSelectedNavItem(destination.getId());
                 updateToolbarAuthActions(destination.getId());
+                enforceAuthenticationForProtectedDestination();
             });
         }
     }
@@ -182,6 +214,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void setupDrawer() {
         drawerLayout = binding.drawerLayout;
         binding.navigationView.setNavigationItemSelectedListener(this);
+        updateDrawerMenuForCurrentUser();
+        updateDrawerAvailabilityForCurrentUser();
         
         View headerView = binding.navigationView.getHeaderView(0);
         if (headerView != null) {
@@ -204,62 +238,212 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
+    private void updateDrawerMenuForCurrentUser() {
+        if (binding == null) {
+            return;
+        }
+        Menu menu = binding.navigationView.getMenu();
+        if (menu == null) {
+            return;
+        }
+
+        hideAllDrawerItems(menu);
+
+        if (!isUserAuthenticated()) {
+            setDrawerItemState(menu, R.id.nav_home, true, true);
+            setDrawerItemState(menu, R.id.nav_login, true, true);
+            setDrawerItemState(menu, R.id.nav_registration, true, true);
+            setDrawerItemState(menu, R.id.nav_logout, false, false);
+            return;
+        }
+
+        String role = getCurrentRoleNormalized();
+        if (ROLE_DRIVER.equals(role)) {
+            // Mirrors web driver navbar: keep placeholders visible but disabled if not implemented.
+            setDrawerItemState(menu, R.id.nav_ride_tracking, true, false);
+            setDrawerItemState(menu, R.id.nav_ride_history, true, true);
+            setDrawerItemState(menu, R.id.nav_profile, true, true);
+            setDrawerItemState(menu, R.id.nav_support, true, false);
+            setDrawerItemState(menu, R.id.nav_logout, true, true);
+            return;
+        }
+
+        if (ROLE_ADMIN.equals(role)) {
+            // Mirrors web admin navbar placeholders.
+            setDrawerItemState(menu, R.id.nav_dashboard, true, false);
+            setDrawerItemState(menu, R.id.nav_active_rides_admin, true, false);
+            setDrawerItemState(menu, R.id.nav_ride_history, true, false);
+            setDrawerItemState(menu, R.id.nav_panic_notifications, true, false);
+            setDrawerItemState(menu, R.id.nav_live_support, true, false);
+            setDrawerItemState(menu, R.id.nav_register_driver, true, false);
+            setDrawerItemState(menu, R.id.nav_drivers, true, false);
+            setDrawerItemState(menu, R.id.nav_passengers, true, false);
+            setDrawerItemState(menu, R.id.nav_reports, true, false);
+            setDrawerItemState(menu, R.id.nav_all_notifications, true, false);
+            setDrawerItemState(menu, R.id.nav_profile, true, true);
+            setDrawerItemState(menu, R.id.nav_logout, true, true);
+            return;
+        }
+
+        // Default authenticated role: passenger.
+        setDrawerItemState(menu, R.id.nav_order_ride, true, true);
+        setDrawerItemState(menu, R.id.nav_ride_tracking, true, false);
+        setDrawerItemState(menu, R.id.nav_ride_history, true, false);
+        setDrawerItemState(menu, R.id.nav_favorite_routes, true, false);
+        setDrawerItemState(menu, R.id.nav_profile, true, true);
+        setDrawerItemState(menu, R.id.nav_support, true, false);
+        setDrawerItemState(menu, R.id.nav_logout, true, true);
+    }
+
+    private void updateDrawerAvailabilityForCurrentUser() {
+        if (drawerLayout == null || toolbar == null) {
+            return;
+        }
+        if (isUserAuthenticated()) {
+            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, GravityCompat.START);
+            toolbar.setNavigationIcon(R.drawable.ic_menu);
+            toolbar.setNavigationOnClickListener(v -> openDrawer());
+            toolbar.setNavigationContentDescription(R.string.nav_drawer_open);
+            return;
+        }
+
+        drawerLayout.closeDrawer(GravityCompat.START);
+        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.START);
+        toolbar.setNavigationIcon(null);
+        toolbar.setNavigationOnClickListener(null);
+    }
+
+    private void hideAllDrawerItems(Menu menu) {
+        int[] allItemIds = new int[] {
+            R.id.nav_home,
+            R.id.nav_login,
+            R.id.nav_registration,
+            R.id.nav_order_ride,
+            R.id.nav_ride_tracking,
+            R.id.nav_ride_history,
+            R.id.nav_favorite_routes,
+            R.id.nav_dashboard,
+            R.id.nav_active_rides_admin,
+            R.id.nav_panic_notifications,
+            R.id.nav_live_support,
+            R.id.nav_register_driver,
+            R.id.nav_drivers,
+            R.id.nav_passengers,
+            R.id.nav_reports,
+            R.id.nav_all_notifications,
+            R.id.nav_profile,
+            R.id.nav_support,
+            R.id.nav_logout
+        };
+        for (int itemId : allItemIds) {
+            setDrawerItemState(menu, itemId, false, false);
+        }
+    }
+
+    private void setDrawerItemState(Menu menu, int itemId, boolean visible, boolean enabled) {
+        MenuItem menuItem = menu.findItem(itemId);
+        if (menuItem == null) {
+            return;
+        }
+        menuItem.setVisible(visible);
+        menuItem.setEnabled(enabled);
+        if (!visible || !enabled) {
+            menuItem.setChecked(false);
+        }
+    }
+
     private void updateSelectedNavItem(int destinationId) {
+        if (destinationId == -1) {
+            return;
+        }
         int menuItemId;
         if (destinationId == R.id.landingFragment || destinationId == R.id.activeVehiclesMapFragment) {
-            menuItemId = R.id.nav_active_vehicles;
+            menuItemId = isPassengerAuthenticated() ? R.id.nav_order_ride : R.id.nav_home;
         } else if (destinationId == R.id.loginFragment) {
             menuItemId = R.id.nav_login;
         } else if (destinationId == R.id.registrationFragment) {
             menuItemId = R.id.nav_registration;
-        } else if (destinationId == R.id.forgotPasswordFragment) {
-            menuItemId = R.id.nav_forgot_password;
-        } else if (destinationId == R.id.resetPasswordFragment) {
-            menuItemId = R.id.nav_reset_password;
         } else if (destinationId == R.id.profileFragment) {
             menuItemId = R.id.nav_profile;
         } else if (destinationId == R.id.rideTrackingFragment) {
-            return;
+            menuItemId = R.id.nav_ride_tracking;
         } else {
             return;
         }
-        binding.navigationView.setCheckedItem(menuItemId);
+        Menu menu = binding.navigationView.getMenu();
+        MenuItem menuItem = menu.findItem(menuItemId);
+        if (menuItem != null && menuItem.isVisible() && menuItem.isEnabled()) {
+            binding.navigationView.setCheckedItem(menuItemId);
+        }
     }
 
     private void updateToolbarAuthActions(int destinationId) {
         if (toolbarAuthActions == null) {
             return;
         }
-        boolean show = destinationId == R.id.landingFragment;
+        boolean show = destinationId == R.id.landingFragment && !isUserAuthenticated();
         toolbarAuthActions.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    private void updateToolbarForDestination(int destinationId) {
+        if (toolbar == null || destinationId == -1) {
+            return;
+        }
+        if (destinationId == R.id.loginFragment || destinationId == R.id.registrationFragment) {
+            toolbar.setVisibility(View.GONE);
+            return;
+        }
+
+        toolbar.setVisibility(View.VISIBLE);
+        toolbar.setTitle("");
+        if (destinationId == R.id.landingFragment && !isUserAuthenticated()) {
+            if (toolbarLandingLogo != null) {
+                toolbarLandingLogo.setVisibility(View.VISIBLE);
+            }
+        } else {
+            if (toolbarLandingLogo != null) {
+                toolbarLandingLogo.setVisibility(View.GONE);
+            }
+        }
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        if (!item.isEnabled()) {
+            drawerLayout.closeDrawer(GravityCompat.START);
+            return true;
+        }
         int itemId = item.getItemId();
 
-        if (itemId == R.id.nav_active_vehicles) {
+        if (itemId == R.id.nav_home) {
             navController.navigate(R.id.landingFragment);
+        } else if (itemId == R.id.nav_order_ride) {
+            navController.navigate(R.id.activeVehiclesMapFragment);
         } else if (itemId == R.id.nav_login) {
             navController.navigate(R.id.loginFragment);
         } else if (itemId == R.id.nav_registration) {
             navController.navigate(R.id.registrationFragment);
-        } else if (itemId == R.id.nav_forgot_password) {
-            navController.navigate(R.id.forgotPasswordFragment);
-        } else if (itemId == R.id.nav_reset_password) {
-            navController.navigate(R.id.resetPasswordFragment);
         } else if (itemId == R.id.nav_logout) {
-            // Handle logout - for now just go to login
             clearAuthState();
             stopDriverLocationPings();
             navController.navigate(R.id.loginFragment);
         } else if (itemId == R.id.nav_ride_history) {
-            // Launch RideHistoryActivity
-            Intent intent = new Intent(this, com.drumigo.mobile.ui.history.RideHistoryActivity.class);
-            startActivity(intent);
+            if (isDriverAuthenticated()) {
+                Intent intent = new Intent(this, com.drumigo.mobile.ui.history.RideHistoryActivity.class);
+                startActivity(intent);
+            }
         } else if (itemId == R.id.nav_profile) {
-            // Navigate to profile fragment
             navController.navigate(R.id.profileFragment);
+        } else {
+            android.widget.Toast.makeText(
+                this,
+                R.string.nav_not_implemented,
+                android.widget.Toast.LENGTH_SHORT
+            ).show();
         }
         
         drawerLayout.closeDrawer(GravityCompat.START);
@@ -267,7 +451,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     public void openDrawer() {
-        if (drawerLayout != null) {
+        if (drawerLayout != null
+            && drawerLayout.getDrawerLockMode(GravityCompat.START) != DrawerLayout.LOCK_MODE_LOCKED_CLOSED) {
             drawerLayout.openDrawer(GravityCompat.START);
         }
     }
@@ -345,26 +530,38 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private boolean isLoggedInDriver() {
-        SharedPreferences prefs = getAuthPrefs();
-        String token = prefs.getString("token", "");
-        String role = prefs.getString("role", "");
-        return token != null && !token.isBlank() && ROLE_DRIVER.equalsIgnoreCase(role);
-    }
-
-    private SharedPreferences getAuthPrefs() {
-        return getSharedPreferences(AUTH_PREFS, Context.MODE_PRIVATE);
+        return isDriverAuthenticated();
     }
 
     private String getAuthToken() {
-        String token = getAuthPrefs().getString("token", "");
-        if (token == null || token.isBlank()) {
+        if (sessionManager == null) {
             return null;
         }
-        return token;
+        String token = sessionManager.getToken();
+        return (token == null || token.isBlank()) ? null : token;
     }
 
     private boolean isUserAuthenticated() {
         return getAuthToken() != null;
+    }
+
+    private boolean isPassengerAuthenticated() {
+        return isUserAuthenticated() && ROLE_PASSENGER.equals(getCurrentRoleNormalized());
+    }
+
+    private boolean isDriverAuthenticated() {
+        return isUserAuthenticated() && ROLE_DRIVER.equals(getCurrentRoleNormalized());
+    }
+
+    private String getCurrentRoleNormalized() {
+        if (sessionManager == null) {
+            return "";
+        }
+        String role = sessionManager.getRole();
+        if (role == null) {
+            return "";
+        }
+        return role.trim().toUpperCase();
     }
 
     private boolean hasLocationPermission() {
@@ -387,17 +584,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             return;
         }
 
-        String token = getAuthToken();
-        if (token == null) {
-            return;
-        }
-
         fusedLocationClient.getLastLocation()
             .addOnSuccessListener(location -> {
                 if (location != null) {
-                    sendDriverLocationPing(token, location);
+                    sendDriverLocationPing(location);
                 } else {
-                    requestCurrentLocationAndPing(token);
+                    requestCurrentLocationAndPing();
                 }
             })
             .addOnFailureListener(error ->
@@ -406,7 +598,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     @SuppressLint("MissingPermission")
-    private void requestCurrentLocationAndPing(String token) {
+    private void requestCurrentLocationAndPing() {
         if (fusedLocationClient == null) {
             return;
         }
@@ -414,7 +606,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
             .addOnSuccessListener(location -> {
                 if (location != null) {
-                    sendDriverLocationPing(token, location);
+                    sendDriverLocationPing(location);
                 }
             })
             .addOnFailureListener(error ->
@@ -422,7 +614,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             );
     }
 
-    private void sendDriverLocationPing(String token, Location location) {
+    private void sendDriverLocationPing(Location location) {
         if (driverApiService == null) {
             return;
         }
@@ -430,7 +622,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         DriverLocationUpdateRequest request =
             new DriverLocationUpdateRequest(location.getLatitude(), location.getLongitude());
 
-        driverApiService.updateMyLocation("Bearer " + token, request).enqueue(new Callback<Void>() {
+        driverApiService.updateMyLocation(request).enqueue(new Callback<Void>() {
             @Override
             public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
                 if (!response.isSuccessful()) {
@@ -446,23 +638,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void clearAuthState() {
-        getAuthPrefs().edit()
-            .remove("token")
-            .remove("userId")
-            .remove("email")
-            .remove("role")
-            .apply();
+        if (sessionManager != null) {
+            sessionManager.clearSession();
+        }
+        updateDrawerMenuForCurrentUser();
+        updateDrawerAvailabilityForCurrentUser();
+        updateToolbarAuthActions(getCurrentDestinationId());
     }
 
     private void checkActiveRides() {
         if (!isUserAuthenticated()) {
+            showSessionExpiredNoticeIfNeeded();
+            enforceAuthenticationForProtectedDestination();
             return;
         }
-        if (navController == null) {
-            return;
-        }
-        NavDestination current = navController.getCurrentDestination();
-        if (current != null && current.getId() == R.id.rideTrackingFragment) {
+        if (!shouldAutoOpenRideTrackingNow()) {
             return;
         }
 
@@ -480,6 +670,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 @NonNull Call<List<RideResponse>> call,
                 @NonNull Response<List<RideResponse>> response
             ) {
+                if (!shouldAutoOpenRideTrackingNow()) {
+                    return;
+                }
                 if (!response.isSuccessful() || response.body() == null || response.body().isEmpty()) {
                     return;
                 }
@@ -514,6 +707,90 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             return;
         }
         navController.navigate(destinationId);
+    }
+
+    private int getCurrentDestinationId() {
+        if (navController == null || navController.getCurrentDestination() == null) {
+            return -1;
+        }
+        return navController.getCurrentDestination().getId();
+    }
+
+    private boolean redirectAuthenticatedUserAwayFromLanding() {
+        if (!isUserAuthenticated() || navController == null) {
+            return false;
+        }
+        NavDestination currentDestination = navController.getCurrentDestination();
+        if (currentDestination == null || currentDestination.getId() != R.id.landingFragment) {
+            return false;
+        }
+        int targetDestination = getAuthenticatedStartDestination();
+        if (targetDestination == currentDestination.getId()) {
+            return false;
+        }
+        navController.navigate(targetDestination);
+        return true;
+    }
+
+    private int getAuthenticatedStartDestination() {
+        String role = getCurrentRoleNormalized();
+        if (ROLE_PASSENGER.equals(role)) {
+            return R.id.activeVehiclesMapFragment;
+        }
+        return R.id.profileFragment;
+    }
+
+    private boolean isAutoRideTrackingAllowedDestination(int destinationId) {
+        return destinationId == R.id.landingFragment
+            || destinationId == R.id.activeVehiclesMapFragment;
+    }
+
+    private boolean shouldAutoOpenRideTrackingNow() {
+        if (navController == null) {
+            return false;
+        }
+        NavDestination current = navController.getCurrentDestination();
+        if (current == null) {
+            return false;
+        }
+        int currentDestinationId = current.getId();
+        if (currentDestinationId == R.id.rideTrackingFragment) {
+            return false;
+        }
+        return isAutoRideTrackingAllowedDestination(currentDestinationId);
+    }
+
+    private void showSessionExpiredNoticeIfNeeded() {
+        if (sessionManager != null && sessionManager.consumeSessionExpiredNotice()) {
+            android.widget.Toast.makeText(
+                this,
+                "Your session expired. Please sign in again.",
+                android.widget.Toast.LENGTH_SHORT
+            ).show();
+        }
+    }
+
+    private void enforceAuthenticationForProtectedDestination() {
+        if (navController == null || sessionManager == null || sessionManager.isAuthenticated()) {
+            return;
+        }
+        NavDestination current = navController.getCurrentDestination();
+        if (current == null) {
+            return;
+        }
+        int destinationId = current.getId();
+        if (isPublicDestination(destinationId)) {
+            return;
+        }
+        navController.navigate(R.id.loginFragment);
+    }
+
+    private boolean isPublicDestination(int destinationId) {
+        return destinationId == R.id.landingFragment
+            || destinationId == R.id.loginFragment
+            || destinationId == R.id.registrationFragment
+            || destinationId == R.id.forgotPasswordFragment
+            || destinationId == R.id.resetPasswordFragment;
     }
 
     @Override

@@ -1,13 +1,12 @@
 package com.drumigo.mobile.ui.auth;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
+import android.content.Intent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,6 +18,7 @@ import com.drumigo.mobile.data.remote.ApiClient;
 import com.drumigo.mobile.data.remote.dto.auth.request.LoginRequest;
 import com.drumigo.mobile.data.remote.dto.auth.response.LoginResponse;
 import com.drumigo.mobile.databinding.FragmentLoginBinding;
+import com.drumigo.mobile.session.SessionManager;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -91,21 +91,27 @@ public class LoginFragment extends Fragment {
                 if (response.isSuccessful() && response.body() != null) {
                     LoginResponse loginResponse = response.body();
 
-                    // Store authentication data
-                    SharedPreferences prefs = requireContext().getSharedPreferences("auth", Context.MODE_PRIVATE);
-                    prefs.edit()
-                            .putString("token", loginResponse.token)
-                            .putLong("userId", loginResponse.userId)
-                            .putString("email", loginResponse.email)
-                            .putString("role", loginResponse.role)
-                            .apply();
+                    SessionManager.getInstance(requireContext()).saveSession(
+                        loginResponse.token,
+                        loginResponse.userId == null ? -1L : loginResponse.userId,
+                        loginResponse.email,
+                        loginResponse.role
+                    );
 
                     Toast.makeText(
                             requireContext(),
                             "Welcome back, " + loginResponse.email + "! You're signed in.",
                             Toast.LENGTH_SHORT
                     ).show();
-                    // TODO: Navigate to main app screen
+                    String role = loginResponse.role == null ? "" : loginResponse.role.trim().toUpperCase();
+                    if ("DRIVER".equals(role)) {
+                        Intent intent = new Intent(requireContext(), com.drumigo.mobile.ui.history.RideHistoryActivity.class);
+                        startActivity(intent);
+                    } else if ("ADMIN".equals(role)) {
+                        Navigation.findNavController(binding.getRoot()).navigate(R.id.profileFragment);
+                    } else {
+                        Navigation.findNavController(binding.getRoot()).navigate(R.id.activeVehiclesMapFragment);
+                    }
                 } else {
                     String errorMsg = getLoginErrorMessage(response.code(), response.message());
                     Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_LONG).show();
