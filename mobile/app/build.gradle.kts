@@ -17,7 +17,13 @@ val mapboxAccessToken = (
         ?: secretsProperties.getProperty("MAPBOX_SECRET_KEY")
         ?: "MAPBOX_API_KEY"
 ).trim()
-val apiBaseUrl = (secretsProperties.getProperty("API_BASE_URL") ?: "http://localhost:8080/api").trim()
+val envApiBaseUrl = (System.getenv("API_BASE_URL") ?: "").trim()
+val secretsApiBaseUrl = (secretsProperties.getProperty("API_BASE_URL") ?: "").trim()
+val resolvedApiBaseUrl = when {
+    envApiBaseUrl.isNotEmpty() -> envApiBaseUrl
+    secretsApiBaseUrl.isNotEmpty() -> secretsApiBaseUrl
+    else -> "http://localhost:8080/api"
+}
 
 android {
     namespace = "com.drumigo.mobile"
@@ -32,15 +38,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        val secretsFile = rootProject.file("secrets.properties")
-        val secretsProps = Properties()
-        if (secretsFile.exists()) {
-            secretsFile.inputStream().use { secretsProps.load(it) }
-        }
-        val apiBaseUrl = secretsProps.getProperty("API_BASE_URL", "http://localhost:8080/api").trim()
-
         buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxAccessToken}\"")
-        buildConfigField("String", "API_BASE_URL", "\"${apiBaseUrl}\"")
+        buildConfigField("String", "API_BASE_URL", "\"${resolvedApiBaseUrl}\"")
     }
 
     buildTypes {
