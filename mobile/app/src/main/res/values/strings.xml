@@ -197,6 +197,7 @@
     <string name="ride_history_detail_title">Ride Details</string>
     <string name="ride_history_detail_ride_id">Ride #%1$d</string>
     <string name="ride_history_detail_route">Route</string>
+    <string name="ride_history_detail_route_map_button">Open route map</string>
     <string name="ride_history_detail_summary">Trip Summary</string>
     <string name="ride_history_detail_status">Status</string>
     <string name="ride_history_detail_date">Date</string>
@@ -210,6 +211,10 @@
     <string name="ride_history_sort_amount_desc">Amount high to low</string>
     <string name="ride_history_sort_amount_asc">Amount low to high</string>
     <string name="ride_history_sort_status">Status A-Z</string>
+    <string name="ride_history_route_map_title">Route Map</string>
+    <string name="ride_history_route_map_loading">Loading route map...</string>
+    <string name="ride_history_route_map_error">Unable to load route on map</string>
+    <string name="ride_history_route_map_missing_addresses">Missing pickup or destination address</string>
 
     <string-array name="ride_history_sort_options">
         <item>@string/ride_history_sort_newest</item>

@@ -6,7 +6,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -77,18 +76,6 @@ public class RideHistoryAdapter extends RecyclerView.Adapter<RideHistoryAdapter.
     }
 
     private void bindPassengerSection(RideViewHolder holder, Ride ride) {
-        holder.passengerAvatarsContainer.removeAllViews();
-        String[] initials = ride.getPassengerInitials();
-        if (initials != null) {
-            for (String passengerInitials : initials) {
-                TextView avatar = createPassengerAvatar(
-                    passengerInitials == null ? "" : passengerInitials,
-                    holder.itemView.getContext()
-                );
-                holder.passengerAvatarsContainer.addView(avatar);
-            }
-        }
-
         int count = Math.max(0, ride.getPassengerCount());
         holder.passengerCountText.setText(count + (count == 1 ? " passenger" : " passengers"));
     }
@@ -130,23 +117,6 @@ public class RideHistoryAdapter extends RecyclerView.Adapter<RideHistoryAdapter.
         notifyDataSetChanged();
     }
 
-    private TextView createPassengerAvatar(String initials, Context ctx) {
-        TextView avatar = new TextView(ctx);
-        float density = ctx.getResources().getDisplayMetrics().density;
-        int sizePx = Math.round(32 * density);
-        int marginPx = Math.round(-8 * density);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(sizePx, sizePx);
-        params.setMarginStart(marginPx);
-        avatar.setLayoutParams(params);
-
-        avatar.setText(initials);
-        avatar.setTextSize(11);
-        avatar.setTextColor(ContextCompat.getColor(ctx, R.color.white));
-        avatar.setGravity(android.view.Gravity.CENTER);
-        avatar.setBackgroundResource(R.drawable.bg_passenger_avatar);
-        return avatar;
-    }
-
     private static String emptyToFallback(String value, String fallback) {
         return isBlank(value) ? fallback : value;
     }
@@ -167,7 +137,6 @@ public class RideHistoryAdapter extends RecyclerView.Adapter<RideHistoryAdapter.
         TextView timeText;
         TextView fromText;
         TextView toText;
-        LinearLayout passengerAvatarsContainer;
         TextView passengerCountText;
         View statusBadge;
         ImageView statusIcon;
@@ -183,7 +152,6 @@ public class RideHistoryAdapter extends RecyclerView.Adapter<RideHistoryAdapter.
             timeText = itemView.findViewById(R.id.timeText);
             fromText = itemView.findViewById(R.id.fromText);
             toText = itemView.findViewById(R.id.toText);
-            passengerAvatarsContainer = itemView.findViewById(R.id.passengerAvatarsContainer);
             passengerCountText = itemView.findViewById(R.id.passengerCountText);
             statusBadge = itemView.findViewById(R.id.statusBadge);
             statusIcon = itemView.findViewById(R.id.statusIcon);

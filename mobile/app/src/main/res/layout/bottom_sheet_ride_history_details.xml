@@ -78,13 +78,31 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/ride_history_detail_route"
-                android:textColor="@color/text_dark"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/ride_history_detail_route"
+                    android:textColor="@color/text_dark"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:id="@+id/detailRouteMapButton"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/bg_ride_history_sheet_close"
+                    android:contentDescription="@string/ride_history_detail_route_map_button"
+                    android:padding="6dp"
+                    android:src="@drawable/ic_route_map"
+                    app:tint="@color/primary_dark" />
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
