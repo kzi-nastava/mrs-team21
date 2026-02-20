@@ -140,9 +140,12 @@ public class ProfileService {
         if (file.getSize() > MAX_PICTURE_SIZE_BYTES) {
             throw new IllegalArgumentException("Profile picture must be at most 5MB");
         }
-        String contentType = file.getContentType();
-        if (contentType != null && !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase(Locale.ROOT))) {
-            throw new IllegalArgumentException("Profile picture must be JPEG, PNG, GIF, or WebP");
+        String contentType = normalizeContentType(file.getContentType());
+        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
+            contentType = getContentTypeFromFilename(file.getOriginalFilename());
+            if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
+                throw new IllegalArgumentException("Profile picture must be JPEG, PNG, GIF, or WebP");
+            }
         }
 
         Path dir = Path.of(profileUploadDir).toAbsolutePath().normalize();
@@ -172,9 +175,12 @@ public class ProfileService {
         if (file.getSize() > MAX_PICTURE_SIZE_BYTES) {
             throw new IllegalArgumentException("Profile picture must be at most 5MB");
         }
-        String contentType = file.getContentType();
-        if (contentType != null && !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase(Locale.ROOT))) {
-            throw new IllegalArgumentException("Profile picture must be JPEG, PNG, GIF, or WebP");
+        String contentType = normalizeContentType(file.getContentType());
+        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
+            contentType = getContentTypeFromFilename(file.getOriginalFilename());
+            if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
+                throw new IllegalArgumentException("Profile picture must be JPEG, PNG, GIF, or WebP");
+            }
         }
 
         Path dir = Path.of(profileUploadDir).resolve("temp").toAbsolutePath().normalize();
@@ -189,6 +195,24 @@ public class ProfileService {
         file.transferTo(target);
 
         return "/api/uploads/profile/temp/" + filename;
+    }
+
+    /** Strip parameters (e.g. "; charset=UTF-8") so "image/jpeg; charset=UTF-8" -> "image/jpeg". */
+    private static String normalizeContentType(String contentType) {
+        if (contentType == null || contentType.isBlank()) return null;
+        String base = contentType.split(";")[0].trim().toLowerCase(Locale.ROOT);
+        return base.isEmpty() ? null : base;
+    }
+
+    /** Derive content type from filename when client sends null/wrong Content-Type (e.g. photo.jpg -> image/jpeg). */
+    private static String getContentTypeFromFilename(String originalFilename) {
+        if (originalFilename == null) return null;
+        String name = originalFilename.toLowerCase(Locale.ROOT);
+        if (name.endsWith(".png")) return "image/png";
+        if (name.endsWith(".gif")) return "image/gif";
+        if (name.endsWith(".webp")) return "image/webp";
+        if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
+        return null;
     }
 
     private static String getExtensionFromContentTypeOrFilename(String contentType, String originalFilename) {
