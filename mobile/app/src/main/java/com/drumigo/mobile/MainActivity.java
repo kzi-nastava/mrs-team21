@@ -38,7 +38,7 @@ import com.drumigo.mobile.data.api.ApiClient;
 import com.drumigo.mobile.data.api.DriverApiService;
 import com.drumigo.mobile.data.api.RideApiService;
 import com.drumigo.mobile.data.model.DriverLocationUpdateRequest;
-import com.drumigo.mobile.data.model.ride.RideResponse;
+import com.drumigo.mobile.data.model.ride.ActiveRideIdResponse;
 import com.drumigo.mobile.session.SessionManager;
 import com.drumigo.mobile.ui.ride.RideTrackingConfig;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -47,8 +47,6 @@ import com.google.android.gms.location.Priority;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.navigation.NavigationView;
-
-import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -258,8 +256,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         String role = getCurrentRoleNormalized();
         if (ROLE_DRIVER.equals(role)) {
-            // Mirrors web driver navbar: keep placeholders visible but disabled if not implemented.
-            setDrawerItemState(menu, R.id.nav_ride_tracking, true, false);
+            setDrawerItemState(menu, R.id.nav_ride_tracking, true, true);
             setDrawerItemState(menu, R.id.nav_ride_history, true, true);
             setDrawerItemState(menu, R.id.nav_profile, true, true);
             setDrawerItemState(menu, R.id.nav_support, true, false);
@@ -286,7 +283,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         // Default authenticated role: passenger.
         setDrawerItemState(menu, R.id.nav_order_ride, true, true);
-        setDrawerItemState(menu, R.id.nav_ride_tracking, true, false);
+        setDrawerItemState(menu, R.id.nav_ride_tracking, true, true);
         setDrawerItemState(menu, R.id.nav_ride_history, true, true);
         setDrawerItemState(menu, R.id.nav_favorite_routes, true, false);
         setDrawerItemState(menu, R.id.nav_profile, true, true);
@@ -434,6 +431,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             if (isUserAuthenticated()) {
                 Intent intent = new Intent(this, com.drumigo.mobile.ui.history.RideHistoryActivity.class);
                 startActivity(intent);
+            }
+        } else if (itemId == R.id.nav_ride_tracking) {
+            if (isUserAuthenticated()) {
+                navigateToDestination(R.id.rideTrackingFragment);
             }
         } else if (itemId == R.id.nav_profile) {
             navController.navigate(R.id.profileFragment);
@@ -663,27 +664,23 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (rideApiService == null) {
             return;
         }
-        rideApiService.getActiveRides().enqueue(new Callback<List<RideResponse>>() {
+        rideApiService.getMyActiveRide().enqueue(new Callback<ActiveRideIdResponse>() {
             @Override
             public void onResponse(
-                @NonNull Call<List<RideResponse>> call,
-                @NonNull Response<List<RideResponse>> response
+                @NonNull Call<ActiveRideIdResponse> call,
+                @NonNull Response<ActiveRideIdResponse> response
             ) {
                 if (!shouldAutoOpenRideTrackingNow()) {
                     return;
                 }
-                if (!response.isSuccessful() || response.body() == null || response.body().isEmpty()) {
+                if (!response.isSuccessful() || response.body() == null || response.body().rideId == null) {
                     return;
                 }
-                RideResponse firstRide = response.body().get(0);
-                if (firstRide == null || firstRide.id == null) {
-                    return;
-                }
-                navigateToRide(firstRide.id);
+                navigateToRide(response.body().rideId);
             }
 
             @Override
-            public void onFailure(@NonNull Call<List<RideResponse>> call, @NonNull Throwable t) {
+            public void onFailure(@NonNull Call<ActiveRideIdResponse> call, @NonNull Throwable t) {
             }
         });
     }

@@ -2,6 +2,7 @@ package com.drumigo.mobile.data.api;
 
 import com.drumigo.mobile.data.model.estimate.EstimateRequest;
 import com.drumigo.mobile.data.model.estimate.EstimateResponse;
+import com.drumigo.mobile.data.model.ride.ActiveRideIdResponse;
 import com.drumigo.mobile.data.model.ride.RideResponse;
 import com.drumigo.mobile.data.model.ride.RideTrackingResponse;
 
@@ -21,6 +22,12 @@ public interface RideApiService {
     @GET("rides/active")
     Call<List<RideResponse>> getActiveRides();
 
+    @GET("rides/me/active")
+    Call<ActiveRideIdResponse> getMyActiveRide();
+
     @POST("rides/estimate")
     Call<EstimateResponse> estimateRide(@Body EstimateRequest request);
+
+    @POST("rides/{id}/panic")
+    Call<Void> createPanic(@Path("id") long rideId);
 }
