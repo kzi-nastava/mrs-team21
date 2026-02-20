@@ -24,4 +24,13 @@ public interface MapboxGeocodingService {
         @Query("types") String types,
         @Query("access_token") String accessToken
     );
+
+    @GET("geocoding/v5/mapbox.places/{longitude},{latitude}.json")
+    Call<MapboxGeocodingResponse> reverseGeocodeAddress(
+        @Path("longitude") String longitude,
+        @Path("latitude") String latitude,
+        @Query("limit") int limit,
+        @Query("types") String types,
+        @Query("access_token") String accessToken
+    );
 }

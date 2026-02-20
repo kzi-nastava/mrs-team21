@@ -15,5 +15,6 @@ public class ActiveRide {
     public RoutePoint destinationLocation;
     public RoutePoint currentLocation;
     public Integer estimatedArrivalTimeSec;
+    public Double totalDistanceKm;
     public List<RoutePoint> route;
 }
