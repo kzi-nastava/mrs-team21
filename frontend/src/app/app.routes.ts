@@ -216,6 +216,13 @@ export const routes: Routes = [
             data: { featureName: 'Passengers', specRef: '2.12' },
           },
           {
+            path: 'users',
+            loadComponent: () =>
+              import('./features/admin/user-management/admin-user-management-page.component').then(
+                (m) => m.AdminUserManagementPageComponent,
+              ),
+          },
+          {
             path: 'reports',
             loadComponent: () =>
               import('./features/reports/pages/admin-reports-page/admin-reports-page.component').then(
