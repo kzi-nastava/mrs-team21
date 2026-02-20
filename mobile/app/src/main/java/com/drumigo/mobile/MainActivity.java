@@ -120,6 +120,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         rideApiService = ApiClient.getRideApiService();
         driverApiService = ApiClient.getDriverApiService();
         sessionManager = SessionManager.getInstance(this);
+        if (savedInstanceState == null) {
+            sessionManager.clearSessionOnColdStartIfNeeded();
+        }
         sessionManager.getToken();
         updateDrawerMenuForCurrentUser();
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -129,7 +132,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     protected void onStart() {
         super.onStart();
         showSessionExpiredNoticeIfNeeded();
-        redirectAuthenticatedUserAwayFromLanding();
         updateToolbarForDestination(getCurrentDestinationId());
         updateDrawerMenuForCurrentUser();
         updateDrawerAvailabilityForCurrentUser();
@@ -198,9 +200,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             navController = navHostFragment.getNavController();
             
             navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
-                if (redirectAuthenticatedUserAwayFromLanding()) {
-                    return;
-                }
                 updateToolbarForDestination(destination.getId());
                 updateDrawerMenuForCurrentUser();
                 updateDrawerAvailabilityForCurrentUser();
@@ -272,7 +271,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             // Mirrors web admin navbar placeholders.
             setDrawerItemState(menu, R.id.nav_dashboard, true, false);
             setDrawerItemState(menu, R.id.nav_active_rides_admin, true, false);
-            setDrawerItemState(menu, R.id.nav_ride_history, true, false);
+            setDrawerItemState(menu, R.id.nav_ride_history, true, true);
             setDrawerItemState(menu, R.id.nav_panic_notifications, true, false);
             setDrawerItemState(menu, R.id.nav_live_support, true, false);
             setDrawerItemState(menu, R.id.nav_register_driver, true, false);
@@ -288,7 +287,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // Default authenticated role: passenger.
         setDrawerItemState(menu, R.id.nav_order_ride, true, true);
         setDrawerItemState(menu, R.id.nav_ride_tracking, true, false);
-        setDrawerItemState(menu, R.id.nav_ride_history, true, false);
+        setDrawerItemState(menu, R.id.nav_ride_history, true, true);
         setDrawerItemState(menu, R.id.nav_favorite_routes, true, false);
         setDrawerItemState(menu, R.id.nav_profile, true, true);
         setDrawerItemState(menu, R.id.nav_support, true, false);
@@ -432,7 +431,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             stopDriverLocationPings();
             navController.navigate(R.id.loginFragment);
         } else if (itemId == R.id.nav_ride_history) {
-            if (isDriverAuthenticated()) {
+            if (isUserAuthenticated()) {
                 Intent intent = new Intent(this, com.drumigo.mobile.ui.history.RideHistoryActivity.class);
                 startActivity(intent);
             }

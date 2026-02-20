@@ -6,7 +6,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
-import android.content.Intent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -95,7 +94,8 @@ public class LoginFragment extends Fragment {
                         loginResponse.token,
                         loginResponse.userId == null ? -1L : loginResponse.userId,
                         loginResponse.email,
-                        loginResponse.role
+                        loginResponse.role,
+                        rememberMe
                     );
 
                     Toast.makeText(
@@ -105,8 +105,7 @@ public class LoginFragment extends Fragment {
                     ).show();
                     String role = loginResponse.role == null ? "" : loginResponse.role.trim().toUpperCase();
                     if ("DRIVER".equals(role)) {
-                        Intent intent = new Intent(requireContext(), com.drumigo.mobile.ui.history.RideHistoryActivity.class);
-                        startActivity(intent);
+                        Navigation.findNavController(binding.getRoot()).navigate(R.id.profileFragment);
                     } else if ("ADMIN".equals(role)) {
                         Navigation.findNavController(binding.getRoot()).navigate(R.id.profileFragment);
                     } else {

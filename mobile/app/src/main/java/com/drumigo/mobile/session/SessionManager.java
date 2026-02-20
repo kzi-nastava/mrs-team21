@@ -15,6 +15,7 @@ public final class SessionManager {
     private static final String KEY_USER_ID = "userId";
     private static final String KEY_EMAIL = "email";
     private static final String KEY_ROLE = "role";
+    private static final String KEY_REMEMBER_SESSION = "rememberSession";
     private static final String KEY_SESSION_EXPIRED_NOTICE = "sessionExpiredNotice";
 
     private static volatile SessionManager instance;
@@ -38,11 +39,16 @@ public final class SessionManager {
     }
 
     public void saveSession(String token, long userId, String email, String role) {
+        saveSession(token, userId, email, role, false);
+    }
+
+    public void saveSession(String token, long userId, String email, String role, boolean rememberSession) {
         prefs.edit()
             .putString(KEY_TOKEN, token)
             .putLong(KEY_USER_ID, userId)
             .putString(KEY_EMAIL, email)
             .putString(KEY_ROLE, role)
+            .putBoolean(KEY_REMEMBER_SESSION, rememberSession)
             .putBoolean(KEY_SESSION_EXPIRED_NOTICE, false)
             .apply();
     }
@@ -53,6 +59,7 @@ public final class SessionManager {
             .remove(KEY_USER_ID)
             .remove(KEY_EMAIL)
             .remove(KEY_ROLE)
+            .remove(KEY_REMEMBER_SESSION)
             .apply();
     }
 
@@ -62,8 +69,16 @@ public final class SessionManager {
             .remove(KEY_USER_ID)
             .remove(KEY_EMAIL)
             .remove(KEY_ROLE)
+            .remove(KEY_REMEMBER_SESSION)
             .putBoolean(KEY_SESSION_EXPIRED_NOTICE, true)
             .apply();
+    }
+
+    public void clearSessionOnColdStartIfNeeded() {
+        boolean keepSession = prefs.getBoolean(KEY_REMEMBER_SESSION, false);
+        if (!keepSession) {
+            clearSession();
+        }
     }
 
     public boolean consumeSessionExpiredNotice() {
