@@ -38,7 +38,7 @@ export const NAVIGATION_CONFIG: NavigationConfig = {
   admin: [
     // Monitoring Section
     { label: 'Ride History', icon: 'file-text', path: '/admin/ride-history', section: 'monitoring' },
-    { label: 'Panic Notifications', icon: 'alert-triangle', path: '/admin/panic', section: 'monitoring', disabled: true },
+    { label: 'Panic Notifications', icon: 'alert-triangle', path: '/admin/panic', section: 'monitoring' },
     { label: 'Live Support / Chat', icon: 'message-circle', path: '/admin/support', section: 'monitoring' },
 
     // Management Section

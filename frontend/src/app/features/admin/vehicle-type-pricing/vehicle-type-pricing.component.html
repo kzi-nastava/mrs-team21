@@ -29,7 +29,7 @@
         @for (vt of vehicleTypes; track vt.id) {
           @let form = getForm(vt.id);
           @if (form) {
-            <article class="pricing-card" [attr.data-type]="vt.name?.toLowerCase()">
+            <article class="pricing-card" [attr.data-type]="vt.name.toLowerCase()">
               <div class="pricing-card__header">
                 <span class="pricing-card__badge">{{ vt.name }}</span>
               </div>

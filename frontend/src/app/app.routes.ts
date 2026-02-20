@@ -179,8 +179,8 @@ export const routes: Routes = [
           {
             path: 'panic',
             loadComponent: () =>
-              import('./shared/components/placeholder-feature/placeholder-feature.component').then(
-                (m) => m.PlaceholderFeatureComponent,
+              import('./features/admin/pages/admin-panic-page/admin-panic-page.component').then(
+                (m) => m.AdminPanicPageComponent,
               ),
             data: { featureName: 'Panic Notifications', specRef: '2.6.3' },
           },
