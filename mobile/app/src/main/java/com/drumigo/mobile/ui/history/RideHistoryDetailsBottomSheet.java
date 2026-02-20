@@ -51,6 +51,7 @@ final class RideHistoryDetailsBottomSheet {
         TextView originText = dialog.findViewById(R.id.detailOriginText);
         TextView destinationText = dialog.findViewById(R.id.detailDestinationText);
         ImageView closeButton = dialog.findViewById(R.id.rideDetailsCloseButton);
+        ImageView routeMapButton = dialog.findViewById(R.id.detailRouteMapButton);
 
         if (rideIdText != null) {
             long safeId = ride.getId() == null ? 0L : ride.getId();
@@ -101,6 +102,9 @@ final class RideHistoryDetailsBottomSheet {
 
         if (closeButton != null) {
             closeButton.setOnClickListener(v -> dialog.dismiss());
+        }
+        if (routeMapButton != null) {
+            routeMapButton.setOnClickListener(v -> RideHistoryRouteMapDialog.show(context, ride));
         }
     }
 
