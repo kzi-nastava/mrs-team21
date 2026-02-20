@@ -21,9 +21,13 @@ import androidx.fragment.app.Fragment;
 import com.drumigo.mobile.BuildConfig;
 import com.drumigo.mobile.R;
 import com.drumigo.mobile.data.api.ApiClient;
+import com.drumigo.mobile.data.api.DriverApiService;
 import com.drumigo.mobile.data.api.MapboxApiClient;
 import com.drumigo.mobile.data.api.MapboxDirectionsService;
+import com.drumigo.mobile.data.api.PassengerApiService;
 import com.drumigo.mobile.data.api.RideApiService;
+import com.drumigo.mobile.data.model.history.PageResponse;
+import com.drumigo.mobile.data.model.history.PassengerRideHistoryItemResponse;
 import com.drumigo.mobile.data.mock.RideTrackingMockProvider;
 import com.drumigo.mobile.data.model.mapbox.MapboxDirectionsResponse;
 import com.drumigo.mobile.data.model.ride.ActiveRideIdResponse;
@@ -89,6 +93,8 @@ public class RideTrackingFragment extends Fragment {
     private Bitmap destinationIcon;
 
     private RideApiService rideApiService;
+    private DriverApiService driverApiService;
+    private PassengerApiService passengerApiService;
     private MapboxDirectionsService directionsService;
     private RideTrackingMockProvider mockProvider;
     private SessionManager sessionManager;
@@ -123,6 +129,8 @@ public class RideTrackingFragment extends Fragment {
         super.onCreate(savedInstanceState);
         MapboxOptions.setAccessToken(BuildConfig.MAPBOX_ACCESS_TOKEN);
         rideApiService = ApiClient.getRideApiService();
+        driverApiService = ApiClient.getDriverApiService();
+        passengerApiService = ApiClient.getPassengerApiService();
         directionsService = MapboxApiClient.getDirectionsService();
         mockProvider = new RideTrackingMockProvider();
         sessionManager = SessionManager.getInstance(requireContext());
@@ -217,6 +225,7 @@ public class RideTrackingFragment extends Fragment {
 
     private void setupActions() {
         View.OnClickListener notImplementedListener = v -> showNotImplemented();
+        binding.btnCancelRide.setOnClickListener(v -> openCancelRideSheet());
         binding.btnStopRide.setOnClickListener(v -> openStopRideSheet());
         binding.btnPanic.setOnClickListener(v -> openPanicSheet());
         binding.btnReportIssue.setOnClickListener(notImplementedListener);
@@ -375,6 +384,39 @@ public class RideTrackingFragment extends Fragment {
         );
     }
 
+    private void openCancelRideSheet() {
+        if (binding == null || getContext() == null || rideApiService == null) {
+            return;
+        }
+        if (!isDriverRole() && !isPassengerRole()) {
+            Snackbar.make(binding.getRoot(), R.string.ride_tracking_cancel_unavailable_role, Snackbar.LENGTH_SHORT).show();
+            return;
+        }
+        if (pendingActiveRideLookup || rideId == 0L) {
+            resolveActiveRideAndStartTracking();
+            Snackbar.make(binding.getRoot(), R.string.ride_tracking_loading_active_ride, Snackbar.LENGTH_SHORT).show();
+            return;
+        }
+        if (activeRide == null) {
+            Snackbar.make(binding.getRoot(), R.string.ride_tracking_load_failed, Snackbar.LENGTH_SHORT).show();
+            return;
+        }
+        RideCancelBottomSheet.show(
+            requireContext(),
+            rideApiService,
+            rideId,
+            activeRide,
+            isDriverRole(),
+            () -> {
+                if (activeRide != null) {
+                    activeRide.status = "CANCELLED";
+                    applyRide(activeRide);
+                }
+                Snackbar.make(binding.getRoot(), R.string.ride_tracking_cancel_success, Snackbar.LENGTH_SHORT).show();
+            }
+        );
+    }
+
     private boolean isRideStatusLoaded() {
         return activeRide != null
             && activeRide.status != null
@@ -392,10 +434,47 @@ public class RideTrackingFragment extends Fragment {
         if (status == null) {
             return false;
         }
-        String normalized = status.trim().toUpperCase()
+        String normalized = normalizeRideStatus(status);
+        return "ACTIVE".equals(normalized) || "IN_PROGRESS".equals(normalized);
+    }
+
+    private boolean isRideCancelableForDriver(String status) {
+        String normalized = normalizeRideStatus(status);
+        return "PENDING".equals(normalized)
+            || "ACCEPTED".equals(normalized)
+            || "DRIVER_ARRIVING".equals(normalized);
+    }
+
+    private boolean isRideCancelableForPassenger(String status) {
+        String normalized = normalizeRideStatus(status);
+        return "PENDING".equals(normalized)
+            || "ACCEPTED".equals(normalized);
+    }
+
+    private boolean isRideTerminalStatus(String status) {
+        String normalized = normalizeRideStatus(status);
+        return "FINISHED".equals(normalized)
+            || "COMPLETED".equals(normalized)
+            || "CANCELLED".equals(normalized)
+            || "REJECTED".equals(normalized);
+    }
+
+    private boolean isTrackableRideStatus(String status) {
+        String normalized = normalizeRideStatus(status);
+        return "PENDING".equals(normalized)
+            || "ACCEPTED".equals(normalized)
+            || "DRIVER_ARRIVING".equals(normalized)
+            || "ACTIVE".equals(normalized)
+            || "IN_PROGRESS".equals(normalized);
+    }
+
+    private String normalizeRideStatus(String status) {
+        if (status == null) {
+            return "";
+        }
+        return status.trim().toUpperCase()
             .replace('-', '_')
             .replace(' ', '_');
-        return "ACTIVE".equals(normalized) || "IN_PROGRESS".equals(normalized);
     }
 
     private String getCurrentRoleNormalized() {
@@ -425,10 +504,12 @@ public class RideTrackingFragment extends Fragment {
         boolean showPassengerControls = isPassengerRole();
         boolean rideActive = isRideActiveStatus(getRideStatusLabel());
 
+        binding.btnCancelRide.setVisibility((showDriverControls || showPassengerControls) ? View.VISIBLE : View.GONE);
         binding.btnStopRide.setVisibility(showDriverControls ? View.VISIBLE : View.GONE);
         binding.btnReportIssue.setVisibility(showPassengerControls ? View.VISIBLE : View.GONE);
         binding.btnPanic.setVisibility((showDriverControls || showPassengerControls) ? View.VISIBLE : View.GONE);
 
+        binding.btnCancelRide.setEnabled(showDriverControls || showPassengerControls);
         if (showDriverControls) {
             binding.btnStopRide.setEnabled(rideActive);
         }
@@ -566,15 +647,15 @@ public class RideTrackingFragment extends Fragment {
                 @NonNull Call<ActiveRideIdResponse> call,
                 @NonNull Response<ActiveRideIdResponse> response
             ) {
-                if (!response.isSuccessful() || response.body() == null || response.body().rideId == null) {
-                    showNoActiveRideError();
+                if (response.isSuccessful() && response.body() != null && response.body().rideId != null) {
+                    startBackendTrackingForRide(response.body().rideId);
                     return;
                 }
-                rideId = response.body().rideId;
-                pendingActiveRideLookup = false;
-                fetchRideTracking();
-                pollingHandler.removeCallbacks(backendPollingRunnable);
-                pollingHandler.postDelayed(backendPollingRunnable, LOCATION_POLLING_INTERVAL_MS);
+                if (response.code() == 404) {
+                    resolveFallbackTrackableRide();
+                } else {
+                    showNoActiveRideError();
+                }
             }
 
             @Override
@@ -582,6 +663,129 @@ public class RideTrackingFragment extends Fragment {
                 showRideLoadError();
             }
         });
+    }
+
+    private void resolveFallbackTrackableRide() {
+        if (sessionManager == null) {
+            showNoActiveRideError();
+            return;
+        }
+        long userId = sessionManager.getUserId();
+        if (userId <= 0L) {
+            showNoActiveRideError();
+            return;
+        }
+        if (isPassengerRole()) {
+            resolvePassengerFallbackRide(userId);
+            return;
+        }
+        if (isDriverRole()) {
+            resolveDriverFallbackRide(userId);
+            return;
+        }
+        showNoActiveRideError();
+    }
+
+    private void resolvePassengerFallbackRide(long userId) {
+        if (passengerApiService == null) {
+            showNoActiveRideError();
+            return;
+        }
+        passengerApiService.getPassengerRideHistory(
+            userId,
+            null,
+            null,
+            0,
+            30,
+            "requestedAt,desc"
+        ).enqueue(new Callback<PageResponse<PassengerRideHistoryItemResponse>>() {
+            @Override
+            public void onResponse(
+                @NonNull Call<PageResponse<PassengerRideHistoryItemResponse>> call,
+                @NonNull Response<PageResponse<PassengerRideHistoryItemResponse>> response
+            ) {
+                if (!response.isSuccessful() || response.body() == null || response.body().content == null) {
+                    showNoActiveRideError();
+                    return;
+                }
+                Long fallbackRideId = null;
+                for (PassengerRideHistoryItemResponse item : response.body().content) {
+                    if (item == null || item.id == null) {
+                        continue;
+                    }
+                    if (isTrackableRideStatus(item.status)) {
+                        fallbackRideId = item.id;
+                        break;
+                    }
+                }
+                if (fallbackRideId == null) {
+                    showNoActiveRideError();
+                    return;
+                }
+                startBackendTrackingForRide(fallbackRideId);
+            }
+
+            @Override
+            public void onFailure(
+                @NonNull Call<PageResponse<PassengerRideHistoryItemResponse>> call,
+                @NonNull Throwable t
+            ) {
+                showNoActiveRideError();
+            }
+        });
+    }
+
+    private void resolveDriverFallbackRide(long userId) {
+        if (driverApiService == null) {
+            showNoActiveRideError();
+            return;
+        }
+        driverApiService.getUpcomingDriverRides(
+            userId,
+            null,
+            0,
+            20,
+            "scheduledFor,asc"
+        ).enqueue(new Callback<PageResponse<RideResponse>>() {
+            @Override
+            public void onResponse(
+                @NonNull Call<PageResponse<RideResponse>> call,
+                @NonNull Response<PageResponse<RideResponse>> response
+            ) {
+                if (!response.isSuccessful() || response.body() == null || response.body().content == null) {
+                    showNoActiveRideError();
+                    return;
+                }
+                Long fallbackRideId = null;
+                for (RideResponse item : response.body().content) {
+                    if (item == null || item.id == null) {
+                        continue;
+                    }
+                    if (isTrackableRideStatus(item.status)) {
+                        fallbackRideId = item.id;
+                        break;
+                    }
+                }
+                if (fallbackRideId == null) {
+                    showNoActiveRideError();
+                    return;
+                }
+                startBackendTrackingForRide(fallbackRideId);
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<PageResponse<RideResponse>> call, @NonNull Throwable t) {
+                showNoActiveRideError();
+            }
+        });
+    }
+
+    private void startBackendTrackingForRide(long resolvedRideId) {
+        rideId = resolvedRideId;
+        pendingActiveRideLookup = false;
+        fetchRideTracking();
+        pollingHandler.removeCallbacks(backendPollingRunnable);
+        pollingHandler.postDelayed(backendPollingRunnable, LOCATION_POLLING_INTERVAL_MS);
     }
 
     private void fetchRideTracking() {
@@ -676,8 +880,7 @@ public class RideTrackingFragment extends Fragment {
         if (binding == null || activeRide == null) {
             return;
         }
-        boolean isCompleted = activeRide.status != null
-            && !"ACTIVE".equalsIgnoreCase(activeRide.status);
+        boolean isCompleted = isRideTerminalStatus(activeRide.status);
         binding.rideCompletedMessage.setVisibility(isCompleted ? View.VISIBLE : View.GONE);
         if (isCompleted) {
             stopTracking();

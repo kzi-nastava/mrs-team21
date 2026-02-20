@@ -297,6 +297,14 @@
                             android:text="@string/ride_tracking_stop_ride" />
 
                         <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnCancelRide"
+                            style="@style/Widget.Drumigo.Button.Secondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_sm"
+                            android:text="@string/ride_tracking_cancel_ride" />
+
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnPanic"
                             style="@style/Widget.Drumigo.Button.Secondary"
                             android:layout_width="match_parent"

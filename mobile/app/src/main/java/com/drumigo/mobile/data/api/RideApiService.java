@@ -3,6 +3,7 @@ package com.drumigo.mobile.data.api;
 import com.drumigo.mobile.data.model.estimate.EstimateRequest;
 import com.drumigo.mobile.data.model.estimate.EstimateResponse;
 import com.drumigo.mobile.data.model.ride.ActiveRideIdResponse;
+import com.drumigo.mobile.data.model.ride.RideCancelByDriverRequest;
 import com.drumigo.mobile.data.model.ride.RideDetailsResponse;
 import com.drumigo.mobile.data.model.ride.RideResponse;
 import com.drumigo.mobile.data.model.ride.RideStopRequest;
@@ -36,6 +37,12 @@ public interface RideApiService {
 
     @POST("rides/{id}/panic")
     Call<Void> createPanic(@Path("id") long rideId);
+
+    @PUT("rides/{id}/cancel-by-driver")
+    Call<Void> cancelRideByDriver(@Path("id") long rideId, @Body RideCancelByDriverRequest request);
+
+    @PUT("rides/{id}/cancel-by-passenger")
+    Call<Void> cancelRideByPassenger(@Path("id") long rideId);
 
     @PUT("rides/{id}/stop")
     Call<RideResponse> stopRide(@Path("id") long rideId, @Body RideStopRequest request);
