@@ -18,6 +18,8 @@ import androidx.core.content.ContextCompat;
 import com.drumigo.mobile.R;
 import com.drumigo.mobile.data.api.RideApiService;
 import com.drumigo.mobile.data.model.ride.ActiveRide;
+import com.drumigo.mobile.data.model.ride.RideDetailsResponse;
+import com.drumigo.mobile.data.model.ride.RideTrackingResponse;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
@@ -51,6 +53,9 @@ final class RidePanicBottomSheet {
     private LinearProgressIndicator holdProgress;
     private TextView instructionText;
     private TextView statusText;
+    private TextView driverValueView;
+    private TextView vehicleValueView;
+    private TextView currentLocationValueView;
     private View whatHappensSection;
     private View activeInfoSection;
 
@@ -119,6 +124,7 @@ final class RidePanicBottomSheet {
 
         bindViews();
         bindRideInfo();
+        fetchLiveRideInfo();
         bindActions();
         applyPanicStateUi();
 
@@ -135,6 +141,9 @@ final class RidePanicBottomSheet {
         holdProgress = dialog.findViewById(R.id.panicHoldProgress);
         instructionText = dialog.findViewById(R.id.panicInstructionText);
         statusText = dialog.findViewById(R.id.panicStatusText);
+        driverValueView = dialog.findViewById(R.id.panicDriverValue);
+        vehicleValueView = dialog.findViewById(R.id.panicVehicleValue);
+        currentLocationValueView = dialog.findViewById(R.id.panicCurrentLocationValue);
         whatHappensSection = dialog.findViewById(R.id.panicWhatHappensSection);
         activeInfoSection = dialog.findViewById(R.id.panicActiveInfoSection);
     }
@@ -143,18 +152,92 @@ final class RidePanicBottomSheet {
         if (dialog == null) {
             return;
         }
-        TextView driverValue = dialog.findViewById(R.id.panicDriverValue);
-        TextView vehicleValue = dialog.findViewById(R.id.panicVehicleValue);
-        TextView currentLocationValue = dialog.findViewById(R.id.panicCurrentLocationValue);
-        if (driverValue != null) {
-            driverValue.setText(buildDriverName());
+        if (driverValueView != null) {
+            driverValueView.setText(buildDriverName());
         }
-        if (vehicleValue != null) {
-            vehicleValue.setText(buildVehicleInfo());
+        if (vehicleValueView != null) {
+            vehicleValueView.setText(buildVehicleInfo());
         }
-        if (currentLocationValue != null) {
-            currentLocationValue.setText(buildCurrentLocationInfo());
+        if (currentLocationValueView != null) {
+            currentLocationValueView.setText(buildCurrentLocationInfo());
         }
+    }
+
+    private void fetchLiveRideInfo() {
+        fetchTrackingInfo();
+        fetchRideDetailsInfo();
+    }
+
+    private void fetchTrackingInfo() {
+        rideApiService.getRideTracking(rideId).enqueue(new Callback<RideTrackingResponse>() {
+            @Override
+            public void onResponse(
+                @NonNull Call<RideTrackingResponse> call,
+                @NonNull Response<RideTrackingResponse> response
+            ) {
+                if (dialog == null || !response.isSuccessful() || response.body() == null) {
+                    return;
+                }
+                RideTrackingResponse tracking = response.body();
+
+                String trackingDriver = joinName(tracking.driverName, tracking.driverSurname);
+                if (driverValueView != null && !trackingDriver.isEmpty()) {
+                    driverValueView.setText(trackingDriver);
+                }
+
+                String trackingVehicle = joinVehicle(tracking.vehicleModel, tracking.vehicleLicensePlate);
+                if (vehicleValueView != null && !trackingVehicle.isEmpty()) {
+                    vehicleValueView.setText(trackingVehicle);
+                }
+
+                String trackingLocation = formatLocation(tracking.vehicleCurrentLat, tracking.vehicleCurrentLng);
+                if (trackingLocation.isEmpty()) {
+                    trackingLocation = resolveLocationFromWaypoints(tracking);
+                }
+                if (currentLocationValueView != null && !trackingLocation.isEmpty()) {
+                    currentLocationValueView.setText(trackingLocation);
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<RideTrackingResponse> call, @NonNull Throwable t) {
+            }
+        });
+    }
+
+    private void fetchRideDetailsInfo() {
+        rideApiService.getRideDetails(rideId).enqueue(new Callback<RideDetailsResponse>() {
+            @Override
+            public void onResponse(
+                @NonNull Call<RideDetailsResponse> call,
+                @NonNull Response<RideDetailsResponse> response
+            ) {
+                if (dialog == null || !response.isSuccessful() || response.body() == null) {
+                    return;
+                }
+                RideDetailsResponse body = response.body();
+                if (body.ride != null) {
+                    String rideDriver = joinName(body.ride.driverName, body.ride.driverSurname);
+                    if (driverValueView != null && !rideDriver.isEmpty()) {
+                        driverValueView.setText(rideDriver);
+                    }
+                    String waypointLocation = resolveLocationFromWaypoints(body.ride.waypoints);
+                    if (currentLocationValueView != null && !waypointLocation.isEmpty()) {
+                        currentLocationValueView.setText(waypointLocation);
+                    }
+                }
+                if (body.driver != null) {
+                    String detailsDriver = joinName(body.driver.name, body.driver.surname);
+                    if (driverValueView != null && !detailsDriver.isEmpty()) {
+                        driverValueView.setText(detailsDriver);
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<RideDetailsResponse> call, @NonNull Throwable t) {
+            }
+        });
     }
 
     private void bindActions() {
@@ -372,36 +455,22 @@ final class RidePanicBottomSheet {
         if (ride == null) {
             return context.getString(R.string.ride_tracking_driver_placeholder);
         }
-        String first = safeTrim(ride.driverName);
-        String last = safeTrim(ride.driverSurname);
-        if (first.isEmpty() && last.isEmpty()) {
+        String fullName = joinName(ride.driverName, ride.driverSurname);
+        if (fullName.isEmpty()) {
             return context.getString(R.string.ride_tracking_driver_placeholder);
         }
-        if (first.isEmpty()) {
-            return last;
-        }
-        if (last.isEmpty()) {
-            return first;
-        }
-        return first + " " + last;
+        return fullName;
     }
 
     private String buildVehicleInfo() {
         if (ride == null) {
             return context.getString(R.string.ride_tracking_vehicle_placeholder);
         }
-        String model = safeTrim(ride.vehicleModel);
-        String plate = safeTrim(ride.vehicleLicensePlate);
-        if (model.isEmpty() && plate.isEmpty()) {
+        String vehicle = joinVehicle(ride.vehicleModel, ride.vehicleLicensePlate);
+        if (vehicle.isEmpty()) {
             return context.getString(R.string.ride_tracking_vehicle_placeholder);
         }
-        if (model.isEmpty()) {
-            return plate;
-        }
-        if (plate.isEmpty()) {
-            return model;
-        }
-        return model + " - " + plate;
+        return vehicle;
     }
 
     private String buildCurrentLocationInfo() {
@@ -425,6 +494,81 @@ final class RidePanicBottomSheet {
             return start;
         }
         return context.getString(R.string.ride_tracking_panic_current_location_unknown);
+    }
+
+    private String joinName(String firstName, String lastName) {
+        String first = safeTrim(firstName);
+        String last = safeTrim(lastName);
+        if (first.isEmpty() && last.isEmpty()) {
+            return "";
+        }
+        if (first.isEmpty()) {
+            return last;
+        }
+        if (last.isEmpty()) {
+            return first;
+        }
+        return first + " " + last;
+    }
+
+    private String joinVehicle(String model, String plate) {
+        String safeModel = safeTrim(model);
+        String safePlate = safeTrim(plate);
+        if (safeModel.isEmpty() && safePlate.isEmpty()) {
+            return "";
+        }
+        if (safeModel.isEmpty()) {
+            return safePlate;
+        }
+        if (safePlate.isEmpty()) {
+            return safeModel;
+        }
+        return safeModel + " - " + safePlate;
+    }
+
+    private String formatLocation(Double lat, Double lng) {
+        if (lat == null || lng == null) {
+            return "";
+        }
+        return String.format(Locale.US, "%.5f, %.5f", lat, lng);
+    }
+
+    private String resolveLocationFromWaypoints(RideTrackingResponse tracking) {
+        if (tracking == null || tracking.waypoints == null || tracking.waypoints.isEmpty()) {
+            return "";
+        }
+        java.util.List<RideTrackingResponse.WaypointInfo> sorted = new java.util.ArrayList<>(tracking.waypoints);
+        java.util.Collections.sort(sorted, (a, b) -> {
+            int orderA = a == null || a.order == null ? 0 : a.order;
+            int orderB = b == null || b.order == null ? 0 : b.order;
+            return Integer.compare(orderA, orderB);
+        });
+        RideTrackingResponse.WaypointInfo destination = sorted.get(sorted.size() - 1);
+        if (destination != null && destination.address != null && !destination.address.trim().isEmpty()) {
+            return destination.address.trim();
+        }
+        return "";
+    }
+
+    private String resolveLocationFromWaypoints(java.util.List<RideDetailsResponse.WaypointInfo> waypoints) {
+        if (waypoints == null || waypoints.isEmpty()) {
+            return "";
+        }
+        java.util.List<RideDetailsResponse.WaypointInfo> sorted = new java.util.ArrayList<>(waypoints);
+        java.util.Collections.sort(sorted, (a, b) -> {
+            int orderA = a == null || a.order == null ? 0 : a.order;
+            int orderB = b == null || b.order == null ? 0 : b.order;
+            return Integer.compare(orderA, orderB);
+        });
+        RideDetailsResponse.WaypointInfo destination = sorted.get(sorted.size() - 1);
+        if (destination == null) {
+            return "";
+        }
+        String destinationAddress = safeTrim(destination.address);
+        if (!destinationAddress.isEmpty()) {
+            return destinationAddress;
+        }
+        return formatLocation(destination.lat, destination.lng);
     }
 
     private String safeTrim(String value) {
