@@ -183,6 +183,42 @@
     <string name="landing_estimate_price_format">Estimated price: ~%.0f RSD</string>
     <string name="landing_estimate_distance_format">Distance: %.1f km</string>
 
+    <!-- Ride History -->
+    <string name="ride_history_subtitle">View all your completed and cancelled rides</string>
+    <string name="ride_history_sort_label">Sort by</string>
+    <string name="ride_history_amount_label">Amount:</string>
+    <string name="ride_history_cancellation_label">Cancellation:</string>
+    <string name="ride_history_none">--</string>
+    <string name="ride_history_not_cancelled">No cancellation</string>
+    <string name="ride_history_panic_active">Panic triggered</string>
+    <string name="ride_history_panic_inactive">No panic event</string>
+    <string name="ride_history_results_count">Showing %1$d rides</string>
+    <string name="ride_history_results_count_default">Showing 0 rides</string>
+    <string name="ride_history_detail_title">Ride Details</string>
+    <string name="ride_history_detail_ride_id">Ride #%1$d</string>
+    <string name="ride_history_detail_route">Route</string>
+    <string name="ride_history_detail_summary">Trip Summary</string>
+    <string name="ride_history_detail_status">Status</string>
+    <string name="ride_history_detail_date">Date</string>
+    <string name="ride_history_detail_time">Time</string>
+    <string name="ride_history_detail_passengers">Passengers</string>
+    <string name="ride_history_detail_amount">Amount</string>
+    <string name="ride_history_detail_cancellation">Cancellation</string>
+    <string name="ride_history_detail_panic">Safety</string>
+    <string name="ride_history_sort_newest">Newest first</string>
+    <string name="ride_history_sort_oldest">Oldest first</string>
+    <string name="ride_history_sort_amount_desc">Amount high to low</string>
+    <string name="ride_history_sort_amount_asc">Amount low to high</string>
+    <string name="ride_history_sort_status">Status A-Z</string>
+
+    <string-array name="ride_history_sort_options">
+        <item>@string/ride_history_sort_newest</item>
+        <item>@string/ride_history_sort_oldest</item>
+        <item>@string/ride_history_sort_amount_desc</item>
+        <item>@string/ride_history_sort_amount_asc</item>
+        <item>@string/ride_history_sort_status</item>
+    </string-array>
+
     <string-array name="landing_vehicle_type_labels">
         <item>Standard</item>
         <item>Luxury</item>

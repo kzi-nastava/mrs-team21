@@ -8,131 +8,129 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.drumigo.mobile.R;
 import com.drumigo.mobile.data.model.Ride;
+
+import java.util.Collections;
 import java.util.List;
 
 public class RideHistoryAdapter extends RecyclerView.Adapter<RideHistoryAdapter.RideViewHolder> {
 
     private static final String TAG = "RideHistoryAdapter";
 
-    private List<Ride> rides;
-    private Context context;
+    public interface OnRideClickListener {
+        void onRideSelected(Ride ride);
+    }
 
-    public RideHistoryAdapter(List<Ride> rides, Context context) {
-        this.rides = rides;
+    private List<Ride> rides;
+    private final Context context;
+    private final OnRideClickListener onRideClickListener;
+
+    public RideHistoryAdapter(List<Ride> rides, Context context, OnRideClickListener onRideClickListener) {
+        this.rides = rides == null ? Collections.emptyList() : rides;
         this.context = context;
+        this.onRideClickListener = onRideClickListener;
     }
 
     @NonNull
     @Override
     public RideViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_ride_history, parent, false);
+            .inflate(R.layout.item_ride_history, parent, false);
         return new RideViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull RideViewHolder holder, int position) {
-        try {
-            if (rides == null || position < 0 || position >= rides.size()) {
-                Log.w(TAG, "Invalid position or empty rides list: " + position);
-                return;
+        if (position < 0 || position >= rides.size()) {
+            Log.w(TAG, "Ignoring invalid adapter position " + position);
+            return;
+        }
+
+        Ride ride = rides.get(position);
+        if (ride == null) {
+            return;
+        }
+
+        bindRouteAndTime(holder, ride);
+        bindPassengerSection(holder, ride);
+        bindStatusSection(holder, ride);
+        bindBottomSummary(holder, ride);
+
+        holder.itemView.setOnClickListener(v -> {
+            if (onRideClickListener != null) {
+                onRideClickListener.onRideSelected(ride);
             }
+        });
+    }
 
-            Ride ride = rides.get(position);
-            if (ride == null) return;
+    private void bindRouteAndTime(RideViewHolder holder, Ride ride) {
+        holder.dateText.setText(emptyToFallback(ride.getDate(), ""));
+        holder.timeText.setText(emptyToFallback(ride.getTime(), ""));
+        holder.fromText.setText(emptyToFallback(ride.getOrigin(), context.getString(R.string.ride_history_none)));
+        holder.toText.setText(emptyToFallback(ride.getDestination(), context.getString(R.string.ride_history_none)));
+    }
 
-            if (holder.dateText != null) holder.dateText.setText(nullToEmpty(ride.getDate()));
-            if (holder.timeText != null) holder.timeText.setText(nullToEmpty(ride.getTime()));
-            if (holder.fromText != null) holder.fromText.setText(nullToEmpty(ride.getOrigin()));
-            if (holder.toText != null) holder.toText.setText(nullToEmpty(ride.getDestination()));
-
-            if (holder.passengerAvatarsContainer != null) {
-                holder.passengerAvatarsContainer.removeAllViews();
-                String[] initials = ride.getPassengerInitials();
-                if (initials != null) {
-                    for (String passengerInitials : initials) {
-                        // use the itemView context which is guaranteed non-null at runtime
-                        TextView avatar = createPassengerAvatar(passengerInitials == null ? "" : passengerInitials, holder.itemView.getContext());
-                        holder.passengerAvatarsContainer.addView(avatar);
-                    }
-                }
+    private void bindPassengerSection(RideViewHolder holder, Ride ride) {
+        holder.passengerAvatarsContainer.removeAllViews();
+        String[] initials = ride.getPassengerInitials();
+        if (initials != null) {
+            for (String passengerInitials : initials) {
+                TextView avatar = createPassengerAvatar(
+                    passengerInitials == null ? "" : passengerInitials,
+                    holder.itemView.getContext()
+                );
+                holder.passengerAvatarsContainer.addView(avatar);
             }
+        }
 
-            if (holder.passengerCountText != null) {
-                int count = ride.getPassengerCount();
-                holder.passengerCountText.setText(count + (count == 1 ? " passenger" : " passengers"));
-            }
+        int count = Math.max(0, ride.getPassengerCount());
+        holder.passengerCountText.setText(count + (count == 1 ? " passenger" : " passengers"));
+    }
 
-            String status = ride.getStatus();
-            if (status != null && status.equals("Completed")) {
-                if (holder.statusBadge != null) holder.statusBadge.setBackgroundResource(R.drawable.bg_status_completed);
-                if (holder.statusText != null) holder.statusText.setText("Completed");
-                if (holder.statusText != null) holder.statusText.setTextColor(ContextCompat.getColor(context, R.color.success));
-                if (holder.statusIcon != null) {
-                    holder.statusIcon.setImageResource(R.drawable.ic_check);
-                    holder.statusIcon.setColorFilter(ContextCompat.getColor(context, R.color.success));
-                }
-            } else if (status != null && status.equals("Cancelled")) {
-                if (holder.statusBadge != null) holder.statusBadge.setBackgroundResource(R.drawable.bg_status_cancelled);
-                if (holder.statusText != null) holder.statusText.setText("Cancelled");
-                if (holder.statusText != null) holder.statusText.setTextColor(ContextCompat.getColor(context, R.color.danger));
-                if (holder.statusIcon != null) {
-                    holder.statusIcon.setImageResource(R.drawable.ic_close_circle);
-                    holder.statusIcon.setColorFilter(ContextCompat.getColor(context, R.color.danger));
-                }
-            }
+    private void bindStatusSection(RideViewHolder holder, Ride ride) {
+        RideStatusPresentation status = RideStatusPresentation.from(ride.getStatus());
+        holder.statusBadge.setBackgroundResource(status.badgeBackgroundRes);
+        holder.statusText.setText(status.label);
+        holder.statusText.setTextColor(ContextCompat.getColor(context, status.textColorRes));
+        holder.statusIcon.setImageResource(status.iconRes);
+        holder.statusIcon.setColorFilter(ContextCompat.getColor(context, status.textColorRes));
+    }
 
-            if (holder.cancelledByText != null) {
-                String cancelledBy = ride.getCancelledBy();
-                holder.cancelledByText.setText(cancelledBy == null ? "—" : cancelledBy);
-                holder.cancelledByText.setVisibility(View.VISIBLE);
-            }
+    private void bindBottomSummary(RideViewHolder holder, Ride ride) {
+        String cancellationText = emptyToFallback(ride.getCancelledBy(), context.getString(R.string.ride_history_not_cancelled));
+        holder.cancelledByText.setText(cancellationText);
 
-            if (holder.priceText != null) {
-                String price = ride.getPrice();
-                holder.priceText.setText(price == null ? "—" : price);
-                if (price == null || price.equals("—")) {
-                    holder.priceText.setTextColor(ContextCompat.getColor(context, R.color.text_light));
-                } else {
-                    holder.priceText.setTextColor(ContextCompat.getColor(context, R.color.success));
-                }
-            }
+        String amountText = emptyToFallback(ride.getPrice(), context.getString(R.string.ride_history_none));
+        holder.priceText.setText(amountText);
+        int amountColor = resolveAmountColorRes(ride.getPrice());
+        holder.priceText.setTextColor(ContextCompat.getColor(context, amountColor));
 
-            if (holder.panicIndicator != null) {
-                if (ride.hasPanic()) {
-                    holder.panicIndicator.setBackgroundResource(R.drawable.bg_panic_active);
-                    if (holder.panicIcon != null) holder.panicIcon.setColorFilter(ContextCompat.getColor(context, R.color.danger));
-                } else {
-                    holder.panicIndicator.setBackgroundResource(R.drawable.bg_panic_inactive);
-                    if (holder.panicIcon != null) holder.panicIcon.setColorFilter(ContextCompat.getColor(context, R.color.text_light));
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error binding ride history item at position " + position, e);
+        if (ride.hasPanic()) {
+            holder.panicIndicator.setBackgroundResource(R.drawable.bg_panic_active);
+            holder.panicIcon.setColorFilter(ContextCompat.getColor(context, R.color.danger));
+        } else {
+            holder.panicIndicator.setBackgroundResource(R.drawable.bg_panic_inactive);
+            holder.panicIcon.setColorFilter(ContextCompat.getColor(context, R.color.text_light));
         }
     }
 
     @Override
     public int getItemCount() {
-        return rides == null ? 0 : rides.size();
+        return rides.size();
     }
 
     public void updateRides(List<Ride> newRides) {
-        this.rides = newRides == null ? java.util.Collections.emptyList() : newRides;
+        this.rides = newRides == null ? Collections.emptyList() : newRides;
         notifyDataSetChanged();
     }
 
     private TextView createPassengerAvatar(String initials, Context ctx) {
-        if (ctx == null) ctx = this.context; // fallback to adapter context
-        if (ctx == null) {
-            Log.w(TAG, "Context is unexpectedly null when creating avatar; this may cause a runtime exception");
-        }
-
         TextView avatar = new TextView(ctx);
         float density = ctx.getResources().getDisplayMetrics().density;
         int sizePx = Math.round(32 * density);
@@ -143,37 +141,43 @@ public class RideHistoryAdapter extends RecyclerView.Adapter<RideHistoryAdapter.
 
         avatar.setText(initials);
         avatar.setTextSize(11);
-        try {
-            avatar.setTextColor(ContextCompat.getColor(ctx, R.color.white));
-        } catch (Exception e) {
-            avatar.setTextColor(0xFFFFFFFF);
-        }
+        avatar.setTextColor(ContextCompat.getColor(ctx, R.color.white));
         avatar.setGravity(android.view.Gravity.CENTER);
         avatar.setBackgroundResource(R.drawable.bg_passenger_avatar);
-
         return avatar;
     }
 
-    private int dpToPx(int dp) {
-        float density = context.getResources().getDisplayMetrics().density;
-        return Math.round(dp * density);
+    private static String emptyToFallback(String value, String fallback) {
+        return isBlank(value) ? fallback : value;
     }
 
-    private static String nullToEmpty(String s) {
-        return s == null ? "" : s;
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    private int resolveAmountColorRes(String value) {
+        if (isBlank(value)) {
+            return R.color.text_light;
+        }
+        return value.trim().startsWith("+") ? R.color.success : R.color.primary_dark;
     }
 
     static class RideViewHolder extends RecyclerView.ViewHolder {
-        TextView dateText, timeText, fromText, toText;
+        TextView dateText;
+        TextView timeText;
+        TextView fromText;
+        TextView toText;
         LinearLayout passengerAvatarsContainer;
         TextView passengerCountText;
         View statusBadge;
         ImageView statusIcon;
-        TextView statusText, cancelledByText, priceText;
+        TextView statusText;
+        TextView cancelledByText;
+        TextView priceText;
         View panicIndicator;
         ImageView panicIcon;
 
-        public RideViewHolder(@NonNull View itemView) {
+        RideViewHolder(@NonNull View itemView) {
             super(itemView);
             dateText = itemView.findViewById(R.id.dateText);
             timeText = itemView.findViewById(R.id.timeText);

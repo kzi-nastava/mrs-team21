@@ -55,7 +55,7 @@ public class DriverRideHistoryMapper {
         String priceLabel = mapPrice(item);
         boolean hasPanic = item.panicOccurred != null && item.panicOccurred;
 
-        return new Ride(
+        Ride ride = new Ride(
             item.id,
             dateLabel,
             timeLabel,
@@ -68,6 +68,9 @@ public class DriverRideHistoryMapper {
             priceLabel,
             hasPanic
         );
+        ride.setSortTimestampEpochMs(start != null ? start.toInstant().toEpochMilli() : 0L);
+        ride.setAmountValue(item.totalCost == null ? 0.0d : item.totalCost);
+        return ride;
     }
 
     private static ZonedDateTime parseDateTime(String iso) {
@@ -96,15 +99,7 @@ public class DriverRideHistoryMapper {
         if (item == null) {
             return "Completed";
         }
-        String status = item.status == null ? "" : item.status.trim().toUpperCase(Locale.ENGLISH);
-        boolean cancelled = item.cancelled != null && item.cancelled;
-        if (cancelled || "CANCELLED".equals(status)) {
-            return "Cancelled";
-        }
-        if ("COMPLETED".equals(status) || "FINISHED".equals(status)) {
-            return "Completed";
-        }
-        return "Completed";
+        return RideStatusMapper.toDisplayStatus(item.status, item.cancelled);
     }
 
     private static String mapCancelledBy(DriverRideHistoryItemResponse item) {
@@ -122,10 +117,10 @@ public class DriverRideHistoryMapper {
 
     private static String mapPrice(DriverRideHistoryItemResponse item) {
         if (item == null || item.totalCost == null) {
-            return "—";
+            return null;
         }
         if (item.cancelled != null && item.cancelled) {
-            return "—";
+            return null;
         }
         DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.ENGLISH);
         DecimalFormat formatter = new DecimalFormat("0.##", symbols);

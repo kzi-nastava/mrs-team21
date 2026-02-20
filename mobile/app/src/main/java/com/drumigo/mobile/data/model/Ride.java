@@ -12,6 +12,8 @@ public class Ride {
     private String cancelledBy;
     private String price;
     private boolean hasPanic;
+    private long sortTimestampEpochMs;
+    private double amountValue;
 
     public Ride(Long id, String date, String time, String origin, String destination,
                 String[] passengerInitials, int passengerCount, String status,
@@ -27,6 +29,8 @@ public class Ride {
         this.cancelledBy = cancelledBy;
         this.price = price;
         this.hasPanic = hasPanic;
+        this.sortTimestampEpochMs = 0L;
+        this.amountValue = 0.0d;
     }
 
     public Long getId() { return id; }
@@ -40,6 +44,8 @@ public class Ride {
     public String getCancelledBy() { return cancelledBy; }
     public String getPrice() { return price; }
     public boolean hasPanic() { return hasPanic; }
+    public long getSortTimestampEpochMs() { return sortTimestampEpochMs; }
+    public double getAmountValue() { return amountValue; }
 
     public void setId(Long id) { this.id = id; }
     public void setDate(String date) { this.date = date; }
@@ -52,4 +58,6 @@ public class Ride {
     public void setCancelledBy(String cancelledBy) { this.cancelledBy = cancelledBy; }
     public void setPrice(String price) { this.price = price; }
     public void setHasPanic(boolean hasPanic) { this.hasPanic = hasPanic; }
+    public void setSortTimestampEpochMs(long sortTimestampEpochMs) { this.sortTimestampEpochMs = sortTimestampEpochMs; }
+    public void setAmountValue(double amountValue) { this.amountValue = amountValue; }
 }
