@@ -83,6 +83,9 @@ dependencies {
     implementation(libs.mapbox.maps)
     implementation(libs.play.services.location)
 
+    // Image loading (profile picture)
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
