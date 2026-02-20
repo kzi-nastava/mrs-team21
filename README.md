@@ -188,6 +188,7 @@ Drumigo is a multi-platform ride-hailing system featuring:
 - **Maven** - 3.6+ (bundled with mvnw wrapper)
 - **MySQL** - 8.0+ (for backend database)
 - **Android Studio** - Latest version (for mobile development)
+- **ngrok** - For exposing the backend to the mobile app (emulator and device); [ngrok.com](https://ngrok.com/)
 - **Mapbox Account** - For API tokens (maps functionality)
 
 ### Environment Configuration
@@ -231,13 +232,24 @@ maintenance.basic.password=admin123
 
 #### Mobile
 
-Create `mobile/secrets.properties`:
+Create `mobile/secrets.properties`: 
 
 ```properties
-MAPBOX_ACCESS_TOKEN=your_mapbox_token
-API_BASE_URL=http://10.0.2.2:8080/api
-# Note: 10.0.2.2 is the Android emulator's localhost
+# Mapbox: at least one of these (used for map display in the app)
+MAPBOX_ACCESS_TOKEN=pk.your_public_token
+# Or: MAPBOX_PUBLIC_TOKEN=... or MAPBOX_SECRET_KEY=sk....
+
+# Required for Gradle to download Mapbox SDK dependencies (Maven)
+MAPBOX_DOWNLOADS_TOKEN=sk.your_secret_token
+# Or set MAPBOX_SECRET_KEY=sk.... (same value can be used for both)
+
+# Backend API base URL — use your ngrok HTTPS URL (recommended; works for emulator and physical device)
+API_BASE_URL=https://your-ngrok-subdomain.ngrok-free.app/api
 ```
+
+**Using ngrok (recommended):** The mobile app expects the backend to be reachable at `API_BASE_URL`. With [ngrok](https://ngrok.com/), you expose `http://localhost:8080` and put the generated URL (e.g. `https://abc123.ngrok-free.app`) in `API_BASE_URL` with `/api` at the end. Same config works for both emulator and physical device. Alternatives: for emulator only you can use `http://10.0.2.2:8080/api`; for a device on the same network, use your PC’s LAN IP (e.g. `http://192.168.1.100:8080/api`).
+
+**Note:** Without `MAPBOX_DOWNLOADS_TOKEN` (or `MAPBOX_SECRET_KEY`), Gradle sync may fail when resolving the Mapbox Maven dependency.
 
 ### Quick Start
 
@@ -303,12 +315,41 @@ npm start
 
 #### 3. Mobile Setup
 
-1. Open the `mobile/` directory in Android Studio
-2. Ensure `secrets.properties` is configured (see Environment Configuration above)
-3. Sync Gradle files
-4. Run on an emulator or physical device (min Android 11)
+**Prerequisites:** Android Studio (latest stable), Android SDK with API 30+ (min), 36 (target). The project uses **Java 11** and **Gradle with Kotlin DSL** (`build.gradle.kts`). For the app to reach the backend, **ngrok** is the recommended way (works for both emulator and physical device).
 
-**Note:** If using an emulator, make sure the backend is accessible at `http://10.0.2.2:8080`
+**How to run the mobile app (with ngrok):**
+
+1. **Start the backend** (see [Backend Setup](#1-backend-setup)):
+   ```bash
+   cd drumigo
+   mvnw.cmd spring-boot:run
+   ```
+
+2. **Start ngrok** in another terminal, tunneling to port 8080:
+   ```bash
+   ngrok http 8080
+   ```
+   Copy the **HTTPS** URL shown (e.g. `https://abc123.ngrok-free.app`). Free ngrok URLs change each time you restart ngrok.
+
+3. **Set the API URL in the mobile project:** In `mobile/secrets.properties`, set:
+   ```properties
+   API_BASE_URL=https://YOUR_NGROK_URL/api
+   ```
+   Use the URL from step 2 and add `/api` at the end (e.g. `https://abc123.ngrok-free.app/api`). No trailing slash. If you already have Mapbox and `MAPBOX_DOWNLOADS_TOKEN` / `MAPBOX_SECRET_KEY` in `secrets.properties`, only this line needs to match your current ngrok URL.
+
+4. **Open and run the app:**
+   - In Android Studio: *File → Open* → select the `mobile/` folder → *Sync Project with Gradle Files* → run on an emulator or device (▶ Run).
+   - Or from the command line (device/emulator connected):
+     ```bash
+     cd mobile
+     .\gradlew.bat installDebug
+     # macOS/Linux: ./gradlew installDebug
+     ```
+     Then open the “Drumigo” app on the device.
+
+**Troubleshooting:** If install fails with `Device is UNAUTHORIZED` or `No online devices found`, the phone is connected but hasn’t allowed USB debugging. On the phone, when the “Allow USB debugging?” dialog appears, tap **Allow** (and optionally “Always allow from this computer”). If you missed it, unplug the cable and plug it again to trigger the dialog, then run `.\gradlew.bat installDebug` again.
+
+**One-time config:** Ensure `mobile/secrets.properties` has Mapbox keys (see [Environment Configuration → Mobile](#mobile)): at least one of `MAPBOX_ACCESS_TOKEN` / `MAPBOX_PUBLIC_TOKEN` / `MAPBOX_SECRET_KEY` for maps, and `MAPBOX_DOWNLOADS_TOKEN` or `MAPBOX_SECRET_KEY` for Gradle to resolve the Mapbox SDK. After that, you only need to update `API_BASE_URL` when your ngrok URL changes.
 
 ## 🧪 Testing
 
@@ -440,4 +481,4 @@ Software Engineering coursework (2025/2026):
 
 ---
 
-**Last Updated:** February 7, 2026
+**Last Updated:** February 20, 2026
