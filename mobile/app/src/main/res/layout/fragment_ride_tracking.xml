@@ -1,256 +1,338 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/bg_warm"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
-    <LinearLayout
-        android:id="@+id/trackingHeader"
+    <com.mapbox.maps.MapView
+        android:id="@+id/mapView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <TextView
+        android:id="@+id/mapError"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:padding="@dimen/spacing_md">
+        android:layout_gravity="center"
+        android:layout_margin="@dimen/spacing_md"
+        android:background="@color/white"
+        android:gravity="center"
+        android:padding="@dimen/spacing_md"
+        android:textColor="@color/error"
+        android:visibility="gone" />
 
-        <ImageButton
-            android:id="@+id/btnBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/back"
-            android:src="@drawable/ic_arrow_back"
-            app:tint="@color/text_dark" />
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnTrackingLauncher"
+        style="@style/Widget.Drumigo.Button.Launcher"
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="@dimen/spacing_lg"
+        android:text="@string/ride_tracking_open_panel"
+        android:textAllCaps="false" />
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/spacing_sm"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/rideTitle"
-                style="@style/TextStyle.Title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/ride_tracking_title" />
-
-            <TextView
-                android:id="@+id/rideId"
-                style="@style/TextStyle.Caption"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/ride_tracking_id_placeholder" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="end"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/driverName"
-                style="@style/TextStyle.Label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/ride_tracking_driver_placeholder" />
-
-            <TextView
-                android:id="@+id/vehicleInfo"
-                style="@style/TextStyle.Caption"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/ride_tracking_vehicle_placeholder" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <com.mapbox.maps.MapView
-            android:id="@+id/mapView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-        <TextView
-            android:id="@+id/mapError"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:background="@color/white"
-            android:padding="@dimen/spacing_md"
-            android:textColor="@color/error"
-            android:visibility="gone" />
-    </FrameLayout>
-
-    <ScrollView
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/trackingPanel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fillViewport="true">
+        android:layout_gravity="bottom"
+        android:visibility="gone"
+        app:cardBackgroundColor="@color/white"
+        app:cardElevation="10dp"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Drumigo.BottomPanel">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="@dimen/spacing_md">
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.Drumigo.Card"
+            <View
+                android:id="@+id/trackingDragHandle"
+                android:layout_width="44dp"
+                android:layout_height="4dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="@dimen/spacing_sm"
+                android:background="@color/border" />
+
+            <LinearLayout
+                android:id="@+id/trackingHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/spacing_md">
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="@dimen/spacing_md"
+                android:paddingTop="@dimen/spacing_sm"
+                android:paddingEnd="@dimen/spacing_md">
 
                 <LinearLayout
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="@dimen/spacing_md">
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
                     <TextView
+                        android:id="@+id/rideTitle"
+                        style="@style/TextStyle.Title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/ride_tracking_title"
+                        android:textSize="@dimen/text_lg" />
+
+                    <TextView
+                        android:id="@+id/rideId"
                         style="@style/TextStyle.Caption"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/ride_tracking_eta_label" />
-
-                    <TextView
-                        android:id="@+id/etaValue"
-                        style="@style/TextStyle.Headline"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/ride_tracking_eta_placeholder" />
+                        android:text="@string/ride_tracking_id_placeholder" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.Drumigo.Card"
+                <ImageButton
+                    android:id="@+id/btnCloseTrackingPanel"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/ride_tracking_close_panel"
+                    android:src="@drawable/ic_close_simple"
+                    app:tint="@color/text_medium" />
+            </LinearLayout>
+
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/trackingScroll"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/spacing_md">
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:fillViewport="true"
+                android:overScrollMode="ifContentScrolls">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="@dimen/spacing_md">
+                    android:paddingStart="@dimen/spacing_md"
+                    android:paddingTop="@dimen/spacing_xs"
+                    android:paddingEnd="@dimen/spacing_md"
+                    android:paddingBottom="@dimen/spacing_md">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <View
-                            android:layout_width="12dp"
-                            android:layout_height="12dp"
-                            android:background="@drawable/bg_route_dot_start" />
+                        android:background="@drawable/bg_estimate_results"
+                        android:orientation="vertical"
+                        android:padding="@dimen/spacing_md">
 
                         <LinearLayout
-                            android:layout_width="0dp"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="@dimen/spacing_sm"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
+                            android:orientation="horizontal">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    style="@style/TextStyle.Caption"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/ride_tracking_driver_label" />
+
+                                <TextView
+                                    android:id="@+id/driverName"
+                                    style="@style/TextStyle.Body"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/ride_tracking_driver_placeholder"
+                                    android:textColor="@color/text_dark"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="end"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    style="@style/TextStyle.Caption"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/ride_tracking_vehicle_label" />
+
+                                <TextView
+                                    android:id="@+id/vehicleInfo"
+                                    style="@style/TextStyle.Body"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/ride_tracking_vehicle_placeholder"
+                                    android:textColor="@color/text_dark"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_sm"
+                            android:background="@drawable/bg_estimate_metric_card"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="@dimen/spacing_sm">
 
                             <TextView
                                 style="@style/TextStyle.Caption"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/ride_tracking_from" />
+                                android:text="@string/ride_tracking_eta_label" />
 
                             <TextView
-                                android:id="@+id/fromAddress"
-                                style="@style/TextStyle.Body"
+                                android:id="@+id/etaValue"
+                                style="@style/TextStyle.Headline"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/ride_tracking_from_placeholder" />
+                                android:text="@string/ride_tracking_eta_placeholder"
+                                android:textSize="@dimen/text_xl" />
                         </LinearLayout>
                     </LinearLayout>
 
-                    <View
-                        android:layout_width="2dp"
-                        android:layout_height="24dp"
-                        android:layout_marginStart="5dp"
-                        android:background="@color/primary" />
-
-                    <LinearLayout
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/Widget.Drumigo.Card"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <View
-                            android:layout_width="12dp"
-                            android:layout_height="12dp"
-                            android:background="@drawable/bg_route_dot_end" />
+                        android:layout_marginTop="@dimen/spacing_md">
 
                         <LinearLayout
-                            android:layout_width="0dp"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="@dimen/spacing_sm"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
+                            android:orientation="vertical"
+                            android:padding="@dimen/spacing_md">
 
-                            <TextView
-                                style="@style/TextStyle.Caption"
-                                android:layout_width="wrap_content"
+                            <LinearLayout
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="@string/ride_tracking_to" />
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
 
-                            <TextView
-                                android:id="@+id/toAddress"
-                                style="@style/TextStyle.Body"
-                                android:layout_width="wrap_content"
+                                <View
+                                    android:layout_width="12dp"
+                                    android:layout_height="12dp"
+                                    android:background="@drawable/bg_route_dot_start" />
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="@dimen/spacing_sm"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        style="@style/TextStyle.Caption"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/ride_tracking_from" />
+
+                                    <TextView
+                                        android:id="@+id/fromAddress"
+                                        style="@style/TextStyle.Body"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/ride_tracking_from_placeholder" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <View
+                                android:layout_width="2dp"
+                                android:layout_height="24dp"
+                                android:layout_marginStart="5dp"
+                                android:background="@color/primary" />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="@string/ride_tracking_to_placeholder" />
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <View
+                                    android:layout_width="12dp"
+                                    android:layout_height="12dp"
+                                    android:background="@drawable/bg_route_dot_end" />
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="@dimen/spacing_sm"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        style="@style/TextStyle.Caption"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/ride_tracking_to" />
+
+                                    <TextView
+                                        android:id="@+id/toAddress"
+                                        style="@style/TextStyle.Body"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/ride_tracking_to_placeholder" />
+                                </LinearLayout>
+                            </LinearLayout>
                         </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <LinearLayout
+                        android:id="@+id/actionButtons"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_md"
+                        android:orientation="vertical">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnStopRide"
+                            style="@style/Widget.Drumigo.Button.Primary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/ride_tracking_stop_ride" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnCancelRide"
+                            style="@style/Widget.Drumigo.Button.Secondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_sm"
+                            android:text="@string/ride_tracking_cancel_ride" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnPanic"
+                            style="@style/Widget.Drumigo.Button.Secondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_sm"
+                            android:text="@string/ride_tracking_panic" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnReportIssue"
+                            style="@style/Widget.Drumigo.Button.Secondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_sm"
+                            android:text="@string/ride_tracking_report_issue" />
                     </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/rideCompletedMessage"
+                        style="@style/TextStyle.Body"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_md"
+                        android:background="@drawable/bg_info_box"
+                        android:padding="@dimen/spacing_md"
+                        android:text="@string/ride_tracking_completed"
+                        android:visibility="gone" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <LinearLayout
-                android:id="@+id/actionButtons"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnStopRide"
-                    style="@style/Widget.Drumigo.Button.Primary"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/ride_tracking_stop_ride" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnPanic"
-                    style="@style/Widget.Drumigo.Button.Secondary"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_sm"
-                    android:text="@string/ride_tracking_panic" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnReportIssue"
-                    style="@style/Widget.Drumigo.Button.Secondary"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_sm"
-                    android:text="@string/ride_tracking_report_issue" />
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/rideCompletedMessage"
-                style="@style/TextStyle.Body"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_md"
-                android:background="@drawable/bg_info_box"
-                android:padding="@dimen/spacing_md"
-                android:text="@string/ride_tracking_completed"
-                android:visibility="gone" />
+            </androidx.core.widget.NestedScrollView>
         </LinearLayout>
-    </ScrollView>
-</LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+</FrameLayout>
