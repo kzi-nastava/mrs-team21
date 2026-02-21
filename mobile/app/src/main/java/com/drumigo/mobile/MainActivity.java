@@ -343,8 +343,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             setDrawerItemState(menu, R.id.nav_panic_notifications, true, false);
             setDrawerItemState(menu, R.id.nav_live_support, true, false);
             setDrawerItemState(menu, R.id.nav_register_driver, true, false);
-            setDrawerItemState(menu, R.id.nav_drivers, true, false);
-            setDrawerItemState(menu, R.id.nav_passengers, true, false);
+            setDrawerItemState(menu, R.id.nav_drivers, false, false);
+            setDrawerItemState(menu, R.id.nav_passengers, true, true);
             setDrawerItemState(menu, R.id.nav_reports, true, false);
             setDrawerItemState(menu, R.id.nav_all_notifications, true, false);
             setDrawerItemState(menu, R.id.nav_profile, true, true);
@@ -529,6 +529,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             }
         } else if (itemId == R.id.nav_profile) {
             navController.navigate(R.id.profileFragment);
+        } else if (itemId == R.id.nav_passengers) {
+            if (isUserAuthenticated() && ROLE_ADMIN.equals(getCurrentRoleNormalized())) {
+                Intent intent = new Intent(this, com.drumigo.mobile.ui.admin.AdminUserManagementActivity.class);
+                startActivity(intent);
+            }
         } else {
             android.widget.Toast.makeText(
                 this,

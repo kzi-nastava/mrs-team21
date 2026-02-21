@@ -48,6 +48,10 @@ public class ApiClient {
         return getRetrofit().create(NotificationApiService.class);
     }
 
+    public static UserApiService getUserApiService() {
+        return getRetrofit().create(UserApiService.class);
+    }
+
     private static Retrofit getRetrofit() {
         if (retrofit == null) {
             retrofit = new Retrofit.Builder()
