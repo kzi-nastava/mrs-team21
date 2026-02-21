@@ -113,6 +113,10 @@
     <string name="nav_reports">Reports</string>
     <string name="nav_all_notifications">All Notifications</string>
     <string name="nav_not_implemented">This page is not implemented yet</string>
+    <string name="admin_panic_notification_channel_name">Panic Alerts</string>
+    <string name="admin_panic_notification_channel_description">Emergency panic alerts from active rides</string>
+    <string name="admin_panic_notification_title">PANIC alert</string>
+    <string name="admin_panic_notification_fallback">A panic event has been triggered.</string>
     <string name="nav_active_vehicles">Active Vehicles</string>
     <string name="nav_home">Home</string>
     <string name="mapbox_token_missing">Mapbox token missing. Add it to mobile/secrets.properties.</string>
