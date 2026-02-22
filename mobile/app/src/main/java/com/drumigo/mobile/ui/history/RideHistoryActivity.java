@@ -26,6 +26,7 @@ import com.drumigo.mobile.data.api.AdminApiService;
 import com.drumigo.mobile.data.api.ApiClient;
 import com.drumigo.mobile.data.api.DriverApiService;
 import com.drumigo.mobile.data.api.PassengerApiService;
+import com.drumigo.mobile.data.api.RideApiService;
 import com.drumigo.mobile.data.model.Ride;
 import com.drumigo.mobile.data.model.favorite.FavoriteRouteResponse;
 import com.drumigo.mobile.data.model.history.DriverRideHistoryItemResponse;
@@ -635,7 +636,9 @@ public class RideHistoryActivity extends AppCompatActivity
         if (ride == null) {
             return;
         }
-        RideHistoryDetailsBottomSheet.show(this, ride);
+        boolean showRating = ROLE_PASSENGER.equals(currentRole);
+        RideApiService rideApiService = showRating ? ApiClient.getRideApiService() : null;
+        RideHistoryDetailsBottomSheet.show(this, ride, showRating, rideApiService);
     }
 
     @Override

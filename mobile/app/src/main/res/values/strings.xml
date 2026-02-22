@@ -395,6 +395,35 @@
     <string name="ride_history_route_map_error">Unable to load route on map</string>
     <string name="ride_history_route_map_missing_addresses">Missing pickup or destination address</string>
 
+    <!-- Ride rating (passenger) -->
+    <string name="ride_rating_title">Rate your ride</string>
+    <string name="ride_rating_close">Close</string>
+    <string name="ride_rating_driver_label">How was your driver?</string>
+    <string name="ride_rating_vehicle_label">How was the vehicle?</string>
+    <string name="ride_rating_comment_hint">Comments (optional)</string>
+    <string name="ride_rating_comment_placeholder">Share your experience…</string>
+    <string name="ride_rating_char_count">%1$d characters remaining</string>
+    <string name="ride_rating_skip">Skip</string>
+    <string name="ride_rating_submit">Submit rating</string>
+    <string name="ride_rating_submitting">Submitting…</string>
+    <string name="ride_rating_require_both">Please rate both driver and vehicle</string>
+    <string name="ride_rating_success">Thank you for your feedback!</string>
+    <string name="ride_rating_failed">Failed to submit review. Please try again.</string>
+    <string name="ride_rating_star">%1$d star</string>
+    <string name="ride_rating_stars">%1$d stars</string>
+
+    <!-- Ride history rating section -->
+    <string name="ride_history_rating_section_title">Ratings</string>
+    <string name="ride_history_rating_days_left">%1$d days left to rate</string>
+    <string name="ride_history_rating_day_left">Less than 1 day left to rate</string>
+    <string name="ride_history_rating_action">Rate this ride</string>
+    <string name="ride_history_rating_submitted">You\'ve rated this ride</string>
+    <string name="ride_history_rating_deadline_passed">Rating deadline has passed</string>
+    <string name="ride_history_rating_loading">Loading rating status…</string>
+    <string name="ride_history_rating_driver">Driver</string>
+    <string name="ride_history_rating_vehicle">Vehicle</string>
+    <string name="ride_history_rating_your_comment">Your comment</string>
+
     <string-array name="ride_history_sort_options">
         <item>@string/ride_history_sort_newest</item>
         <item>@string/ride_history_sort_oldest</item>

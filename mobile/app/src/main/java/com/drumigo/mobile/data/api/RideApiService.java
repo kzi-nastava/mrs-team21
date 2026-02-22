@@ -6,8 +6,11 @@ import com.drumigo.mobile.data.model.ride.ActiveRideIdResponse;
 import com.drumigo.mobile.data.model.ride.RideCancelByDriverRequest;
 import com.drumigo.mobile.data.model.ride.RideCreateRequest;
 import com.drumigo.mobile.data.model.ride.RideDetailsResponse;
+import com.drumigo.mobile.data.model.ride.ReviewCreateRequest;
+import com.drumigo.mobile.data.model.ride.ReviewResponse;
 import com.drumigo.mobile.data.model.ride.RideInconsistencyCreateRequest;
 import com.drumigo.mobile.data.model.ride.RideInconsistencyResponse;
+import com.drumigo.mobile.data.model.ride.RideRatingStatusResponse;
 import com.drumigo.mobile.data.model.ride.RideResponse;
 import com.drumigo.mobile.data.model.ride.RideStopRequest;
 import com.drumigo.mobile.data.model.ride.RideTrackingPositionRequest;
@@ -71,4 +74,13 @@ public interface RideApiService {
 
     @GET("rides/{id}/inconsistencies")
     Call<List<RideInconsistencyResponse>> getInconsistencies(@Path("id") long rideId);
+
+    @GET("rides/{id}/rating-status")
+    Call<RideRatingStatusResponse> getRatingStatus(@Path("id") long rideId);
+
+    @POST("rides/{id}/reviews")
+    Call<ReviewResponse> createReview(@Path("id") long rideId, @Body ReviewCreateRequest request);
+
+    @GET("rides/{id}/reviews")
+    Call<List<ReviewResponse>> getRideReviews(@Path("id") long rideId);
 }
