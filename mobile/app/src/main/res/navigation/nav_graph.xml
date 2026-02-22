@@ -112,6 +112,12 @@
         tools:layout="@layout/fragment_support" />
 
     <fragment
+        android:id="@+id/notificationsFragment"
+        android:name="com.drumigo.mobile.ui.notifications.NotificationsFragment"
+        android:label="@string/notifications_title"
+        tools:layout="@layout/fragment_notifications" />
+
+    <fragment
         android:id="@+id/adminSupportConversationsFragment"
         android:name="com.drumigo.mobile.ui.support.AdminSupportConversationsFragment"
         android:label="@string/nav_live_support"
