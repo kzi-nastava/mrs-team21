@@ -400,6 +400,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             setDrawerItemState(menu, R.id.nav_ride_tracking, true, true);
             setDrawerItemState(menu, R.id.nav_ride_history, true, true);
             setDrawerItemState(menu, R.id.nav_notifications, true, true);
+            setDrawerItemState(menu, R.id.nav_reports, true, true);
             setDrawerItemState(menu, R.id.nav_profile, true, true);
             setDrawerItemState(menu, R.id.nav_support, true, true);
             setDrawerItemState(menu, R.id.nav_logout, true, true);
@@ -417,7 +418,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             setDrawerItemState(menu, R.id.nav_drivers, false, false);
             setDrawerItemState(menu, R.id.nav_passengers, true, true);
             setDrawerItemState(menu, R.id.nav_ride_pricing, true, true);
-            setDrawerItemState(menu, R.id.nav_reports, true, false);
+            setDrawerItemState(menu, R.id.nav_reports, true, true);
             setDrawerItemState(menu, R.id.nav_all_notifications, true, true);
             setDrawerItemState(menu, R.id.nav_profile, true, true);
             setDrawerItemState(menu, R.id.nav_logout, true, true);
@@ -429,6 +430,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setDrawerItemState(menu, R.id.nav_ride_tracking, true, true);
         setDrawerItemState(menu, R.id.nav_ride_history, true, true);
         setDrawerItemState(menu, R.id.nav_notifications, true, true);
+        setDrawerItemState(menu, R.id.nav_reports, true, true);
         setDrawerItemState(menu, R.id.nav_profile, true, true);
         setDrawerItemState(menu, R.id.nav_support, true, true);
         setDrawerItemState(menu, R.id.nav_logout, true, true);
@@ -516,6 +518,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             menuItemId = ROLE_ADMIN.equals(getCurrentRoleNormalized()) ? R.id.nav_live_support : R.id.nav_support;
         } else if (destinationId == R.id.registerDriverFragment) {
             menuItemId = R.id.nav_register_driver;
+        } else if (destinationId == R.id.reportsFragment) {
+            menuItemId = R.id.nav_reports;
         } else {
             return;
         }
@@ -649,6 +653,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if (itemId == R.id.nav_register_driver) {
             if (isUserAuthenticated()) {
                 navController.navigate(R.id.registerDriverFragment);
+            }
+        } else if (itemId == R.id.nav_reports) {
+            if (isUserAuthenticated()) {
+                navController.navigate(R.id.reportsFragment);
             }
         } else if (itemId == R.id.nav_all_notifications) {
             if (isUserAuthenticated() && ROLE_ADMIN.equals(getCurrentRoleNormalized())) {
