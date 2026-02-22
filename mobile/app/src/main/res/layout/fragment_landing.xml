@@ -150,10 +150,42 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
+
+                        <LinearLayout
+                            android:id="@+id/favoriteRoutesSection"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:visibility="gone">
+                            <TextView
+                                style="@style/TextStyle.Subtitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/order_quick_pick_favorites" />
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Widget.Drumigo.TextInputLayout"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/spacing_sm"
+                                android:hint="@string/order_favorite_route_hint"
+                                app:endIconMode="dropdown_menu">
+
+                                <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                                    android:id="@+id/favoriteRouteDropdown"
+                                    style="@style/Widget.Drumigo.TextInputEditText"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:inputType="none"
+                                    android:textColor="@color/text_dark"
+                                    android:textSize="@dimen/text_md" />
+                            </com.google.android.material.textfield.TextInputLayout>
+                        </LinearLayout>
+
                         <TextView
                             style="@style/TextStyle.Subtitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_md"
                             android:text="@string/order_where_going" />
                         <TextView
                             android:id="@+id/activeVehiclesCount"

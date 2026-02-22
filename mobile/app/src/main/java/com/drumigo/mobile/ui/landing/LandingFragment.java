@@ -38,10 +38,13 @@ import com.drumigo.mobile.data.api.MapboxApiClient;
 import com.drumigo.mobile.data.api.MapboxDirectionsService;
 import com.drumigo.mobile.data.api.MapboxGeocodingService;
 import com.drumigo.mobile.data.api.MapboxSearchBoxService;
+import com.drumigo.mobile.data.api.PassengerApiService;
 import com.drumigo.mobile.data.api.RideApiService;
 import com.drumigo.mobile.data.api.VehicleApiService;
 import com.drumigo.mobile.data.model.VehicleResponse;
 import com.drumigo.mobile.data.model.estimate.EstimateRequest;
+import com.drumigo.mobile.data.model.favorite.FavoriteRouteResponse;
+import com.drumigo.mobile.data.model.favorite.FavoriteRouteWaypointResponse;
 import com.drumigo.mobile.data.model.estimate.EstimateResponse;
 import com.drumigo.mobile.data.model.estimate.LocationDto;
 import com.drumigo.mobile.data.model.ride.RideCreateRequest;
@@ -73,6 +76,7 @@ import com.mapbox.maps.plugin.scalebar.ScaleBarUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,6 +103,7 @@ public class LandingFragment extends Fragment {
     private MapView mapView;
     private VehicleApiService vehicleApiService;
     private RideApiService rideApiService;
+    private PassengerApiService passengerApiService;
     private MapboxGeocodingService geocodingService;
     private MapboxSearchBoxService searchBoxService;
     private SessionManager sessionManager;
@@ -130,6 +135,7 @@ public class LandingFragment extends Fragment {
     private final List<View> passengerRows = new ArrayList<>();
     private ArrayAdapter<String> pickupSuggestionsAdapter;
     private ArrayAdapter<String> destinationSuggestionsAdapter;
+    private ArrayAdapter<String> favoriteRouteDropdownAdapter;
     private int pickupAutocompleteToken = 0;
     private int destinationAutocompleteToken = 0;
     private int stopAutocompleteToken = 0;
@@ -139,6 +145,8 @@ public class LandingFragment extends Fragment {
 
     private List<VehicleResponse> activeVehicles = new ArrayList<>();
     private List<List<Double>> routeCoordinates = Collections.emptyList();
+    private final List<FavoriteRouteResponse> favoriteRoutes = new ArrayList<>();
+    private final List<FavoriteRouteResponse> favoriteRouteDropdownItems = new ArrayList<>();
 
     private final Handler pollingHandler = new Handler(Looper.getMainLooper());
     private final Handler autocompleteHandler = new Handler(Looper.getMainLooper());
@@ -163,6 +171,7 @@ public class LandingFragment extends Fragment {
         MapboxOptions.setAccessToken(BuildConfig.MAPBOX_ACCESS_TOKEN);
         vehicleApiService = ApiClient.getVehicleApiService();
         rideApiService = ApiClient.getRideApiService();
+        passengerApiService = ApiClient.getPassengerApiService();
         geocodingService = MapboxApiClient.getGeocodingService();
         searchBoxService = MapboxApiClient.getSearchBoxService();
         directionsService = MapboxApiClient.getDirectionsService();
@@ -188,6 +197,7 @@ public class LandingFragment extends Fragment {
 
         setupHeaderActions();
         setupEstimatePanel();
+        refreshFavoriteRoutesSection();
         // Open order/estimate panel by default so users always see where to order a ride
         binding.getRoot().post(() -> {
             if (binding != null && !estimatePanelOpen) {
@@ -203,6 +213,7 @@ public class LandingFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        refreshFavoriteRoutesSection();
         // Open order panel when fragment is visible (e.g. after login or "Order a Ride")
         if (binding != null && !estimatePanelOpen) {
             binding.getRoot().postDelayed(() -> {
@@ -273,6 +284,7 @@ public class LandingFragment extends Fragment {
         passengerRows.clear();
         pickupSuggestionsAdapter = null;
         destinationSuggestionsAdapter = null;
+        favoriteRouteDropdownAdapter = null;
         binding = null;
         super.onDestroyView();
     }
@@ -298,8 +310,14 @@ public class LandingFragment extends Fragment {
             android.R.layout.simple_list_item_1,
             new ArrayList<>()
         );
+        favoriteRouteDropdownAdapter = new ArrayAdapter<>(
+            requireContext(),
+            android.R.layout.simple_list_item_1,
+            new ArrayList<>()
+        );
         binding.pickupInput.setAdapter(pickupSuggestionsAdapter);
         binding.destinationInput.setAdapter(destinationSuggestionsAdapter);
+        binding.favoriteRouteDropdown.setAdapter(favoriteRouteDropdownAdapter);
         setupLocationAutocomplete();
 
         binding.vehicleTypeDropdown.setAdapter(vehicleTypeAdapter);
@@ -308,6 +326,9 @@ public class LandingFragment extends Fragment {
         }
         binding.vehicleTypeDropdown.setKeyListener(null);
         binding.vehicleTypeDropdown.setOnClickListener(v -> binding.vehicleTypeDropdown.showDropDown());
+        binding.favoriteRouteDropdown.setKeyListener(null);
+        binding.favoriteRouteDropdown.setOnClickListener(v -> binding.favoriteRouteDropdown.showDropDown());
+        binding.favoriteRouteDropdown.setOnItemClickListener((parent, view, position, id) -> onFavoriteRouteSelected(position));
 
         binding.btnEstimateLauncher.setOnClickListener(v -> openEstimatePanel());
         binding.btnCloseEstimatePanel.setOnClickListener(v -> closeEstimatePanel());
@@ -740,6 +761,26 @@ public class LandingFragment extends Fragment {
                 .setDuration(240L)
                 .start();
         });
+        refreshFavoriteRoutesSection();
+    }
+
+    private void refreshFavoriteRoutesSection() {
+        if (binding == null) {
+            return;
+        }
+        if (!isPassengerLoggedIn()) {
+            binding.favoriteRoutesSection.setVisibility(View.GONE);
+            return;
+        }
+        // Always show manual entry card immediately; favorites append once fetched.
+        binding.favoriteRoutesSection.setVisibility(View.VISIBLE);
+        populateFavoriteRoutesCards();
+        if (passengerApiService != null && sessionManager != null) {
+            long passengerId = sessionManager.getUserId();
+            if (passengerId > 0) {
+                fetchFavoriteRoutes(passengerId);
+            }
+        }
     }
 
     private void closeEstimatePanel() {
@@ -1496,7 +1537,8 @@ public class LandingFragment extends Fragment {
         if (role == null || role.trim().isEmpty()) {
             return false;
         }
-        return "PASSENGER".equals(role.trim().toUpperCase());
+        String normalized = role.trim().toUpperCase(java.util.Locale.ENGLISH);
+        return "PASSENGER".equals(normalized) || "ROLE_PASSENGER".equals(normalized);
     }
 
     private void createRideFromEstimate() {
@@ -2023,6 +2065,173 @@ public class LandingFragment extends Fragment {
             return;
         }
         Snackbar.make(binding.getRoot(), messageResId, Snackbar.LENGTH_SHORT).show();
+    }
+
+    private void fetchFavoriteRoutes(long passengerId) {
+        if (passengerApiService == null || binding == null) {
+            return;
+        }
+        favoriteRoutes.clear();
+        passengerApiService.getFavoriteRoutes(passengerId).enqueue(new Callback<List<FavoriteRouteResponse>>() {
+            @Override
+            public void onResponse(
+                @NonNull Call<List<FavoriteRouteResponse>> call,
+                @NonNull Response<List<FavoriteRouteResponse>> response
+            ) {
+                if (binding == null) {
+                    return;
+                }
+                if (response.isSuccessful() && response.body() != null) {
+                    favoriteRoutes.clear();
+                    favoriteRoutes.addAll(deduplicateFavoriteRoutes(response.body()));
+                }
+                populateFavoriteRoutesCards();
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<List<FavoriteRouteResponse>> call, @NonNull Throwable t) {
+                if (binding != null) {
+                    populateFavoriteRoutesCards();
+                }
+            }
+        });
+    }
+
+    /** Keep first occurrence of each route (by pickup + destination). Stops duplicates from API. */
+    private List<FavoriteRouteResponse> deduplicateFavoriteRoutes(List<FavoriteRouteResponse> list) {
+        if (list == null) return new ArrayList<>();
+        List<FavoriteRouteResponse> out = new ArrayList<>();
+        java.util.Set<String> seen = new java.util.LinkedHashSet<>();
+        for (FavoriteRouteResponse fav : list) {
+            String key = getFavoriteRouteKey(fav);
+            if (key.isEmpty() || seen.add(key)) {
+                out.add(fav);
+            }
+        }
+        return out;
+    }
+
+    private String getFavoriteRouteKey(FavoriteRouteResponse fav) {
+        if (fav == null || fav.waypoints == null || fav.waypoints.isEmpty()) return "";
+        List<FavoriteRouteWaypointResponse> sorted = new ArrayList<>(fav.waypoints);
+        sorted.sort(Comparator.comparingInt(w -> w.order != null ? w.order : 0));
+        String first = sorted.get(0).address != null ? sorted.get(0).address.trim() : "";
+        String last = sorted.get(sorted.size() - 1).address != null ? sorted.get(sorted.size() - 1).address.trim() : "";
+        return first + "|" + last;
+    }
+
+    private void populateFavoriteRoutesCards() {
+        if (binding == null || favoriteRouteDropdownAdapter == null) {
+            return;
+        }
+        favoriteRouteDropdownItems.clear();
+        favoriteRouteDropdownItems.addAll(deduplicateFavoriteRoutes(favoriteRoutes));
+        List<String> labels = new ArrayList<>();
+        labels.add(getString(R.string.order_enter_address_manually));
+        for (FavoriteRouteResponse fav : favoriteRouteDropdownItems) {
+            labels.add(getFavoriteLabel(fav));
+        }
+        favoriteRouteDropdownAdapter.clear();
+        favoriteRouteDropdownAdapter.addAll(labels);
+        favoriteRouteDropdownAdapter.notifyDataSetChanged();
+        String current = binding.favoriteRouteDropdown.getText() == null
+            ? ""
+            : binding.favoriteRouteDropdown.getText().toString();
+        if (current.trim().isEmpty() || !labels.contains(current)) {
+            binding.favoriteRouteDropdown.setText(labels.get(0), false);
+        }
+        binding.favoriteRoutesSection.setVisibility(View.VISIBLE);
+    }
+
+    private void onFavoriteRouteSelected(int position) {
+        if (position <= 0) {
+            clearFormForManual();
+            return;
+        }
+        int favoriteIndex = position - 1;
+        if (favoriteIndex >= 0 && favoriteIndex < favoriteRouteDropdownItems.size()) {
+            applyFavoriteRoute(favoriteRouteDropdownItems.get(favoriteIndex));
+        }
+    }
+
+    private String getFavoriteLabel(FavoriteRouteResponse fav) {
+        if (fav == null || fav.waypoints == null || fav.waypoints.isEmpty()) {
+            return "";
+        }
+        List<FavoriteRouteWaypointResponse> sorted = new ArrayList<>(fav.waypoints);
+        sorted.sort(Comparator.comparingInt(w -> w.order != null ? w.order : 0));
+        String first = sorted.get(0).address != null ? sorted.get(0).address : "";
+        String last = sorted.get(sorted.size() - 1).address != null ? sorted.get(sorted.size() - 1).address : "";
+        if (first.length() > 35) first = first.substring(0, 32) + "...";
+        if (last.length() > 35) last = last.substring(0, 32) + "...";
+        return first + " → " + last;
+    }
+
+    private void applyFavoriteRoute(FavoriteRouteResponse fav) {
+        if (binding == null || fav == null || fav.waypoints == null || fav.waypoints.size() < 2) {
+            return;
+        }
+        List<FavoriteRouteWaypointResponse> sorted = new ArrayList<>(fav.waypoints);
+        sorted.sort(Comparator.comparingInt(w -> w.order != null ? w.order : 0));
+
+        binding.pickupInput.setText(sorted.get(0).address != null ? sorted.get(0).address : "");
+        binding.destinationInput.setText(sorted.get(sorted.size() - 1).address != null
+            ? sorted.get(sorted.size() - 1).address : "");
+
+        for (Runnable r : stopAutocompleteRunnables.values()) {
+            autocompleteHandler.removeCallbacks(r);
+        }
+        stopAutocompleteRunnables.clear();
+        stopRows.clear();
+        binding.stopsContainer.removeAllViews();
+        for (int i = 1; i < sorted.size() - 1; i++) {
+            addStopRow();
+            View row = stopRows.get(stopRows.size() - 1);
+            if (row instanceof LinearLayout && ((LinearLayout) row).getChildCount() > 0) {
+                android.view.View first = ((LinearLayout) row).getChildAt(0);
+                if (first instanceof AutoCompleteTextView) {
+                    ((AutoCompleteTextView) first).setText(sorted.get(i).address != null ? sorted.get(i).address : "");
+                }
+            }
+        }
+
+        String vehicleTypeName = fav.vehicleTypeName != null ? fav.vehicleTypeName.toUpperCase() : "STANDARD";
+        String[] typeValues = getResources().getStringArray(R.array.landing_vehicle_type_values);
+        String[] labels = getResources().getStringArray(R.array.landing_vehicle_type_labels);
+        for (int i = 0; i < typeValues.length && i < labels.length; i++) {
+            if (vehicleTypeName.equals(typeValues[i])) {
+                binding.vehicleTypeDropdown.setText(labels[i], false);
+                break;
+            }
+        }
+
+        binding.babyTransportCheckbox.setChecked(Boolean.TRUE.equals(fav.babyTransport));
+        binding.petTransportCheckbox.setChecked(Boolean.TRUE.equals(fav.petTransport));
+
+        lastGeocodedWaypoints.clear();
+        lastEstimateResponse = null;
+    }
+
+    private void clearFormForManual() {
+        if (binding == null) {
+            return;
+        }
+        binding.pickupInput.setText("");
+        binding.destinationInput.setText("");
+        for (Runnable r : stopAutocompleteRunnables.values()) {
+            autocompleteHandler.removeCallbacks(r);
+        }
+        stopAutocompleteRunnables.clear();
+        stopRows.clear();
+        binding.stopsContainer.removeAllViews();
+        String[] vehicleLabels = getResources().getStringArray(R.array.landing_vehicle_type_labels);
+        if (vehicleLabels.length > 0) {
+            binding.vehicleTypeDropdown.setText(vehicleLabels[0], false);
+        }
+        binding.babyTransportCheckbox.setChecked(false);
+        binding.petTransportCheckbox.setChecked(false);
+        lastGeocodedWaypoints.clear();
+        lastEstimateResponse = null;
     }
 
     private void navigateTo(int destinationId) {

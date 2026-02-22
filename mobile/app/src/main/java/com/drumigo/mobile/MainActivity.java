@@ -320,7 +320,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setDrawerItemState(menu, R.id.nav_order_ride, true, true);
         setDrawerItemState(menu, R.id.nav_ride_tracking, true, true);
         setDrawerItemState(menu, R.id.nav_ride_history, true, true);
-        setDrawerItemState(menu, R.id.nav_favorite_routes, true, false);
         setDrawerItemState(menu, R.id.nav_profile, true, true);
         setDrawerItemState(menu, R.id.nav_support, true, false);
         setDrawerItemState(menu, R.id.nav_logout, true, true);
@@ -352,7 +351,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             R.id.nav_order_ride,
             R.id.nav_ride_tracking,
             R.id.nav_ride_history,
-            R.id.nav_favorite_routes,
             R.id.nav_dashboard,
             R.id.nav_active_rides_admin,
             R.id.nav_panic_notifications,

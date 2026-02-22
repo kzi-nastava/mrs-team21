@@ -321,6 +321,9 @@
     <string name="order_step_options">Options</string>
     <string name="order_step_confirm">Confirm</string>
     <string name="order_where_going">Where are you going?</string>
+    <string name="order_quick_pick_favorites">Quick pick from favorites</string>
+    <string name="order_favorite_route_hint">Choose favorite route</string>
+    <string name="order_enter_address_manually">Enter address manually</string>
     <string name="order_add_stop">Add stop</string>
     <string name="order_stop_hint">Stop address</string>
     <string name="order_continue">Continue</string>
@@ -357,6 +360,10 @@
     <string name="ride_history_amount_label">Amount:</string>
     <string name="ride_history_cancellation_label">Cancellation:</string>
     <string name="ride_history_none">--</string>
+    <string name="ride_history_favorite_toggle">Add or remove from favorites</string>
+    <string name="favorite_added">Added to favorites</string>
+    <string name="favorite_removed">Removed from favorites</string>
+    <string name="favorite_error">Failed to update favorite</string>
     <string name="ride_history_not_cancelled">No cancellation</string>
     <string name="ride_history_panic_active">Panic triggered</string>
     <string name="ride_history_panic_inactive">No panic event</string>

@@ -3,8 +3,10 @@ package com.drumigo.mobile.ui.history;
 import android.content.Context;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.graphics.PorterDuff;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -26,14 +28,23 @@ public class RideHistoryAdapter extends RecyclerView.Adapter<RideHistoryAdapter.
         void onRideSelected(Ride ride);
     }
 
+    public interface OnFavoriteToggleListener {
+        void onFavoriteToggled(Ride ride);
+    }
+
     private List<Ride> rides;
     private final Context context;
     private final OnRideClickListener onRideClickListener;
+    private final boolean showFavoriteButton;
+    private final OnFavoriteToggleListener onFavoriteToggleListener;
 
-    public RideHistoryAdapter(List<Ride> rides, Context context, OnRideClickListener onRideClickListener) {
+    public RideHistoryAdapter(List<Ride> rides, Context context, OnRideClickListener onRideClickListener,
+                              boolean showFavoriteButton, OnFavoriteToggleListener onFavoriteToggleListener) {
         this.rides = rides == null ? Collections.emptyList() : rides;
         this.context = context;
         this.onRideClickListener = onRideClickListener;
+        this.showFavoriteButton = showFavoriteButton;
+        this.onFavoriteToggleListener = onFavoriteToggleListener;
     }
 
     @NonNull
@@ -60,11 +71,31 @@ public class RideHistoryAdapter extends RecyclerView.Adapter<RideHistoryAdapter.
         bindPassengerSection(holder, ride);
         bindStatusSection(holder, ride);
         bindBottomSummary(holder, ride);
+        bindFavoriteStar(holder, ride);
 
         holder.itemView.setOnClickListener(v -> {
             if (onRideClickListener != null) {
                 onRideClickListener.onRideSelected(ride);
             }
+        });
+    }
+
+    private void bindFavoriteStar(RideViewHolder holder, Ride ride) {
+        holder.favoriteStar.setVisibility(showFavoriteButton ? View.VISIBLE : View.GONE);
+        if (!showFavoriteButton) {
+            return;
+        }
+        holder.favoriteStar.setImageResource(ride.isFavorite() ? R.drawable.ic_star : R.drawable.ic_star_outline);
+        int color = ride.isFavorite()
+            ? ContextCompat.getColor(context, R.color.star_filled)
+            : ContextCompat.getColor(context, R.color.text_light);
+        holder.favoriteStar.setColorFilter(color, PorterDuff.Mode.SRC_IN);
+        holder.favoriteStar.setOnClickListener(v -> {
+            v.setClickable(false);
+            if (onFavoriteToggleListener != null) {
+                onFavoriteToggleListener.onFavoriteToggled(ride);
+            }
+            v.setClickable(true);
         });
     }
 
@@ -138,6 +169,7 @@ public class RideHistoryAdapter extends RecyclerView.Adapter<RideHistoryAdapter.
         TextView fromText;
         TextView toText;
         TextView passengerCountText;
+        ImageButton favoriteStar;
         View statusBadge;
         ImageView statusIcon;
         TextView statusText;
@@ -153,6 +185,7 @@ public class RideHistoryAdapter extends RecyclerView.Adapter<RideHistoryAdapter.
             fromText = itemView.findViewById(R.id.fromText);
             toText = itemView.findViewById(R.id.toText);
             passengerCountText = itemView.findViewById(R.id.passengerCountText);
+            favoriteStar = itemView.findViewById(R.id.favoriteStar);
             statusBadge = itemView.findViewById(R.id.statusBadge);
             statusIcon = itemView.findViewById(R.id.statusIcon);
             statusText = itemView.findViewById(R.id.statusText);
