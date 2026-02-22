@@ -19,6 +19,10 @@ public class MapboxApiClient {
         return getRetrofit().create(MapboxGeocodingService.class);
     }
 
+    public static MapboxSearchBoxService getSearchBoxService() {
+        return getRetrofit().create(MapboxSearchBoxService.class);
+    }
+
     private static Retrofit getRetrofit() {
         if (retrofit == null) {
             retrofit = new Retrofit.Builder()

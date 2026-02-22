@@ -473,7 +473,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (itemId == R.id.nav_home) {
             navController.navigate(R.id.landingFragment);
         } else if (itemId == R.id.nav_order_ride) {
-            navController.navigate(R.id.activeVehiclesMapFragment);
+            navController.navigate(R.id.landingFragment);
         } else if (itemId == R.id.nav_login) {
             navController.navigate(R.id.loginFragment);
         } else if (itemId == R.id.nav_registration) {

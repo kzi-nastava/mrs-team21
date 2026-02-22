@@ -1,5 +1,6 @@
 package com.drumigo.mobile.ui.ride;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
@@ -11,12 +12,15 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 
 import com.drumigo.mobile.BuildConfig;
 import com.drumigo.mobile.R;
@@ -36,6 +40,7 @@ import com.drumigo.mobile.data.model.ride.LocationUpdate;
 import com.drumigo.mobile.data.model.ride.RideResponse;
 import com.drumigo.mobile.data.model.ride.RideTrackingResponse;
 import com.drumigo.mobile.data.model.ride.RoutePoint;
+import com.drumigo.mobile.ui.history.RideHistoryActivity;
 import com.drumigo.mobile.session.SessionManager;
 import com.drumigo.mobile.databinding.FragmentRideTrackingBinding;
 import com.google.android.material.snackbar.Snackbar;
@@ -80,6 +85,10 @@ public class RideTrackingFragment extends Fragment {
     private static final int MAPBOX_MAX_ROUTE_POINTS = 25;
     private static final double COORD_TOLERANCE = 1e-8;
     private static final double EARTH_RADIUS_METERS = 6_371_000.0;
+    private static final double MIN_FORWARD_MOVE_METERS = 8.0;
+    private static final double MAX_FORWARD_MOVE_METERS = 90.0;
+    private static final double DEFAULT_FORWARD_MOVE_METERS = 20.0;
+    private static final double MAX_PROJECTION_CATCHUP_METERS = 60.0;
     private static final long PANEL_SHOW_ANIMATION_MS = 240L;
     private static final long PANEL_HIDE_ANIMATION_MS = 200L;
 
@@ -101,6 +110,9 @@ public class RideTrackingFragment extends Fragment {
 
     private ActiveRide activeRide;
     private List<RoutePoint> renderedRoute = new ArrayList<>();
+    private double[] routeCumulativeDistancesMeters = new double[0];
+    private double routeProgressMeters = 0.0;
+    private RoutePoint lastBackendLocation = null;
     private String currentRoleNormalized = "";
     private long rideId;
     private boolean pendingActiveRideLookup = false;
@@ -112,6 +124,10 @@ public class RideTrackingFragment extends Fragment {
     private float panelDragStartY = 0f;
     private long lastRouteRequestAt = 0L;
     private int routeRequestToken = 0;
+    private Long nextScheduledRideId = null;
+    private String nextRideOrigin = "";
+    private String nextRideDestination = "";
+    private String nextRideScheduledFor = null;
     private final Handler pollingHandler = new Handler(Looper.getMainLooper());
     private final Runnable backendPollingRunnable = new Runnable() {
         @Override
@@ -224,11 +240,20 @@ public class RideTrackingFragment extends Fragment {
     }
 
     private void setupActions() {
-        View.OnClickListener notImplementedListener = v -> showNotImplemented();
+        binding.btnStartRide.setOnClickListener(v -> onStartRide());
         binding.btnCancelRide.setOnClickListener(v -> openCancelRideSheet());
         binding.btnStopRide.setOnClickListener(v -> openStopRideSheet());
+        binding.btnEndRide.setOnClickListener(v -> onEndRide());
         binding.btnPanic.setOnClickListener(v -> openPanicSheet());
-        binding.btnReportIssue.setOnClickListener(notImplementedListener);
+        binding.btnReportIssue.setOnClickListener(v -> openInconsistencySheet());
+        if (binding.nextRideCard != null) {
+            if (binding.btnOpenNextRide != null) {
+                binding.btnOpenNextRide.setOnClickListener(v -> navigateToNextRide());
+            }
+            if (binding.btnViewUpcoming != null) {
+                binding.btnViewUpcoming.setOnClickListener(v -> openRideHistory());
+            }
+        }
         applyActionVisibility();
     }
 
@@ -380,6 +405,45 @@ public class RideTrackingFragment extends Fragment {
                 applyRide(updated);
                 requestRouteIfNeeded(true);
                 Snackbar.make(binding.getRoot(), R.string.ride_tracking_stop_success, Snackbar.LENGTH_SHORT).show();
+                if (isDriverRole()) {
+                    openRideHistory();
+                }
+            }
+        );
+    }
+
+    private void openInconsistencySheet() {
+        if (binding == null || getContext() == null || rideApiService == null) {
+            return;
+        }
+        if (!isPassengerRole()) {
+            return;
+        }
+        if (pendingActiveRideLookup || rideId == 0L) {
+            resolveActiveRideAndStartTracking();
+            Snackbar.make(binding.getRoot(), R.string.ride_tracking_loading_active_ride, Snackbar.LENGTH_SHORT).show();
+            return;
+        }
+        if (activeRide == null) {
+            Snackbar.make(binding.getRoot(), R.string.ride_tracking_load_failed, Snackbar.LENGTH_SHORT).show();
+            return;
+        }
+        if (!isRideActiveStatus(getRideStatusLabel())) {
+            Snackbar.make(
+                binding.getRoot(),
+                getString(R.string.ride_tracking_inconsistency_failed),
+                Snackbar.LENGTH_SHORT
+            ).show();
+            return;
+        }
+        RideInconsistencyBottomSheet.show(
+            requireContext(),
+            rideApiService,
+            rideId,
+            () -> {
+                if (binding != null) {
+                    Snackbar.make(binding.getRoot(), R.string.ride_tracking_inconsistency_success, Snackbar.LENGTH_SHORT).show();
+                }
             }
         );
     }
@@ -415,6 +479,204 @@ public class RideTrackingFragment extends Fragment {
                 Snackbar.make(binding.getRoot(), R.string.ride_tracking_cancel_success, Snackbar.LENGTH_SHORT).show();
             }
         );
+    }
+
+    private void onStartRide() {
+        if (binding == null || rideApiService == null || rideId == 0L) {
+            return;
+        }
+        if (!isDriverRole()) {
+            return;
+        }
+        String status = getRideStatusLabel();
+        if (!"ACCEPTED".equals(normalizeRideStatus(status))) {
+            Snackbar.make(
+                binding.getRoot(),
+                getString(R.string.ride_tracking_start_accepted_only, status),
+                Snackbar.LENGTH_SHORT
+            ).show();
+            return;
+        }
+        binding.btnStartRide.setEnabled(false);
+        binding.btnStartRide.setText(R.string.ride_tracking_start_ride_loading);
+        rideApiService.startRide(rideId).enqueue(new Callback<RideResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<RideResponse> call, @NonNull Response<RideResponse> response) {
+                if (binding == null) {
+                    return;
+                }
+                binding.btnStartRide.setEnabled(true);
+                binding.btnStartRide.setText(R.string.ride_tracking_start_ride);
+                if (response.isSuccessful()) {
+                    Snackbar.make(binding.getRoot(), R.string.ride_tracking_start_success, Snackbar.LENGTH_SHORT).show();
+                    fetchRideTracking();
+                } else {
+                    Snackbar.make(binding.getRoot(), R.string.ride_tracking_start_failed, Snackbar.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<RideResponse> call, @NonNull Throwable t) {
+                if (binding == null) {
+                    return;
+                }
+                binding.btnStartRide.setEnabled(true);
+                binding.btnStartRide.setText(R.string.ride_tracking_start_ride);
+                Snackbar.make(binding.getRoot(), R.string.ride_tracking_start_failed, Snackbar.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void onEndRide() {
+        if (binding == null || rideApiService == null || rideId == 0L) {
+            return;
+        }
+        if (!isDriverRole()) {
+            return;
+        }
+        String status = getRideStatusLabel();
+        if (!isRideActiveStatus(status)) {
+            Snackbar.make(
+                binding.getRoot(),
+                getString(R.string.ride_tracking_end_active_only, status),
+                Snackbar.LENGTH_SHORT
+            ).show();
+            return;
+        }
+        binding.btnEndRide.setEnabled(false);
+        binding.btnEndRide.setText(R.string.ride_tracking_end_ride_loading);
+        rideApiService.endRide(rideId).enqueue(new Callback<RideResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<RideResponse> call, @NonNull Response<RideResponse> response) {
+                if (binding == null) {
+                    return;
+                }
+                binding.btnEndRide.setEnabled(true);
+                binding.btnEndRide.setText(R.string.ride_tracking_end_ride);
+                if (response.isSuccessful()) {
+                    stopTracking();
+                    if (activeRide != null) {
+                        activeRide.status = "FINISHED";
+                        applyRide(activeRide);
+                    }
+                    clearRouteAndMapForFinishedRide();
+                    updateCompletionState();
+                    loadUpcomingRidesForDriver();
+                    Snackbar.make(binding.getRoot(), R.string.ride_tracking_end_success, Snackbar.LENGTH_SHORT).show();
+                } else {
+                    Snackbar.make(binding.getRoot(), R.string.ride_tracking_end_failed, Snackbar.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<RideResponse> call, @NonNull Throwable t) {
+                if (binding == null) {
+                    return;
+                }
+                binding.btnEndRide.setEnabled(true);
+                binding.btnEndRide.setText(R.string.ride_tracking_end_ride);
+                Snackbar.make(binding.getRoot(), R.string.ride_tracking_end_failed, Snackbar.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void loadUpcomingRidesForDriver() {
+        if (!isDriverRole() || sessionManager == null || driverApiService == null) {
+            return;
+        }
+        long driverId = sessionManager.getUserId();
+        if (driverId <= 0L) {
+            return;
+        }
+        driverApiService.getUpcomingDriverRides(driverId, null, 0, 5, "scheduledFor,asc")
+            .enqueue(new Callback<PageResponse<RideResponse>>() {
+                @Override
+                public void onResponse(
+                    @NonNull Call<PageResponse<RideResponse>> call,
+                    @NonNull Response<PageResponse<RideResponse>> response
+                ) {
+                    if (!response.isSuccessful() || response.body() == null || response.body().content == null) {
+                        return;
+                    }
+                    List<RideResponse> content = response.body().content;
+                    if (content.isEmpty()) {
+                        return;
+                    }
+                    RideResponse nextRide = content.get(0);
+                    if (nextRide == null || nextRide.id == null) {
+                        return;
+                    }
+                    nextScheduledRideId = nextRide.id;
+                    nextRideOrigin = waypointAddress(nextRide, 0);
+                    nextRideDestination = waypointAddress(nextRide, -1);
+                    nextRideScheduledFor = nextRide.scheduledFor;
+                    showNextRideCard();
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<PageResponse<RideResponse>> call, @NonNull Throwable t) {
+                    // ignore
+                }
+            });
+    }
+
+    private String waypointAddress(RideResponse ride, int index) {
+        if (ride == null || ride.waypoints == null || ride.waypoints.isEmpty()) {
+            return "";
+        }
+        int i = index < 0 ? ride.waypoints.size() + index : index;
+        if (i < 0 || i >= ride.waypoints.size()) {
+            return "";
+        }
+        RideResponse.WaypointInfo wp = ride.waypoints.get(i);
+        return wp != null && wp.address != null ? wp.address : "";
+    }
+
+    private void showNextRideCard() {
+        if (binding == null || binding.nextRideCard == null) {
+            return;
+        }
+        if (nextScheduledRideId == null) {
+            binding.nextRideCard.setVisibility(View.GONE);
+            return;
+        }
+        if (binding.nextRideOrigin != null) {
+            binding.nextRideOrigin.setText(nextRideOrigin != null ? nextRideOrigin : "");
+        }
+        if (binding.nextRideDestination != null) {
+            binding.nextRideDestination.setText(nextRideDestination != null ? nextRideDestination : "");
+        }
+        if (binding.nextRideScheduled != null) {
+            binding.nextRideScheduled.setText(formatScheduledTime(nextRideScheduledFor));
+        }
+        binding.nextRideCard.setVisibility(View.VISIBLE);
+    }
+
+    private String formatScheduledTime(String iso8601) {
+        if (iso8601 == null || iso8601.trim().isEmpty()) {
+            return getString(R.string.ride_tracking_no_upcoming);
+        }
+        try {
+            java.time.Instant instant = java.time.Instant.parse(iso8601);
+            java.time.ZonedDateTime zdt = instant.atZone(java.time.ZoneId.systemDefault());
+            return java.time.format.DateTimeFormatter.ofPattern("MMM d, h:mm a").format(zdt);
+        } catch (Exception e) {
+            return iso8601;
+        }
+    }
+
+    private void navigateToNextRide() {
+        if (nextScheduledRideId == null) {
+            return;
+        }
+        NavController nav = Navigation.findNavController(requireView());
+        Bundle args = new Bundle();
+        args.putLong(ARG_RIDE_ID, nextScheduledRideId);
+        nav.navigate(R.id.rideTrackingFragment, args);
+    }
+
+    private void openRideHistory() {
+        startActivity(new Intent(requireContext(), RideHistoryActivity.class));
     }
 
     private boolean isRideStatusLoaded() {
@@ -496,20 +758,28 @@ public class RideTrackingFragment extends Fragment {
         return ROLE_PASSENGER.equals(currentRoleNormalized);
     }
 
+    /**
+     * Align with frontend: Passenger = Panic + Report inconsistency only.
+     * Driver = Start Ride, Stop Ride, End Ride, Panic. No Cancel in tracking panel.
+     */
     private void applyActionVisibility() {
         if (binding == null) {
             return;
         }
         boolean showDriverControls = isDriverRole();
         boolean showPassengerControls = isPassengerRole();
-        boolean rideActive = isRideActiveStatus(getRideStatusLabel());
+        String statusLabel = getRideStatusLabel();
+        boolean rideActive = isRideActiveStatus(statusLabel);
+        boolean rideAccepted = "ACCEPTED".equals(normalizeRideStatus(statusLabel));
 
-        binding.btnCancelRide.setVisibility((showDriverControls || showPassengerControls) ? View.VISIBLE : View.GONE);
+        binding.btnStartRide.setVisibility(showDriverControls ? View.VISIBLE : View.GONE);
+        binding.btnStartRide.setEnabled(showDriverControls && rideAccepted);
+        binding.btnCancelRide.setVisibility(View.GONE);
         binding.btnStopRide.setVisibility(showDriverControls ? View.VISIBLE : View.GONE);
+        binding.btnEndRide.setVisibility(View.GONE);
         binding.btnReportIssue.setVisibility(showPassengerControls ? View.VISIBLE : View.GONE);
         binding.btnPanic.setVisibility((showDriverControls || showPassengerControls) ? View.VISIBLE : View.GONE);
 
-        binding.btnCancelRide.setEnabled(showDriverControls || showPassengerControls);
         if (showDriverControls) {
             binding.btnStopRide.setEnabled(rideActive);
         }
@@ -517,6 +787,77 @@ public class RideTrackingFragment extends Fragment {
             binding.btnReportIssue.setEnabled(rideActive);
         }
         binding.btnPanic.setEnabled(rideActive || !isRideStatusLoaded());
+    }
+
+    private void updateRideNotStartedMessage() {
+        if (binding == null || !isPassengerRole() || activeRide == null) {
+            if (binding != null && binding.rideNotStartedMessage != null) {
+                binding.rideNotStartedMessage.setVisibility(View.GONE);
+            }
+            return;
+        }
+        String status = normalizeRideStatus(activeRide.status);
+        if ("ACTIVE".equals(status) || "IN_PROGRESS".equals(status)) {
+            binding.rideNotStartedMessage.setVisibility(View.GONE);
+            return;
+        }
+        binding.rideNotStartedMessage.setVisibility(View.VISIBLE);
+        if ("ACCEPTED".equals(status)) {
+            binding.rideNotStartedMessage.setText(R.string.ride_tracking_not_started_accepted);
+        } else {
+            binding.rideNotStartedMessage.setText(R.string.ride_tracking_not_started_pending);
+        }
+    }
+
+    private void updateCheckpoints() {
+        if (binding == null || binding.checkpointsContainer == null || binding.checkpointsTitle == null) {
+            return;
+        }
+        if (activeRide == null || activeRide.route == null || activeRide.route.size() < 2) {
+            binding.checkpointsTitle.setVisibility(View.GONE);
+            binding.checkpointsContainer.setVisibility(View.GONE);
+            return;
+        }
+        List<RoutePoint> sorted = new ArrayList<>(activeRide.route);
+        Collections.sort(sorted, Comparator.comparingInt(wp -> wp.order));
+        binding.checkpointsTitle.setVisibility(View.VISIBLE);
+        binding.checkpointsContainer.setVisibility(View.VISIBLE);
+        binding.checkpointsContainer.removeAllViews();
+        RoutePoint current = activeRide.currentLocation;
+        boolean destinationReached = isRideTerminalStatus(activeRide.status)
+            || (current != null && sorted.size() >= 2
+                && distanceMeters(current, sorted.get(sorted.size() - 1)) <= 40.0);
+        for (int i = 0; i < sorted.size(); i++) {
+            RoutePoint wp = sorted.get(i);
+            boolean isStart = i == 0;
+            boolean isDest = i == sorted.size() - 1;
+            boolean passed = isDest ? destinationReached : (wp.order <= lastPassedWaypointOrder);
+            String title = isStart ? getString(R.string.ride_tracking_checkpoint_pickup)
+                : isDest ? getString(R.string.ride_tracking_checkpoint_destination)
+                : getString(R.string.ride_tracking_checkpoint_label, i);
+            String address = isStart ? (activeRide.startAddress != null ? activeRide.startAddress : (wp.address != null ? wp.address : ""))
+                : isDest ? (activeRide.destinationAddress != null ? activeRide.destinationAddress : (wp.address != null ? wp.address : ""))
+                : (wp.address != null && !wp.address.isEmpty() ? wp.address : getString(R.string.ride_tracking_checkpoint_waypoint_fallback, i));
+            addCheckpointRow(binding.checkpointsContainer, title, address, passed);
+        }
+    }
+
+    private void addCheckpointRow(android.view.ViewGroup container, String title, String address, boolean passed) {
+        android.view.LayoutInflater inflater = android.view.LayoutInflater.from(requireContext());
+        View row = inflater.inflate(android.R.layout.simple_list_item_2, container, false);
+        TextView text1 = row.findViewById(android.R.id.text1);
+        TextView text2 = row.findViewById(android.R.id.text2);
+        if (text1 != null) {
+            text1.setText(title);
+            text1.setAlpha(passed ? 0.6f : 1f);
+            text1.setPaintFlags(passed ? text1.getPaintFlags() | android.graphics.Paint.STRIKE_THRU_TEXT_FLAG : text1.getPaintFlags() & ~android.graphics.Paint.STRIKE_THRU_TEXT_FLAG);
+        }
+        if (text2 != null) {
+            text2.setText(address);
+            text2.setAlpha(passed ? 0.6f : 1f);
+            text2.setPaintFlags(passed ? text2.getPaintFlags() | android.graphics.Paint.STRIKE_THRU_TEXT_FLAG : text2.getPaintFlags() & ~android.graphics.Paint.STRIKE_THRU_TEXT_FLAG);
+        }
+        container.addView(row);
     }
 
     private void openTrackingPanel() {
@@ -824,19 +1165,39 @@ public class RideTrackingFragment extends Fragment {
         if (response == null || activeRide == null) {
             return;
         }
-        Double lat = response.vehicleCurrentLat;
-        Double lng = response.vehicleCurrentLng;
-        if (lat == null || lng == null) {
-            return;
+        String status = normalizeRideStatus(activeRide.status);
+        // Only apply vehicle location updates when ride is ACTIVE (driver has clicked Start).
+        // Before that, keep the car at pickup so it doesn't move until the driver starts.
+        if ("ACTIVE".equals(status)) {
+            Double lat = response.vehicleCurrentLat;
+            Double lng = response.vehicleCurrentLng;
+            if (lat != null && lng != null) {
+                RoutePoint current = new RoutePoint(lat, lng, 0);
+                int eta = response.estimatedDurationSec != null ? response.estimatedDurationSec : 0;
+                float bearing = 0f;
+                if (previousLocation != null) {
+                    bearing = (float) calculateBearing(previousLocation, current);
+                }
+                previousLocation = current;
+                applyLocationUpdate(new LocationUpdate(lat, lng, System.currentTimeMillis(), eta, bearing));
+            }
+        } else {
+            // ACCEPTED or PENDING: pin car at pickup (first waypoint) until driver starts
+            if (activeRide.route != null && !activeRide.route.isEmpty()) {
+                List<RoutePoint> sorted = new ArrayList<>(activeRide.route);
+                Collections.sort(sorted, Comparator.comparingInt(wp -> wp.order));
+                RoutePoint start = sorted.get(0);
+                activeRide.currentLocation = new RoutePoint(start.lat, start.lng, 0);
+            }
+            if (response.estimatedDurationSec != null) {
+                activeRide.estimatedArrivalTimeSec = response.estimatedDurationSec;
+            }
+            if (binding != null) {
+                binding.etaValue.setText(formatEta(activeRide.estimatedArrivalTimeSec));
+            }
+            updateMapContent();
+            updateCheckpoints();
         }
-        RoutePoint current = new RoutePoint(lat, lng, 0);
-        int eta = response.estimatedDurationSec != null ? response.estimatedDurationSec : 0;
-        float bearing = 0f;
-        if (previousLocation != null) {
-            bearing = (float) calculateBearing(previousLocation, current);
-        }
-        previousLocation = current;
-        applyLocationUpdate(new LocationUpdate(lat, lng, System.currentTimeMillis(), eta, bearing));
     }
 
     private void applyRide(ActiveRide ride) {
@@ -844,6 +1205,9 @@ public class RideTrackingFragment extends Fragment {
         activeRide = ride;
         if (destinationChanged) {
             renderedRoute.clear();
+            routeCumulativeDistancesMeters = new double[0];
+            routeProgressMeters = 0.0;
+            lastBackendLocation = null;
             lastPassedWaypointOrder = Integer.MIN_VALUE;
             routeRequestToken++;
         }
@@ -858,6 +1222,8 @@ public class RideTrackingFragment extends Fragment {
         binding.toAddress.setText(ride.destinationAddress == null ? "" : ride.destinationAddress);
         binding.etaValue.setText(formatEta(ride.estimatedArrivalTimeSec));
         applyActionVisibility();
+        updateRideNotStartedMessage();
+        updateCheckpoints();
         updateMapContent();
         updateCompletionState();
     }
@@ -866,14 +1232,86 @@ public class RideTrackingFragment extends Fragment {
         if (activeRide == null || update == null) {
             return;
         }
-        activeRide.currentLocation = new RoutePoint(update.lat, update.lng, 0);
+        // Only move the car when ride is ACTIVE (driver has started the ride)
+        if (!"ACTIVE".equals(normalizeRideStatus(activeRide.status))) {
+            return;
+        }
+        RoutePoint backendLocation = new RoutePoint(update.lat, update.lng, 0);
+        RoutePoint displayLocation;
+        if (renderedRoute == null || renderedRoute.size() < 2) {
+            displayLocation = backendLocation;
+        } else {
+            displayLocation = computeNextLocationOnRoute(backendLocation);
+        }
+        activeRide.currentLocation = displayLocation;
+        lastBackendLocation = backendLocation;
         activeRide.estimatedArrivalTimeSec = update.estimatedArrivalTimeSec;
         currentBearing = update.bearing;
+        // Update which waypoints we've passed: use progress along route when available, else 70m distance (frontend heuristic)
+        if (renderedRoute != null && renderedRoute.size() >= 2 && routeCumulativeDistancesMeters.length >= 2) {
+            updateLastPassedWaypointOrderFromRouteProgress();
+        } else {
+            updateLastPassedWaypointOrderFromLocation(displayLocation);
+        }
         if (binding != null) {
             binding.etaValue.setText(formatEta(update.estimatedArrivalTimeSec));
+            updateCheckpoints();
         }
         updateMapContent();
         requestRouteIfNeeded(false);
+    }
+
+    /**
+     * Update lastPassedWaypointOrder from route progress (same idea as frontend but using path):
+     * a waypoint is passed when the car's progress along the route has passed that waypoint's
+     * position on the route. This avoids the car "jumping" and ensures checkpoints cross out
+     * as the car follows the path (frontend uses 70m distance; we use progress for reliability).
+     */
+    private static final double WAYPOINT_PASSED_BUFFER_METERS = 50.0;
+
+    private void updateLastPassedWaypointOrderFromRouteProgress() {
+        if (activeRide == null || activeRide.route == null || renderedRoute == null || renderedRoute.size() < 2
+            || routeCumulativeDistancesMeters.length < 2) {
+            return;
+        }
+        List<RoutePoint> sorted = new ArrayList<>(activeRide.route);
+        Collections.sort(sorted, Comparator.comparingInt(wp -> wp.order));
+        if (sorted.size() < 2) {
+            return;
+        }
+        int maxReachedOrder = Integer.MIN_VALUE;
+        for (int i = 0; i < sorted.size() - 1; i++) {
+            RoutePoint wp = sorted.get(i);
+            double waypointDistanceAlongRoute = closestDistanceAlongRoute(wp, renderedRoute, routeCumulativeDistancesMeters);
+            if (routeProgressMeters >= waypointDistanceAlongRoute - WAYPOINT_PASSED_BUFFER_METERS) {
+                maxReachedOrder = Math.max(maxReachedOrder, wp.order);
+            }
+        }
+        if (maxReachedOrder != Integer.MIN_VALUE) {
+            lastPassedWaypointOrder = Math.max(lastPassedWaypointOrder, maxReachedOrder);
+        }
+    }
+
+    /** Fallback when route polyline not yet available: use 70m distance like frontend. */
+    private void updateLastPassedWaypointOrderFromLocation(RoutePoint location) {
+        if (activeRide == null || activeRide.route == null || location == null) {
+            return;
+        }
+        List<RoutePoint> sorted = new ArrayList<>(activeRide.route);
+        Collections.sort(sorted, Comparator.comparingInt(wp -> wp.order));
+        if (sorted.size() < 2) {
+            return;
+        }
+        int maxReachedOrder = Integer.MIN_VALUE;
+        for (int i = 0; i < sorted.size() - 1; i++) {
+            RoutePoint wp = sorted.get(i);
+            if (distanceMeters(location, wp) <= WAYPOINT_REACHED_RADIUS_METERS) {
+                maxReachedOrder = Math.max(maxReachedOrder, wp.order);
+            }
+        }
+        if (maxReachedOrder != Integer.MIN_VALUE) {
+            lastPassedWaypointOrder = Math.max(lastPassedWaypointOrder, maxReachedOrder);
+        }
     }
 
     private void updateCompletionState() {
@@ -883,7 +1321,13 @@ public class RideTrackingFragment extends Fragment {
         boolean isCompleted = isRideTerminalStatus(activeRide.status);
         binding.rideCompletedMessage.setVisibility(isCompleted ? View.VISIBLE : View.GONE);
         if (isCompleted) {
+            binding.rideCompletedMessage.setText(
+                getString(R.string.ride_tracking_completed) + "\n" + getString(R.string.ride_tracking_no_active_ride));
+            clearRouteAndMapForFinishedRide();
             stopTracking();
+            if (isDriverRole()) {
+                loadUpcomingRidesForDriver();
+            }
         }
     }
 
@@ -892,13 +1336,35 @@ public class RideTrackingFragment extends Fragment {
             return;
         }
         ensureAnnotationManagers();
+        if (isRideTerminalStatus(activeRide.status)) {
+            clearRouteAndMapForFinishedRide();
+            return;
+        }
         updateRouteLine();
         updateMarkers();
         updateMapCamera();
     }
 
+    /** When ride is finished: clear route and markers so the map shows no route and says no active ride. */
+    private void clearRouteAndMapForFinishedRide() {
+        renderedRoute = new ArrayList<>();
+        routeCumulativeDistancesMeters = new double[0];
+        routeProgressMeters = 0.0;
+        lastBackendLocation = null;
+        if (polylineAnnotationManager != null) {
+            polylineAnnotationManager.deleteAll();
+        }
+        if (pointAnnotationManager != null) {
+            pointAnnotationManager.deleteAll();
+        }
+    }
+
     private void updateMarkers() {
         if (pointAnnotationManager == null || activeRide == null) {
+            return;
+        }
+        if (isRideTerminalStatus(activeRide.status)) {
+            pointAnnotationManager.deleteAll();
             return;
         }
         pointAnnotationManager.deleteAll();
@@ -928,6 +1394,10 @@ public class RideTrackingFragment extends Fragment {
 
     private void updateRouteLine() {
         if (polylineAnnotationManager == null || activeRide == null) {
+            return;
+        }
+        if (isRideTerminalStatus(activeRide.status)) {
+            polylineAnnotationManager.deleteAll();
             return;
         }
         List<RoutePoint> source = null;
@@ -968,13 +1438,15 @@ public class RideTrackingFragment extends Fragment {
             return;
         }
         long now = System.currentTimeMillis();
-        if (!force && now - lastRouteRequestAt < ROUTE_REFRESH_INTERVAL_MS) {
+        int previousLastPassed = lastPassedWaypointOrder;
+        List<RoutePoint> requestPoints = deduplicateConsecutivePoints(
+            buildRouteRequestPoints(activeRide.currentLocation)
+        );
+        boolean waypointTransitioned = lastPassedWaypointOrder > previousLastPassed;
+        if (!force && !waypointTransitioned && now - lastRouteRequestAt < ROUTE_REFRESH_INTERVAL_MS) {
             return;
         }
         lastRouteRequestAt = now;
-        List<RoutePoint> requestPoints = deduplicateConsecutivePoints(
-            buildFallbackCurrentToDestination(activeRide.currentLocation)
-        );
         if (requestPoints.size() < 2) {
             return;
         }
@@ -1180,6 +1652,16 @@ public class RideTrackingFragment extends Fragment {
         }
         if (!route.isEmpty()) {
             renderedRoute = route;
+            routeCumulativeDistancesMeters = buildRouteCumulativeDistances(renderedRoute);
+            if (routeCumulativeDistancesMeters.length >= 2 && activeRide.currentLocation != null) {
+                routeProgressMeters = closestDistanceAlongRoute(
+                    activeRide.currentLocation,
+                    renderedRoute,
+                    routeCumulativeDistancesMeters
+                );
+            } else {
+                routeProgressMeters = 0.0;
+            }
             updateMapContent();
         }
     }
@@ -1192,6 +1674,144 @@ public class RideTrackingFragment extends Fragment {
             renderedRoute = new ArrayList<>(activeRide.route);
         }
         updateMapContent();
+    }
+
+    /**
+     * Compute display position on the route from backend location (same logic as frontend):
+     * project backend onto route, advance progress with min/max forward step and catchup.
+     */
+    private RoutePoint computeNextLocationOnRoute(RoutePoint backendLocation) {
+        List<RoutePoint> route = renderedRoute;
+        if (route == null || route.size() < 2 || routeCumulativeDistancesMeters.length < 2) {
+            return backendLocation;
+        }
+        if (routeCumulativeDistancesMeters.length != route.size()) {
+            routeCumulativeDistancesMeters = buildRouteCumulativeDistances(route);
+        }
+        double backendProjectedDistance = closestDistanceAlongRoute(
+            backendLocation,
+            route,
+            routeCumulativeDistancesMeters
+        );
+        routeProgressMeters = Math.max(routeProgressMeters, backendProjectedDistance);
+
+        double forwardMoveMeters = DEFAULT_FORWARD_MOVE_METERS;
+        if (lastBackendLocation != null) {
+            forwardMoveMeters = distanceMeters(lastBackendLocation, backendLocation);
+        }
+        forwardMoveMeters = Math.max(MIN_FORWARD_MOVE_METERS,
+            Math.min(MAX_FORWARD_MOVE_METERS, forwardMoveMeters));
+
+        double totalRouteDistance = routeCumulativeDistancesMeters[routeCumulativeDistancesMeters.length - 1];
+        double projectedAheadDistance = backendProjectedDistance - routeProgressMeters;
+        boolean canCatchUpToProjection = projectedAheadDistance > 0
+            && projectedAheadDistance <= MAX_PROJECTION_CATCHUP_METERS;
+        double projectedTarget = canCatchUpToProjection ? backendProjectedDistance : routeProgressMeters;
+        double stepTarget = routeProgressMeters + forwardMoveMeters;
+        routeProgressMeters = Math.min(totalRouteDistance, Math.max(stepTarget, projectedTarget));
+
+        return pointAlongRouteAtDistance(route, routeCumulativeDistancesMeters, routeProgressMeters);
+    }
+
+    private double[] buildRouteCumulativeDistances(List<RoutePoint> route) {
+        if (route == null || route.size() < 2) {
+            return new double[0];
+        }
+        double[] cumulative = new double[route.size()];
+        cumulative[0] = 0.0;
+        for (int i = 1; i < route.size(); i++) {
+            RoutePoint prev = route.get(i - 1);
+            RoutePoint curr = route.get(i);
+            cumulative[i] = cumulative[i - 1] + distanceMeters(prev, curr);
+        }
+        return cumulative;
+    }
+
+    private double closestDistanceAlongRoute(
+        RoutePoint point,
+        List<RoutePoint> route,
+        double[] cumulativeDistances
+    ) {
+        if (route.size() < 2 || cumulativeDistances.length < 2) {
+            return 0.0;
+        }
+        double refLatRad = Math.toRadians(point.lat);
+        double cosLat = Math.cos(refLatRad);
+        if (Math.abs(cosLat) < 1e-9) cosLat = 1e-9;
+
+        double px = Math.toRadians(point.lng) * EARTH_RADIUS_METERS * cosLat;
+        double py = Math.toRadians(point.lat) * EARTH_RADIUS_METERS;
+
+        double minDistSq = Double.POSITIVE_INFINITY;
+        double closestDistanceAlongRoute = 0.0;
+
+        for (int i = 0; i < route.size() - 1; i++) {
+            RoutePoint a = route.get(i);
+            RoutePoint b = route.get(i + 1);
+            double ax = Math.toRadians(a.lng) * EARTH_RADIUS_METERS * cosLat;
+            double ay = Math.toRadians(a.lat) * EARTH_RADIUS_METERS;
+            double bx = Math.toRadians(b.lng) * EARTH_RADIUS_METERS * cosLat;
+            double by = Math.toRadians(b.lat) * EARTH_RADIUS_METERS;
+            double abx = bx - ax;
+            double aby = by - ay;
+            double apx = px - ax;
+            double apy = py - ay;
+            double abLenSq = abx * abx + aby * aby;
+            double t = abLenSq <= 0 ? 0 : (apx * abx + apy * aby) / abLenSq;
+            double clampedT = Math.max(0.0, Math.min(1.0, t));
+            double projX = ax + abx * clampedT;
+            double projY = ay + aby * clampedT;
+            double dx = px - projX;
+            double dy = py - projY;
+            double distSq = dx * dx + dy * dy;
+
+            if (distSq < minDistSq) {
+                minDistSq = distSq;
+                double segmentStart = cumulativeDistances[i];
+                double segmentEnd = cumulativeDistances[i + 1];
+                closestDistanceAlongRoute = segmentStart + (segmentEnd - segmentStart) * clampedT;
+            }
+        }
+        return closestDistanceAlongRoute;
+    }
+
+    private RoutePoint pointAlongRouteAtDistance(
+        List<RoutePoint> route,
+        double[] cumulativeDistances,
+        double distanceMeters
+    ) {
+        if (route == null || route.isEmpty()) {
+            return new RoutePoint(0, 0, 0);
+        }
+        if (route.size() == 1 || cumulativeDistances.length < 2) {
+            RoutePoint p = route.get(0);
+            return new RoutePoint(p.lat, p.lng, 0);
+        }
+        if (distanceMeters <= 0) {
+            RoutePoint p = route.get(0);
+            return new RoutePoint(p.lat, p.lng, 0);
+        }
+        double totalDistance = cumulativeDistances[cumulativeDistances.length - 1];
+        if (distanceMeters >= totalDistance) {
+            RoutePoint p = route.get(route.size() - 1);
+            return new RoutePoint(p.lat, p.lng, 0);
+        }
+        for (int i = 1; i < cumulativeDistances.length; i++) {
+            double segmentEndDistance = cumulativeDistances[i];
+            if (distanceMeters > segmentEndDistance) {
+                continue;
+            }
+            double segmentStartDistance = cumulativeDistances[i - 1];
+            double segmentLength = segmentEndDistance - segmentStartDistance;
+            double ratio = segmentLength <= 0 ? 0 : (distanceMeters - segmentStartDistance) / segmentLength;
+            RoutePoint start = route.get(i - 1);
+            RoutePoint end = route.get(i);
+            double lat = start.lat + (end.lat - start.lat) * ratio;
+            double lng = start.lng + (end.lng - start.lng) * ratio;
+            return new RoutePoint(lat, lng, 0);
+        }
+        RoutePoint last = route.get(route.size() - 1);
+        return new RoutePoint(last.lat, last.lng, 0);
     }
 
     private boolean didDestinationChange(ActiveRide previous, ActiveRide current) {
@@ -1294,7 +1914,8 @@ public class RideTrackingFragment extends Fragment {
                     continue;
                 }
                 int order = waypoint.order == null ? 0 : waypoint.order;
-                route.add(new RoutePoint(waypoint.lat, waypoint.lng, order));
+                String addr = waypoint.address != null ? waypoint.address : "";
+                route.add(new RoutePoint(waypoint.lat, waypoint.lng, order, addr));
             }
             ride.route = route;
         }
@@ -1329,7 +1950,8 @@ public class RideTrackingFragment extends Fragment {
                 continue;
             }
             int order = waypoint.order == null ? 0 : waypoint.order;
-            route.add(new RoutePoint(waypoint.lat, waypoint.lng, order));
+            String addr = waypoint.address != null ? waypoint.address : "";
+            route.add(new RoutePoint(waypoint.lat, waypoint.lng, order, addr));
         }
         ride.route = route;
 

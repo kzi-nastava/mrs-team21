@@ -82,6 +82,53 @@
                     app:tint="@color/text_medium" />
             </LinearLayout>
 
+            <!-- Step indicator -->
+            <LinearLayout
+                android:id="@+id/stepIndicator"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:paddingStart="@dimen/spacing_md"
+                android:paddingEnd="@dimen/spacing_md"
+                android:paddingTop="@dimen/spacing_xs"
+                android:paddingBottom="@dimen/spacing_sm">
+                <TextView
+                    android:id="@+id/step1Label"
+                    style="@style/TextStyle.Caption"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="@string/order_step_route" />
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="0.5"
+                    android:background="@color/border" />
+                <TextView
+                    android:id="@+id/step2Label"
+                    style="@style/TextStyle.Caption"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="@string/order_step_options" />
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="0.5"
+                    android:background="@color/border" />
+                <TextView
+                    android:id="@+id/step3Label"
+                    style="@style/TextStyle.Caption"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="@string/order_step_confirm" />
+            </LinearLayout>
+
             <androidx.core.widget.NestedScrollView
                 android:id="@+id/estimateScroll"
                 android:layout_width="match_parent"
@@ -97,71 +144,251 @@
                     android:paddingEnd="@dimen/spacing_md"
                     android:paddingBottom="@dimen/spacing_md">
 
-                    <TextView
-                        android:id="@+id/activeVehiclesCount"
-                        style="@style/TextStyle.Caption"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/landing_active_vehicles_count_placeholder" />
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.Drumigo.TextInputLayout"
+                    <!-- Step 1: Route -->
+                    <LinearLayout
+                        android:id="@+id/step1Content"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_md">
+                        android:orientation="vertical">
+                        <TextView
+                            style="@style/TextStyle.Subtitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/order_where_going" />
+                        <TextView
+                            android:id="@+id/activeVehiclesCount"
+                            style="@style/TextStyle.Caption"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_xs"
+                            android:text="@string/landing_active_vehicles_count_placeholder" />
 
-                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                            android:id="@+id/pickupInput"
-                            style="@style/Widget.Drumigo.TextInputEditText"
+                        <com.google.android.material.textfield.TextInputLayout
+                            style="@style/Widget.Drumigo.TextInputLayout"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="@string/landing_pickup_hint"
-                            android:inputType="textPostalAddress"
-                            android:maxLines="1" />
-                    </com.google.android.material.textfield.TextInputLayout>
+                            android:layout_marginTop="@dimen/spacing_md">
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.Drumigo.TextInputLayout"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_sm">
+                            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                                android:id="@+id/pickupInput"
+                                style="@style/Widget.Drumigo.TextInputEditText"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="@string/landing_pickup_hint"
+                                android:inputType="textPostalAddress"
+                                android:maxLines="1" />
+                        </com.google.android.material.textfield.TextInputLayout>
 
-                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                            android:id="@+id/destinationInput"
-                            style="@style/Widget.Drumigo.TextInputEditText"
+                        <com.google.android.material.textfield.TextInputLayout
+                            style="@style/Widget.Drumigo.TextInputLayout"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="@string/landing_destination_hint"
-                            android:inputType="textPostalAddress"
-                            android:maxLines="1" />
-                    </com.google.android.material.textfield.TextInputLayout>
+                            android:layout_marginTop="@dimen/spacing_sm">
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.Drumigo.TextInputLayout"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_sm"
-                        app:endIconMode="dropdown_menu"
-                        android:hint="@string/landing_vehicle_type_hint">
+                            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                                android:id="@+id/destinationInput"
+                                style="@style/Widget.Drumigo.TextInputEditText"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="@string/landing_destination_hint"
+                                android:inputType="textPostalAddress"
+                                android:maxLines="1" />
+                        </com.google.android.material.textfield.TextInputLayout>
 
-                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                            android:id="@+id/vehicleTypeDropdown"
-                            style="@style/Widget.Drumigo.TextInputEditText"
+                        <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:inputType="none"
-                            android:textColor="@color/text_dark"
-                            android:textSize="@dimen/text_md" />
-                    </com.google.android.material.textfield.TextInputLayout>
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginTop="@dimen/spacing_sm">
+                            <TextView
+                                style="@style/TextStyle.Caption"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/order_add_stop" />
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnAddStop"
+                                style="@style/Widget.Drumigo.Button.Secondary"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/order_add_stop"
+                                android:textAllCaps="false" />
+                        </LinearLayout>
+                        <LinearLayout
+                            android:id="@+id/stopsContainer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnEstimate"
-                        style="@style/Widget.Drumigo.Button.Primary"
+                        <com.google.android.material.textfield.TextInputLayout
+                            style="@style/Widget.Drumigo.TextInputLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_sm"
+                            app:endIconMode="dropdown_menu"
+                            android:hint="@string/landing_vehicle_type_hint">
+
+                            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                                android:id="@+id/vehicleTypeDropdown"
+                                style="@style/Widget.Drumigo.TextInputEditText"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="none"
+                                android:textColor="@color/text_dark"
+                                android:textSize="@dimen/text_md" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+
+                    <!-- Step 2: Options -->
+                    <LinearLayout
+                        android:id="@+id/step2Content"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_md"
-                        android:text="@string/landing_calculate_estimate"
-                        android:textAllCaps="false" />
+                        android:orientation="vertical"
+                        android:visibility="gone">
+                        <TextView
+                            style="@style/TextStyle.Subtitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/order_ride_options" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_sm"
+                            android:text="@string/order_schedule_ride"
+                            android:textSize="@dimen/text_sm"
+                            android:textStyle="bold" />
+                        <RadioGroup
+                            android:id="@+id/scheduleGroup"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="@dimen/spacing_xs">
+                            <RadioButton
+                                android:id="@+id/scheduleNow"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/order_schedule_now"
+                                android:checked="true" />
+                            <RadioButton
+                                android:id="@+id/scheduleLater"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/spacing_md"
+                                android:text="@string/order_schedule_later" />
+                        </RadioGroup>
+                        <LinearLayout
+                            android:id="@+id/scheduleLaterFields"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:visibility="gone"
+                            android:layout_marginTop="@dimen/spacing_sm">
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Widget.Drumigo.TextInputLayout"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginEnd="@dimen/spacing_xs"
+                                android:hint="@string/order_schedule_hours">
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/scheduleHoursInput"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:inputType="number"
+                                    android:maxLength="1" />
+                            </com.google.android.material.textfield.TextInputLayout>
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Widget.Drumigo.TextInputLayout"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="@dimen/spacing_xs"
+                                android:hint="@string/order_schedule_minutes">
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/scheduleMinutesInput"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:inputType="number" />
+                            </com.google.android.material.textfield.TextInputLayout>
+                        </LinearLayout>
+                        <TextView
+                            style="@style/TextStyle.Caption"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_xs"
+                            android:text="@string/order_schedule_max_hint" />
+                        <com.google.android.material.checkbox.MaterialCheckBox
+                            android:id="@+id/babyTransportCheckbox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_md"
+                            android:text="@string/order_baby_seat" />
+                        <com.google.android.material.checkbox.MaterialCheckBox
+                            android:id="@+id/petTransportCheckbox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/order_pet_transport" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_md"
+                            android:text="@string/order_additional_passengers"
+                            android:textSize="@dimen/text_sm"
+                            android:textStyle="bold" />
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnAddPassenger"
+                            style="@style/Widget.Drumigo.Button.Secondary"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_xs"
+                            android:text="@string/order_add_passenger"
+                            android:textAllCaps="false" />
+                        <LinearLayout
+                            android:id="@+id/passengersContainer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
+                    </LinearLayout>
+
+                    <!-- Step 3: Confirm -->
+                    <LinearLayout
+                        android:id="@+id/step3Content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+                        <TextView
+                            style="@style/TextStyle.Subtitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/order_confirm_title" />
+                        <TextView
+                            android:id="@+id/confirmRouteSummary"
+                            style="@style/TextStyle.Caption"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_sm" />
+                        <TextView
+                            android:id="@+id/confirmDetails"
+                            style="@style/TextStyle.Caption"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_xs" />
+                        <TextView
+                            android:id="@+id/confirmPrice"
+                            style="@style/TextStyle.Title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_sm" />
+                        <com.google.android.material.checkbox.MaterialCheckBox
+                            android:id="@+id/termsCheckbox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_md"
+                            android:text="@string/order_terms_accept" />
+                    </LinearLayout>
 
                     <ProgressBar
                         android:id="@+id/estimateProgress"
@@ -172,160 +399,28 @@
                         android:visibility="gone" />
 
                     <LinearLayout
-                        android:id="@+id/estimateResults"
+                        android:id="@+id/formActions"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_md"
-                        android:background="@drawable/bg_estimate_results"
-                        android:orientation="vertical"
-                        android:padding="@dimen/spacing_md"
-                        android:visibility="gone">
-
-                        <LinearLayout
+                        android:orientation="horizontal"
+                        android:gravity="end"
+                        android:layout_marginTop="@dimen/spacing_md">
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnBack"
+                            style="@style/Widget.Drumigo.Button.Secondary"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:src="@drawable/ic_check" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="@dimen/spacing_xs"
-                                android:text="@string/landing_estimate_summary"
-                                android:textColor="@color/success"
-                                android:textSize="@dimen/text_sm"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/spacing_sm"
-                            android:orientation="horizontal">
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginEnd="6dp"
-                                android:layout_weight="1"
-                                android:background="@drawable/bg_estimate_metric_card"
-                                android:gravity="center"
-                                android:orientation="vertical"
-                                android:padding="@dimen/spacing_sm">
-
-                                <TextView
-                                    android:id="@+id/resultEtaValue"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:textColor="@color/text_dark"
-                                    android:textSize="@dimen/text_xl"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:text="@string/landing_estimate_time_label"
-                                    android:textColor="@color/text_light"
-                                    android:textSize="@dimen/text_xs" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:layout_weight="1"
-                                android:background="@drawable/bg_estimate_metric_card"
-                                android:gravity="center"
-                                android:orientation="vertical"
-                                android:padding="@dimen/spacing_sm">
-
-                                <TextView
-                                    android:id="@+id/resultPriceValue"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:textColor="@color/text_dark"
-                                    android:textSize="@dimen/text_xl"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:text="@string/landing_estimate_price_label"
-                                    android:textColor="@color/text_light"
-                                    android:textSize="@dimen/text_xs" />
-                            </LinearLayout>
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:background="@drawable/bg_estimate_metric_card"
-                            android:gravity="center"
-                            android:orientation="horizontal"
-                            android:padding="@dimen/spacing_sm">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/landing_estimate_distance_label"
-                                android:textColor="@color/primary"
-                                android:textSize="@dimen/text_sm"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:id="@+id/resultDistanceValue"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="@dimen/spacing_xs"
-                                android:textColor="@color/text_medium"
-                                android:textSize="@dimen/text_sm" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_md"
-                        android:background="@drawable/bg_estimate_cta"
-                        android:orientation="vertical"
-                        android:padding="@dimen/spacing_md">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:text="@string/landing_cta_title"
-                            android:textColor="@color/text_dark"
-                            android:textSize="@dimen/text_md"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/spacing_xs"
-                            android:gravity="center"
-                            android:lineSpacingExtra="2dp"
-                            android:text="@string/landing_cta_description"
-                            android:textColor="@color/text_light"
-                            android:textSize="@dimen/text_sm" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnBookRide"
-                            style="@style/Widget.Drumigo.Button.Primary"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/spacing_sm"
-                            android:text="@string/landing_signup_cta"
+                            android:layout_marginEnd="@dimen/spacing_sm"
+                            android:text="@string/order_back"
                             android:textAllCaps="false"
-                            app:backgroundTint="@color/accent" />
+                            android:visibility="gone" />
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnContinueOrRequest"
+                            style="@style/Widget.Drumigo.Button.Primary"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/order_continue"
+                            android:textAllCaps="false" />
                     </LinearLayout>
 
                     <LinearLayout

@@ -109,7 +109,7 @@ public class LoginFragment extends Fragment {
                     } else if ("ADMIN".equals(role)) {
                         Navigation.findNavController(binding.getRoot()).navigate(R.id.profileFragment);
                     } else {
-                        Navigation.findNavController(binding.getRoot()).navigate(R.id.activeVehiclesMapFragment);
+                        Navigation.findNavController(binding.getRoot()).navigate(R.id.landingFragment);
                     }
                 } else {
                     String errorMsg = getLoginErrorMessage(response.code(), response.message());

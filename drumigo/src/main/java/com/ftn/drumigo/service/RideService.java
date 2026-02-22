@@ -57,7 +57,7 @@ public class RideService {
     private final MapService mapService;
     private final AssignmentNotificationService assignmentNotificationService;
     private static final String NO_ACTIVE_DRIVERS_MESSAGE = "There are currently no active drivers.";
-    private static final long TEN_MINUTES_IN_SECONDS = Duration.ofMinutes(10).getSeconds();
+    private static final String NO_AVAILABLE_DRIVERS_MESSAGE = "No drivers available. All drivers are currently busy.";
     private static final long DEFAULT_RIDE_DURATION_SECONDS = Duration.ofMinutes(15).getSeconds();
     private static final List<RideStatus> ASSIGNMENT_BLOCKING_STATUSES = List.of(RideStatus.ACTIVE, RideStatus.ACCEPTED);
 
@@ -585,6 +585,10 @@ public class RideService {
         return DriverAssignmentResult.assigned(reservedDriver);
     }
 
+    /**
+     * Assign a driver for an immediate ride. Only drivers who are not currently on a ride
+     * (inactive / free) are considered. If none are available, returns a clear "no drivers available" message.
+     */
     private DriverAssignmentResult assignImmediateRideDriver(List<DriverAssignmentCandidate> eligibleCandidates) {
         List<DriverAssignmentCandidate> freeCandidates = eligibleCandidates.stream()
             .filter(candidate -> !candidate.currentlyOccupied())
@@ -602,33 +606,7 @@ public class RideService {
             return DriverAssignmentResult.assigned(nearestFreeDriver);
         }
 
-        if (eligibleCandidates.stream().allMatch(
-                candidate -> candidate.reservationConflict()
-                    || (candidate.currentlyOccupied() && candidate.hasFutureScheduledRide())
-        )) {
-            return DriverAssignmentResult.rejected(NO_ACTIVE_DRIVERS_MESSAGE);
-        }
-
-        List<DriverAssignmentCandidate> fallbackCandidates = eligibleCandidates.stream()
-            .filter(DriverAssignmentCandidate::currentlyOccupied)
-            .filter(candidate -> !candidate.reservationConflict())
-            .filter(candidate -> !candidate.hasFutureScheduledRide())
-            .filter(candidate -> candidate.remainingToFinishSec() <= TEN_MINUTES_IN_SECONDS)
-            .toList();
-
-        if (fallbackCandidates.isEmpty()) {
-            return DriverAssignmentResult.rejected(NO_ACTIVE_DRIVERS_MESSAGE);
-        }
-
-        Driver fallbackDriver = fallbackCandidates.stream()
-            .min(Comparator
-                .comparingLong(DriverAssignmentCandidate::remainingToFinishSec)
-                .thenComparingDouble(DriverAssignmentCandidate::pickupDistanceKm)
-                .thenComparing(candidate -> candidate.driver().getId()))
-            .orElseThrow()
-            .driver();
-
-        return DriverAssignmentResult.assigned(fallbackDriver);
+        return DriverAssignmentResult.rejected(NO_AVAILABLE_DRIVERS_MESSAGE);
     }
 
     private boolean isVehicleEligibleForRide(Ride ride, VehicleType vehicleType, Vehicle vehicle) {
