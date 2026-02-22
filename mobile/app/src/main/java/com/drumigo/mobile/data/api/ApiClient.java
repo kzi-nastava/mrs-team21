@@ -48,6 +48,10 @@ public class ApiClient {
         return getRetrofit().create(NotificationApiService.class);
     }
 
+    public static UserApiService getUserApiService() {
+        return getRetrofit().create(UserApiService.class);
+    }
+
     public static SupportApiService getSupportApiService() {
         return getRetrofit().create(SupportApiService.class);
     }

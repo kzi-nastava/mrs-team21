@@ -72,6 +72,11 @@
             android:exported="false"
             android:label="@string/nav_ride_history" />
 
+        <activity
+            android:name="com.drumigo.mobile.ui.admin.AdminUserManagementActivity"
+            android:exported="false"
+            android:label="@string/admin_users_title" />
+
     </application>
 
 </manifest>
