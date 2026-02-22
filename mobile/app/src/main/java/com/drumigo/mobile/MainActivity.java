@@ -534,6 +534,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 Intent intent = new Intent(this, com.drumigo.mobile.ui.admin.AdminUserManagementActivity.class);
                 startActivity(intent);
             }
+        } else if (itemId == R.id.nav_support) {
+            if (isUserAuthenticated()) {
+                navController.navigate(R.id.supportFragment);
+            }
+        } else if (itemId == R.id.nav_live_support) {
+            if (isUserAuthenticated()) {
+                navController.navigate(R.id.adminSupportConversationsFragment);
+            }
         } else {
             android.widget.Toast.makeText(
                 this,
