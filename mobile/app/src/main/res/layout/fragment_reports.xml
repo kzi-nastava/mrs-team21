@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_cream"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_md">
+
+        <!-- Header -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/reports_title"
+            android:textSize="@dimen/text_title"
+            android:textColor="@color/text_dark"
+            android:layout_marginBottom="4dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/reports_subtitle"
+            android:textSize="@dimen/text_sm"
+            android:textColor="@color/text_light"
+            android:layout_marginBottom="@dimen/spacing_lg" />
+
+        <!-- Filter bar -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/spacing_md"
+            app:cardCornerRadius="@dimen/radius_md"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="@color/white">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/spacing_md">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="@dimen/spacing_sm">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginEnd="8dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/reports_from"
+                            android:textSize="@dimen/text_xs"
+                            android:textColor="@color/text_medium"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="4dp" />
+
+                        <TextView
+                            android:id="@+id/reportsFromDateText"
+                            android:layout_width="match_parent"
+                            android:layout_height="44dp"
+                            android:background="@drawable/bg_input"
+                            android:padding="12dp"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_dark"
+                            android:gravity="center_vertical"
+                            android:drawableEnd="@drawable/ic_calendar"
+                            android:drawablePadding="8dp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="8dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/reports_to"
+                            android:textSize="@dimen/text_xs"
+                            android:textColor="@color/text_medium"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="4dp" />
+
+                        <TextView
+                            android:id="@+id/reportsToDateText"
+                            android:layout_width="match_parent"
+                            android:layout_height="44dp"
+                            android:background="@drawable/bg_input"
+                            android:padding="12dp"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_dark"
+                            android:gravity="center_vertical"
+                            android:drawableEnd="@drawable/ic_calendar"
+                            android:drawablePadding="8dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/reportsGenerateButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/reports_generate"
+                    app:cornerRadius="@dimen/radius_sm" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Error -->
+        <TextView
+            android:id="@+id/reportsErrorText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/spacing_md"
+            android:textColor="@color/error"
+            android:visibility="gone"
+            tools:text="Failed to load report."
+            tools:visibility="visible" />
+
+        <!-- Loading -->
+        <ProgressBar
+            android:id="@+id/reportsLoading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <!-- Summary (visible when report loaded) -->
+        <LinearLayout
+            android:id="@+id/reportsSummarySection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/reports_summary"
+                android:textSize="@dimen/text_lg"
+                android:textColor="@color/text_dark"
+                android:textStyle="bold"
+                android:layout_marginBottom="@dimen/spacing_sm" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_lg"
+                app:cardCornerRadius="@dimen/radius_md"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_md">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="8dp"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/reportsSummaryRidesLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/reports_rides"
+                            android:textSize="@dimen/text_body"
+                            android:textColor="@color/text_dark" />
+                        <TextView
+                            android:id="@+id/reportsSummaryRidesCumulative"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="@dimen/text_body"
+                            android:textColor="@color/text_medium"
+                            android:layout_marginEnd="@dimen/spacing_md" />
+                        <TextView
+                            android:id="@+id/reportsSummaryRidesAvg"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="@dimen/text_body"
+                            android:textColor="@color/text_medium" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/border" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="8dp"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/reports_distance_km"
+                            android:textSize="@dimen/text_body"
+                            android:textColor="@color/text_dark" />
+                        <TextView
+                            android:id="@+id/reportsSummaryDistanceCumulative"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="@dimen/text_body"
+                            android:textColor="@color/text_medium"
+                            android:layout_marginEnd="@dimen/spacing_md" />
+                        <TextView
+                            android:id="@+id/reportsSummaryDistanceAvg"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="@dimen/text_body"
+                            android:textColor="@color/text_medium" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/border" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="8dp"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/reportsSummaryMoneyLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/reports_money_spent"
+                            android:textSize="@dimen/text_body"
+                            android:textColor="@color/text_dark" />
+                        <TextView
+                            android:id="@+id/reportsSummaryMoneyCumulative"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="@dimen/text_body"
+                            android:textColor="@color/text_medium"
+                            android:layout_marginEnd="@dimen/spacing_md" />
+                        <TextView
+                            android:id="@+id/reportsSummaryMoneyAvg"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="@dimen/text_body"
+                            android:textColor="@color/text_medium" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Chart: Rides per day -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/reports_chart_rides_per_day"
+                android:textSize="@dimen/text_lg"
+                android:textColor="@color/text_dark"
+                android:textStyle="bold"
+                android:layout_marginBottom="@dimen/spacing_sm" />
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_lg"
+                app:cardCornerRadius="@dimen/radius_md"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_md">
+                    <com.github.mikephil.charting.charts.BarChart
+                        android:id="@+id/reportsChartRides"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Chart: Distance (km) per day -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/reports_chart_km_per_day"
+                android:textSize="@dimen/text_lg"
+                android:textColor="@color/text_dark"
+                android:textStyle="bold"
+                android:layout_marginBottom="@dimen/spacing_sm" />
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_lg"
+                app:cardCornerRadius="@dimen/radius_md"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_md">
+                    <com.github.mikephil.charting.charts.BarChart
+                        android:id="@+id/reportsChartDistance"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Chart: Money per day -->
+            <TextView
+                android:id="@+id/reportsChartMoneyTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/reports_chart_money_per_day"
+                android:textSize="@dimen/text_lg"
+                android:textColor="@color/text_dark"
+                android:textStyle="bold"
+                android:layout_marginBottom="@dimen/spacing_sm" />
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_md"
+                app:cardCornerRadius="@dimen/radius_md"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_md">
+                    <com.github.mikephil.charting.charts.BarChart
+                        android:id="@+id/reportsChartCost"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
