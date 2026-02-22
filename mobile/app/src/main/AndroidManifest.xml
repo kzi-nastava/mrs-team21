@@ -77,6 +77,11 @@
             android:exported="false"
             android:label="@string/admin_users_title" />
 
+        <activity
+            android:name="com.drumigo.mobile.ui.admin.AdminVehicleTypePricingActivity"
+            android:exported="false"
+            android:label="@string/admin_pricing_title" />
+
     </application>
 
 </manifest>

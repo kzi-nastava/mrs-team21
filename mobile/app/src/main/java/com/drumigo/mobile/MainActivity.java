@@ -345,6 +345,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             setDrawerItemState(menu, R.id.nav_register_driver, true, false);
             setDrawerItemState(menu, R.id.nav_drivers, false, false);
             setDrawerItemState(menu, R.id.nav_passengers, true, true);
+            setDrawerItemState(menu, R.id.nav_ride_pricing, true, true);
             setDrawerItemState(menu, R.id.nav_reports, true, false);
             setDrawerItemState(menu, R.id.nav_all_notifications, true, false);
             setDrawerItemState(menu, R.id.nav_profile, true, true);
@@ -394,6 +395,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             R.id.nav_register_driver,
             R.id.nav_drivers,
             R.id.nav_passengers,
+            R.id.nav_ride_pricing,
             R.id.nav_reports,
             R.id.nav_all_notifications,
             R.id.nav_profile,
@@ -542,6 +544,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if (itemId == R.id.nav_passengers) {
             if (isUserAuthenticated() && ROLE_ADMIN.equals(getCurrentRoleNormalized())) {
                 Intent intent = new Intent(this, com.drumigo.mobile.ui.admin.AdminUserManagementActivity.class);
+                startActivity(intent);
+            }
+        } else if (itemId == R.id.nav_ride_pricing) {
+            if (isUserAuthenticated() && ROLE_ADMIN.equals(getCurrentRoleNormalized())) {
+                Intent intent = new Intent(this, com.drumigo.mobile.ui.admin.AdminVehicleTypePricingActivity.class);
                 startActivity(intent);
             }
         } else if (itemId == R.id.nav_support) {

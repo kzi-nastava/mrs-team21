@@ -68,6 +68,11 @@
             android:title="@string/nav_passengers" />
 
         <item
+            android:id="@+id/nav_ride_pricing"
+            android:icon="@drawable/ic_dollar_white"
+            android:title="@string/nav_ride_pricing" />
+
+        <item
             android:id="@+id/nav_reports"
             android:icon="@drawable/ic_clock_white"
             android:title="@string/nav_reports" />

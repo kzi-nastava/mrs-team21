@@ -110,6 +110,7 @@
     <string name="nav_register_driver">Register Driver</string>
     <string name="nav_drivers">Drivers</string>
     <string name="nav_passengers">Passengers</string>
+    <string name="nav_ride_pricing">Ride Pricing</string>
     <string name="nav_reports">Reports</string>
     <string name="nav_all_notifications">All Notifications</string>
     <string name="nav_not_implemented">This page is not implemented yet</string>
@@ -133,6 +134,17 @@
     <string name="admin_users_block_failed">Failed to block user.</string>
     <string name="admin_users_unblock_success">User unblocked.</string>
     <string name="admin_users_unblock_failed">Failed to unblock user.</string>
+    <string name="admin_pricing_title">Ride pricing</string>
+    <string name="admin_pricing_subtitle">Set start price and price per km for each vehicle type. Amounts are in RSD.</string>
+    <string name="admin_pricing_start_price">Start price (RSD)</string>
+    <string name="admin_pricing_per_km">Per km (RSD)</string>
+    <string name="admin_pricing_save">Save</string>
+    <string name="admin_pricing_saving">Saving…</string>
+    <string name="admin_pricing_loading">Loading vehicle types…</string>
+    <string name="admin_pricing_empty">No vehicle types found.</string>
+    <string name="admin_pricing_load_failed">Failed to load vehicle type pricing.</string>
+    <string name="admin_pricing_save_success">Pricing for %1$s updated.</string>
+    <string name="admin_pricing_save_failed">Failed to update pricing.</string>
     <string name="support_subtitle">Chat with our admin support team.</string>
     <string name="support_empty">No messages yet. Start the conversation with support.</string>
     <string name="support_message_hint">Type your message for support…</string>
