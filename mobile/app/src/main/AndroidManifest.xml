@@ -113,6 +113,21 @@
             android:exported="false"
             android:label="@string/admin_users_title" />
 
+        <activity
+            android:name="com.drumigo.mobile.ui.admin.AdminVehicleTypePricingActivity"
+            android:exported="false"
+            android:label="@string/admin_pricing_title" />
+
+        <activity
+            android:name="com.drumigo.mobile.ui.admin.AdminNotificationsActivity"
+            android:exported="false"
+            android:label="@string/admin_notifications_title" />
+
+        <activity
+            android:name="com.drumigo.mobile.ui.admin.AdminPanicNotificationsActivity"
+            android:exported="false"
+            android:label="@string/nav_panic_notifications" />
+
     </application>
 
 </manifest>

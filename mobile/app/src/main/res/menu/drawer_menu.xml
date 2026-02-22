@@ -33,6 +33,11 @@
             android:title="@string/nav_ride_history" />
 
         <item
+            android:id="@+id/nav_notifications"
+            android:icon="@drawable/ic_bell"
+            android:title="@string/nav_notifications" />
+
+        <item
             android:id="@+id/nav_dashboard"
             android:icon="@drawable/ic_menu_dark"
             android:title="@string/nav_dashboard" />
@@ -66,6 +71,11 @@
             android:id="@+id/nav_passengers"
             android:icon="@drawable/ic_person"
             android:title="@string/nav_passengers" />
+
+        <item
+            android:id="@+id/nav_ride_pricing"
+            android:icon="@drawable/ic_dollar_white"
+            android:title="@string/nav_ride_pricing" />
 
         <item
             android:id="@+id/nav_reports"

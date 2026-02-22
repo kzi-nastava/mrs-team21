@@ -57,7 +57,9 @@ import com.drumigo.mobile.data.model.NotificationResponse;
 import com.drumigo.mobile.data.model.history.PageResponse;
 import com.drumigo.mobile.data.model.ride.ActiveRideIdResponse;
 import com.drumigo.mobile.session.SessionManager;
+import com.drumigo.mobile.ui.notifications.NotificationsFragment;
 import com.drumigo.mobile.ui.ride.RideTrackingConfig;
+import com.drumigo.mobile.util.NotificationTypeLabels;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
@@ -81,6 +83,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private static final String ADMIN_NOTIFICATION_SORT = "createdAt,desc";
     private static final String PANIC_NOTIFICATION_TYPE = "PANIC_ALERT";
     private static final String PANIC_NOTIFICATION_CHANNEL_ID = "panic_alerts";
+    private static final String USER_NOTIFICATION_CHANNEL_ID = "user_notifications";
+    private static final long MY_NOTIFICATION_POLLING_INTERVAL_MS = 6_000L;
+    private static final int MY_NOTIFICATION_PAGE_SIZE = 20;
 
     private ActivityMainBinding binding;
     private NavController navController;
@@ -96,6 +101,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private SessionManager sessionManager;
     private FusedLocationProviderClient fusedLocationClient;
     private long lastSeenAdminPanicNotificationId = -1L;
+    private long lastSeenUserNotificationId = -1L;
     private final Handler ridePollingHandler = new Handler(Looper.getMainLooper());
     private final Runnable ridePollingRunnable = new Runnable() {
         @Override
@@ -118,6 +124,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         public void run() {
             fetchAdminNotificationsOnce();
             adminNotificationPollingHandler.postDelayed(this, ADMIN_NOTIFICATION_POLLING_INTERVAL_MS);
+        }
+    };
+    private final Handler myNotificationPollingHandler = new Handler(Looper.getMainLooper());
+    private final Runnable myNotificationPollingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            fetchMyNotificationsOnce();
+            myNotificationPollingHandler.postDelayed(this, MY_NOTIFICATION_POLLING_INTERVAL_MS);
         }
     };
     private final ActivityResultLauncher<String[]> locationPermissionLauncher =
@@ -222,12 +236,24 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         enforceAuthenticationForProtectedDestination();
         startDriverLocationPingsIfNeeded();
         startAdminPanicNotificationPollingIfNeeded();
+        startMyNotificationPollingIfNeeded();
+        openNotificationsIfRequested();
+    }
+
+    private void openNotificationsIfRequested() {
+        if (navController == null || getIntent() == null) return;
+        if (!getIntent().getBooleanExtra("open_notifications", false)) return;
+        getIntent().removeExtra("open_notifications");
+        NavDestination current = navController.getCurrentDestination();
+        if (current != null && current.getId() == R.id.notificationsFragment) return;
+        navController.navigate(R.id.notificationsFragment);
     }
 
     @Override
     protected void onStop() {
         stopDriverLocationPings();
         stopAdminPanicNotificationPolling();
+        stopMyNotificationPolling();
         super.onStop();
     }
 
@@ -373,6 +399,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (ROLE_DRIVER.equals(role)) {
             setDrawerItemState(menu, R.id.nav_ride_tracking, true, true);
             setDrawerItemState(menu, R.id.nav_ride_history, true, true);
+            setDrawerItemState(menu, R.id.nav_notifications, true, true);
             setDrawerItemState(menu, R.id.nav_profile, true, true);
             setDrawerItemState(menu, R.id.nav_support, true, true);
             setDrawerItemState(menu, R.id.nav_logout, true, true);
@@ -384,13 +411,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             setDrawerItemState(menu, R.id.nav_dashboard, true, false);
             setDrawerItemState(menu, R.id.nav_active_rides_admin, true, false);
             setDrawerItemState(menu, R.id.nav_ride_history, true, true);
-            setDrawerItemState(menu, R.id.nav_panic_notifications, true, false);
+            setDrawerItemState(menu, R.id.nav_panic_notifications, true, true);
             setDrawerItemState(menu, R.id.nav_live_support, true, true);
             setDrawerItemState(menu, R.id.nav_register_driver, true, true);
             setDrawerItemState(menu, R.id.nav_drivers, false, false);
             setDrawerItemState(menu, R.id.nav_passengers, true, true);
+            setDrawerItemState(menu, R.id.nav_ride_pricing, true, true);
             setDrawerItemState(menu, R.id.nav_reports, true, false);
-            setDrawerItemState(menu, R.id.nav_all_notifications, true, false);
+            setDrawerItemState(menu, R.id.nav_all_notifications, true, true);
             setDrawerItemState(menu, R.id.nav_profile, true, true);
             setDrawerItemState(menu, R.id.nav_logout, true, true);
             return;
@@ -400,6 +428,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setDrawerItemState(menu, R.id.nav_order_ride, true, true);
         setDrawerItemState(menu, R.id.nav_ride_tracking, true, true);
         setDrawerItemState(menu, R.id.nav_ride_history, true, true);
+        setDrawerItemState(menu, R.id.nav_notifications, true, true);
         setDrawerItemState(menu, R.id.nav_profile, true, true);
         setDrawerItemState(menu, R.id.nav_support, true, true);
         setDrawerItemState(menu, R.id.nav_logout, true, true);
@@ -431,6 +460,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             R.id.nav_order_ride,
             R.id.nav_ride_tracking,
             R.id.nav_ride_history,
+            R.id.nav_notifications,
             R.id.nav_dashboard,
             R.id.nav_active_rides_admin,
             R.id.nav_panic_notifications,
@@ -438,6 +468,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             R.id.nav_register_driver,
             R.id.nav_drivers,
             R.id.nav_passengers,
+            R.id.nav_ride_pricing,
             R.id.nav_reports,
             R.id.nav_all_notifications,
             R.id.nav_profile,
@@ -478,6 +509,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             menuItemId = R.id.nav_ride_tracking;
         } else if (destinationId == R.id.supportFragment) {
             menuItemId = R.id.nav_support;
+        } else if (destinationId == R.id.notificationsFragment) {
+            menuItemId = R.id.nav_notifications;
         } else if (destinationId == R.id.adminSupportConversationsFragment
                 || destinationId == R.id.adminSupportChatFragment) {
             menuItemId = ROLE_ADMIN.equals(getCurrentRoleNormalized()) ? R.id.nav_live_support : R.id.nav_support;
@@ -517,6 +550,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if (destinationId == R.id.supportFragment) {
             if (getSupportActionBar() != null) getSupportActionBar().setDisplayShowTitleEnabled(true);
             toolbar.setTitle(R.string.nav_support);
+        } else if (destinationId == R.id.notificationsFragment) {
+            if (getSupportActionBar() != null) getSupportActionBar().setDisplayShowTitleEnabled(true);
+            toolbar.setTitle(R.string.notifications_title);
         } else if (destinationId == R.id.adminSupportConversationsFragment
                 || destinationId == R.id.adminSupportChatFragment) {
             if (getSupportActionBar() != null) getSupportActionBar().setDisplayShowTitleEnabled(true);
@@ -593,6 +629,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 Intent intent = new Intent(this, com.drumigo.mobile.ui.admin.AdminUserManagementActivity.class);
                 startActivity(intent);
             }
+        } else if (itemId == R.id.nav_ride_pricing) {
+            if (isUserAuthenticated() && ROLE_ADMIN.equals(getCurrentRoleNormalized())) {
+                Intent intent = new Intent(this, com.drumigo.mobile.ui.admin.AdminVehicleTypePricingActivity.class);
+                startActivity(intent);
+            }
+        } else if (itemId == R.id.nav_notifications) {
+            if (isUserAuthenticated()) {
+                navController.navigate(R.id.notificationsFragment);
+            }
         } else if (itemId == R.id.nav_support) {
             if (isUserAuthenticated()) {
                 navController.navigate(R.id.supportFragment);
@@ -604,6 +649,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if (itemId == R.id.nav_register_driver) {
             if (isUserAuthenticated()) {
                 navController.navigate(R.id.registerDriverFragment);
+            }
+        } else if (itemId == R.id.nav_all_notifications) {
+            if (isUserAuthenticated() && ROLE_ADMIN.equals(getCurrentRoleNormalized())) {
+                startActivity(new Intent(this, com.drumigo.mobile.ui.admin.AdminNotificationsActivity.class));
+            }
+        } else if (itemId == R.id.nav_panic_notifications) {
+            if (isUserAuthenticated() && ROLE_ADMIN.equals(getCurrentRoleNormalized())) {
+                startActivity(new Intent(this, com.drumigo.mobile.ui.admin.AdminPanicNotificationsActivity.class));
             }
         } else {
             android.widget.Toast.makeText(
@@ -951,12 +1004,132 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
     }
 
+    private void startMyNotificationPollingIfNeeded() {
+        String role = getCurrentRoleNormalized();
+        if (!ROLE_PASSENGER.equals(role) && !ROLE_DRIVER.equals(role)) {
+            stopMyNotificationPolling();
+            return;
+        }
+        ensureUserNotificationChannel();
+        if (!hasNotificationPermission()) {
+            requestNotificationPermissionIfNeeded();
+            return;
+        }
+        myNotificationPollingHandler.removeCallbacks(myNotificationPollingRunnable);
+        myNotificationPollingHandler.post(myNotificationPollingRunnable);
+    }
+
+    private void stopMyNotificationPolling() {
+        myNotificationPollingHandler.removeCallbacks(myNotificationPollingRunnable);
+    }
+
+    private void fetchMyNotificationsOnce() {
+        if (!isUserAuthenticated() || notificationApiService == null || sessionManager == null) {
+            return;
+        }
+        long userId = sessionManager.getUserId();
+        if (userId <= 0L) return;
+
+        notificationApiService.getUserNotifications(
+            userId,
+            0,
+            MY_NOTIFICATION_PAGE_SIZE,
+            "createdAt,desc"
+        ).enqueue(new Callback<PageResponse<NotificationResponse>>() {
+            @Override
+            public void onResponse(
+                @NonNull Call<PageResponse<NotificationResponse>> call,
+                @NonNull Response<PageResponse<NotificationResponse>> response
+            ) {
+                if (!response.isSuccessful() || response.body() == null || response.body().content == null) {
+                    return;
+                }
+                List<NotificationResponse> notifications = response.body().content;
+                long maxId = lastSeenUserNotificationId;
+                for (NotificationResponse item : notifications) {
+                    if (item != null && item.id != null) {
+                        maxId = Math.max(maxId, item.id);
+                    }
+                }
+                if (lastSeenUserNotificationId < 0L) {
+                    lastSeenUserNotificationId = Math.max(maxId, 0L);
+                    return;
+                }
+                long previousSeen = lastSeenUserNotificationId;
+                for (int i = notifications.size() - 1; i >= 0; i--) {
+                    NotificationResponse item = notifications.get(i);
+                    if (item == null || item.id == null) continue;
+                    if (item.id > previousSeen) {
+                        showUserSystemNotification(item);
+                    }
+                }
+                lastSeenUserNotificationId = Math.max(lastSeenUserNotificationId, maxId);
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<PageResponse<NotificationResponse>> call, @NonNull Throwable t) {
+                Log.w(TAG, "Failed to fetch my notifications.", t);
+            }
+        });
+    }
+
+    private void showUserSystemNotification(@NonNull NotificationResponse notification) {
+        if (!hasNotificationPermission()) return;
+        String title = notification.type != null
+            ? NotificationTypeLabels.getLabel(notification.type)
+            : getString(R.string.notifications_title);
+        String message = notification.message != null && !notification.message.trim().isEmpty()
+            ? notification.message.trim()
+            : title;
+
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.putExtra("open_notifications", true);
+        PendingIntent contentIntent = PendingIntent.getActivity(
+            this,
+            notification.id == null ? 0 : notification.id.intValue(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, USER_NOTIFICATION_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_bell)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .setContentIntent(contentIntent);
+
+        NotificationManagerCompat.from(this).notify(
+            notification.id == null ? (int) System.currentTimeMillis() : notification.id.intValue(),
+            builder.build()
+        );
+    }
+
+    private void ensureUserNotificationChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        if (manager == null || manager.getNotificationChannel(USER_NOTIFICATION_CHANNEL_ID) != null) {
+            return;
+        }
+        NotificationChannel channel = new NotificationChannel(
+            USER_NOTIFICATION_CHANNEL_ID,
+            getString(R.string.user_notification_channel_name),
+            NotificationManager.IMPORTANCE_DEFAULT
+        );
+        channel.setDescription(getString(R.string.user_notification_channel_description));
+        manager.createNotificationChannel(channel);
+    }
+
     private void clearAuthState() {
         if (sessionManager != null) {
             sessionManager.clearSession();
         }
         stopAdminPanicNotificationPolling();
+        stopMyNotificationPolling();
         lastSeenAdminPanicNotificationId = -1L;
+        lastSeenUserNotificationId = -1L;
         updateDrawerMenuForCurrentUser();
         updateDrawerAvailabilityForCurrentUser();
         updateToolbarAuthActions(getCurrentDestinationId());
