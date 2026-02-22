@@ -356,7 +356,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setDrawerItemState(menu, R.id.nav_order_ride, true, true);
         setDrawerItemState(menu, R.id.nav_ride_tracking, true, true);
         setDrawerItemState(menu, R.id.nav_ride_history, true, true);
-        setDrawerItemState(menu, R.id.nav_favorite_routes, true, false);
         setDrawerItemState(menu, R.id.nav_profile, true, true);
         setDrawerItemState(menu, R.id.nav_support, true, false);
         setDrawerItemState(menu, R.id.nav_logout, true, true);
@@ -388,7 +387,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             R.id.nav_order_ride,
             R.id.nav_ride_tracking,
             R.id.nav_ride_history,
-            R.id.nav_favorite_routes,
             R.id.nav_dashboard,
             R.id.nav_active_rides_admin,
             R.id.nav_panic_notifications,
@@ -509,7 +507,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (itemId == R.id.nav_home) {
             navController.navigate(R.id.landingFragment);
         } else if (itemId == R.id.nav_order_ride) {
-            navController.navigate(R.id.activeVehiclesMapFragment);
+            navController.navigate(R.id.landingFragment);
         } else if (itemId == R.id.nav_login) {
             navController.navigate(R.id.loginFragment);
         } else if (itemId == R.id.nav_registration) {

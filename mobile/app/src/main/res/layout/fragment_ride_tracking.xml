@@ -282,6 +282,33 @@
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
+                    <TextView
+                        android:id="@+id/rideNotStartedMessage"
+                        style="@style/TextStyle.Body"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_md"
+                        android:background="@drawable/bg_estimate_note"
+                        android:padding="@dimen/spacing_md"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/checkpointsTitle"
+                        style="@style/TextStyle.Caption"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_md"
+                        android:text="@string/ride_tracking_checkpoints_title"
+                        android:visibility="gone" />
+
+                    <LinearLayout
+                        android:id="@+id/checkpointsContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_xs"
+                        android:orientation="vertical"
+                        android:visibility="gone" />
+
                     <LinearLayout
                         android:id="@+id/actionButtons"
                         android:layout_width="match_parent"
@@ -290,11 +317,29 @@
                         android:orientation="vertical">
 
                         <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnStartRide"
+                            style="@style/Widget.Drumigo.Button.Primary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/ride_tracking_start_ride"
+                            android:visibility="gone" />
+
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnStopRide"
                             style="@style/Widget.Drumigo.Button.Primary"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_sm"
                             android:text="@string/ride_tracking_stop_ride" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnEndRide"
+                            style="@style/Widget.Drumigo.Button.Primary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_sm"
+                            android:text="@string/ride_tracking_end_ride"
+                            android:visibility="gone" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnCancelRide"
@@ -331,6 +376,71 @@
                         android:padding="@dimen/spacing_md"
                         android:text="@string/ride_tracking_completed"
                         android:visibility="gone" />
+
+                    <LinearLayout
+                        android:id="@+id/nextRideCard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_md"
+                        android:background="@drawable/bg_estimate_results"
+                        android:orientation="vertical"
+                        android:padding="@dimen/spacing_md"
+                        android:visibility="gone">
+
+                        <TextView
+                            style="@style/TextStyle.Caption"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/ride_tracking_next_ride_pickup" />
+                        <TextView
+                            android:id="@+id/nextRideOrigin"
+                            style="@style/TextStyle.Body"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/text_dark" />
+
+                        <TextView
+                            style="@style/TextStyle.Caption"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_sm"
+                            android:text="@string/ride_tracking_next_ride_destination" />
+                        <TextView
+                            android:id="@+id/nextRideDestination"
+                            style="@style/TextStyle.Body"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/text_dark" />
+
+                        <TextView
+                            style="@style/TextStyle.Caption"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_sm"
+                            android:text="@string/ride_tracking_next_ride_scheduled" />
+                        <TextView
+                            android:id="@+id/nextRideScheduled"
+                            style="@style/TextStyle.Body"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/text_dark" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnOpenNextRide"
+                            style="@style/Widget.Drumigo.Button.Primary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_md"
+                            android:text="@string/ride_tracking_open_next_ride" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnViewUpcoming"
+                            style="@style/Widget.Drumigo.Button.Secondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_sm"
+                            android:text="@string/ride_tracking_view_upcoming" />
+                    </LinearLayout>
                 </LinearLayout>
             </androidx.core.widget.NestedScrollView>
         </LinearLayout>

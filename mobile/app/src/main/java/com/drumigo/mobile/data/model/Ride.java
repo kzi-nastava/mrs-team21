@@ -14,6 +14,8 @@ public class Ride {
     private boolean hasPanic;
     private long sortTimestampEpochMs;
     private double amountValue;
+    private boolean favorite;
+    private Long favoriteRouteId;
 
     public Ride(Long id, String date, String time, String origin, String destination,
                 String[] passengerInitials, int passengerCount, String status,
@@ -46,6 +48,8 @@ public class Ride {
     public boolean hasPanic() { return hasPanic; }
     public long getSortTimestampEpochMs() { return sortTimestampEpochMs; }
     public double getAmountValue() { return amountValue; }
+    public boolean isFavorite() { return favorite; }
+    public Long getFavoriteRouteId() { return favoriteRouteId; }
 
     public void setId(Long id) { this.id = id; }
     public void setDate(String date) { this.date = date; }
@@ -60,4 +64,6 @@ public class Ride {
     public void setHasPanic(boolean hasPanic) { this.hasPanic = hasPanic; }
     public void setSortTimestampEpochMs(long sortTimestampEpochMs) { this.sortTimestampEpochMs = sortTimestampEpochMs; }
     public void setAmountValue(double amountValue) { this.amountValue = amountValue; }
+    public void setFavorite(boolean favorite) { this.favorite = favorite; }
+    public void setFavoriteRouteId(Long favoriteRouteId) { this.favoriteRouteId = favoriteRouteId; }
 }

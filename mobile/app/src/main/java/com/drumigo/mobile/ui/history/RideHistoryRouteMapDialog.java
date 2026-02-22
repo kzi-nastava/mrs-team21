@@ -25,10 +25,13 @@ import androidx.lifecycle.ViewTreeLifecycleOwner;
 
 import com.drumigo.mobile.BuildConfig;
 import com.drumigo.mobile.R;
+import com.drumigo.mobile.data.api.ApiClient;
 import com.drumigo.mobile.data.api.MapboxApiClient;
 import com.drumigo.mobile.data.api.MapboxDirectionsService;
 import com.drumigo.mobile.data.api.MapboxGeocodingService;
+import com.drumigo.mobile.data.api.RideApiService;
 import com.drumigo.mobile.data.model.Ride;
+import com.drumigo.mobile.data.model.ride.RideDetailsResponse;
 import com.drumigo.mobile.data.model.mapbox.MapboxDirectionsResponse;
 import com.drumigo.mobile.data.model.mapbox.MapboxGeocodingResponse;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
@@ -52,6 +55,8 @@ import com.mapbox.maps.plugin.scalebar.ScaleBarUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import retrofit2.Call;
@@ -71,6 +76,7 @@ final class RideHistoryRouteMapDialog {
     private final Ride ride;
     private final MapboxGeocodingService geocodingService;
     private final MapboxDirectionsService directionsService;
+    private final RideApiService rideApiService;
 
     private BottomSheetDialog dialog;
     private MapView mapView;
@@ -89,6 +95,7 @@ final class RideHistoryRouteMapDialog {
         this.ride = ride;
         this.geocodingService = MapboxApiClient.getGeocodingService();
         this.directionsService = MapboxApiClient.getDirectionsService();
+        this.rideApiService = ApiClient.getRideApiService();
     }
 
     static void show(@NonNull Context context, @NonNull Ride ride) {
@@ -190,6 +197,72 @@ final class RideHistoryRouteMapDialog {
         if (dismissed) {
             return;
         }
+        Long rideId = ride.getId();
+        if (rideId != null && rideApiService != null) {
+            rideApiService.getRideDetails(rideId).enqueue(new Callback<RideDetailsResponse>() {
+                @Override
+                public void onResponse(
+                    @NonNull Call<RideDetailsResponse> call,
+                    @NonNull Response<RideDetailsResponse> response
+                ) {
+                    if (dismissed) return;
+                    if (response.isSuccessful() && response.body() != null) {
+                        RideDetailsResponse body = response.body();
+                        List<RideDetailsResponse.WaypointInfo> waypoints = getOrderedWaypoints(body);
+                        if (waypoints != null && waypoints.size() >= 2) {
+                            boolean allHaveLatLng = true;
+                            for (RideDetailsResponse.WaypointInfo wp : waypoints) {
+                                if (wp.lat == null || wp.lng == null) {
+                                    allHaveLatLng = false;
+                                    break;
+                                }
+                            }
+                            if (allHaveLatLng) {
+                                List<GeocodedLocation> points = new ArrayList<>();
+                                for (RideDetailsResponse.WaypointInfo wp : waypoints) {
+                                    String addr = wp.address != null ? wp.address : "";
+                                    points.add(new GeocodedLocation(wp.lat, wp.lng, addr));
+                                }
+                                requestRouteFromWaypoints(points);
+                                return;
+                            }
+                        }
+                    }
+                    loadRouteFallbackOriginDestination();
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<RideDetailsResponse> call, @NonNull Throwable t) {
+                    if (!dismissed) loadRouteFallbackOriginDestination();
+                }
+            });
+        } else {
+            loadRouteFallbackOriginDestination();
+        }
+    }
+
+    /**
+     * Waypoints in order: pickup -> waypoint 1 -> waypoint 2 -> ... -> destination.
+     * Uses whichever of top-level waypoints or ride.waypoints has more elements, so we never
+     * show only pickup->first waypoint when the backend sends the full list in the other field.
+     */
+    private static List<RideDetailsResponse.WaypointInfo> getOrderedWaypoints(RideDetailsResponse body) {
+        if (body == null) return null;
+        List<RideDetailsResponse.WaypointInfo> fromTop = body.waypoints != null ? new ArrayList<>(body.waypoints) : null;
+        List<RideDetailsResponse.WaypointInfo> fromRide = (body.ride != null && body.ride.waypoints != null)
+            ? new ArrayList<>(body.ride.waypoints) : null;
+        int topSize = fromTop != null ? fromTop.size() : 0;
+        int rideSize = fromRide != null ? fromRide.size() : 0;
+        List<RideDetailsResponse.WaypointInfo> list = topSize >= rideSize && topSize > 0
+            ? fromTop
+            : (rideSize > 0 ? fromRide : null);
+        if (list == null || list.isEmpty()) return null;
+        Collections.sort(list, Comparator.comparingInt(wp -> wp.order == null ? 0 : wp.order));
+        return list;
+    }
+
+    private void loadRouteFallbackOriginDestination() {
+        if (dismissed) return;
         String originAddress = trimToEmpty(ride.getOrigin());
         String destinationAddress = trimToEmpty(ride.getDestination());
         if (originAddress.isEmpty() || destinationAddress.isEmpty()) {
@@ -277,6 +350,27 @@ final class RideHistoryRouteMapDialog {
         );
     }
 
+    private void requestRouteFromWaypoints(List<GeocodedLocation> points) {
+        if (points == null || points.size() < 2) {
+            loadRouteFallbackOriginDestination();
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < points.size(); i++) {
+            if (i > 0) sb.append(";");
+            GeocodedLocation p = points.get(i);
+            sb.append(p.longitude).append(",").append(p.latitude);
+        }
+        int requestToken = ++routeRequestToken;
+        requestDirectionsWithProfileWaypoints(
+            "driving-traffic",
+            sb.toString(),
+            requestToken,
+            true,
+            points
+        );
+    }
+
     private void requestDirectionsWithProfile(
         String profile,
         String coordinates,
@@ -344,6 +438,70 @@ final class RideHistoryRouteMapDialog {
         });
     }
 
+    private void requestDirectionsWithProfileWaypoints(
+        String profile,
+        String coordinates,
+        int requestToken,
+        boolean allowRetryWithDriving,
+        List<GeocodedLocation> routePoints
+    ) {
+        if (directionsService == null) {
+            showError(context.getString(R.string.ride_history_route_map_error));
+            return;
+        }
+        directionsService.getDirections(
+            profile,
+            coordinates,
+            "geojson",
+            "full",
+            BuildConfig.MAPBOX_ACCESS_TOKEN
+        ).enqueue(new Callback<MapboxDirectionsResponse>() {
+            @Override
+            public void onResponse(
+                @NonNull Call<MapboxDirectionsResponse> call,
+                @NonNull Response<MapboxDirectionsResponse> response
+            ) {
+                if (dismissed || requestToken != routeRequestToken) {
+                    return;
+                }
+                List<List<Double>> coordinatesList = extractRouteCoordinates(response);
+                if (coordinatesList != null && coordinatesList.size() >= 2) {
+                    drawRouteWithWaypoints(coordinatesList, routePoints);
+                    return;
+                }
+                if (allowRetryWithDriving) {
+                    requestDirectionsWithProfileWaypoints(
+                        "driving",
+                        coordinates,
+                        requestToken,
+                        false,
+                        routePoints
+                    );
+                } else {
+                    showError(context.getString(R.string.ride_history_route_map_error));
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<MapboxDirectionsResponse> call, @NonNull Throwable t) {
+                if (dismissed || requestToken != routeRequestToken) {
+                    return;
+                }
+                if (allowRetryWithDriving) {
+                    requestDirectionsWithProfileWaypoints(
+                        "driving",
+                        coordinates,
+                        requestToken,
+                        false,
+                        routePoints
+                    );
+                } else {
+                    showError(context.getString(R.string.ride_history_route_map_error));
+                }
+            }
+        });
+    }
+
     @Nullable
     private List<List<Double>> extractRouteCoordinates(Response<MapboxDirectionsResponse> response) {
         if (response == null || !response.isSuccessful() || response.body() == null) {
@@ -388,6 +546,47 @@ final class RideHistoryRouteMapDialog {
         Point endPoint = Point.fromLngLat(destination.longitude, destination.latitude);
         addRouteLabel(startPoint, compactAddressLabel(origin.address), R.color.primary);
         addRouteLabel(endPoint, compactAddressLabel(destination.address), R.color.accent);
+
+        centerMapOnRoute(routePoints);
+        showMap();
+    }
+
+    private void drawRouteWithWaypoints(
+        @NonNull List<List<Double>> routeCoordinates,
+        @NonNull List<GeocodedLocation> orderedPoints
+    ) {
+        if (dismissed || mapView == null || orderedPoints.isEmpty()) {
+            return;
+        }
+        ensureAnnotationManagers();
+
+        GeocodedLocation first = orderedPoints.get(0);
+        List<Point> routePoints = buildRenderableRoutePoints(routeCoordinates, first);
+        if (routePoints.size() < 2 || polylineAnnotationManager == null || pointAnnotationManager == null) {
+            showError(context.getString(R.string.ride_history_route_map_error));
+            return;
+        }
+
+        polylineAnnotationManager.deleteAll();
+        pointAnnotationManager.deleteAll();
+
+        polylineAnnotationManager.create(new PolylineAnnotationOptions()
+            .withPoints(routePoints)
+            .withLineColor("#5B4CDB")
+            .withLineWidth(5.2));
+
+        for (int i = 0; i < orderedPoints.size(); i++) {
+            GeocodedLocation p = orderedPoints.get(i);
+            Point point = Point.fromLngLat(p.longitude, p.latitude);
+            String label = compactAddressLabel(p.address);
+            if (label.isEmpty() && orderedPoints.size() > 2) {
+                if (i == 0) label = context.getString(R.string.ride_tracking_checkpoint_pickup);
+                else if (i == orderedPoints.size() - 1) label = context.getString(R.string.ride_tracking_checkpoint_destination);
+                else label = context.getString(R.string.ride_tracking_checkpoint_waypoint_fallback, i);
+            }
+            int colorRes = (i == 0) ? R.color.primary : R.color.accent;
+            addRouteLabel(point, label.isEmpty() ? String.valueOf(i + 1) : label, colorRes);
+        }
 
         centerMapOnRoute(routePoints);
         showMap();

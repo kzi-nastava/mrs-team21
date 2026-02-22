@@ -27,6 +27,7 @@ import com.drumigo.mobile.data.api.ApiClient;
 import com.drumigo.mobile.data.api.DriverApiService;
 import com.drumigo.mobile.data.api.PassengerApiService;
 import com.drumigo.mobile.data.model.Ride;
+import com.drumigo.mobile.data.model.favorite.FavoriteRouteResponse;
 import com.drumigo.mobile.data.model.history.DriverRideHistoryItemResponse;
 import com.drumigo.mobile.data.model.history.PageResponse;
 import com.drumigo.mobile.data.model.history.PassengerRideHistoryItemResponse;
@@ -50,7 +51,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class RideHistoryActivity extends AppCompatActivity implements RideHistoryAdapter.OnRideClickListener {
+public class RideHistoryActivity extends AppCompatActivity
+    implements RideHistoryAdapter.OnRideClickListener, RideHistoryAdapter.OnFavoriteToggleListener {
 
     private static final String TAG = "RideHistoryActivity";
     private static final String ROLE_DRIVER = "DRIVER";
@@ -136,9 +138,6 @@ public class RideHistoryActivity extends AppCompatActivity implements RideHistor
 
             setupToolbar();
             initializeViews();
-            setupRecyclerView();
-            setupDatePickers();
-            setupSortControl();
 
             sessionManager = SessionManager.getInstance(this);
             if (!sessionManager.isAuthenticated()) {
@@ -146,16 +145,18 @@ public class RideHistoryActivity extends AppCompatActivity implements RideHistor
                 finish();
                 return;
             }
-
             sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
             if (sensorManager != null) {
                 accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             }
-
             currentRole = resolveCurrentRole();
             driverApiService = ApiClient.getDriverApiService();
             passengerApiService = ApiClient.getPassengerApiService();
             adminApiService = ApiClient.getAdminApiService();
+
+            setupRecyclerView();
+            setupDatePickers();
+            setupSortControl();
 
             loadRideHistory();
         } catch (Exception e) {
@@ -218,7 +219,14 @@ public class RideHistoryActivity extends AppCompatActivity implements RideHistor
     }
 
     private void setupRecyclerView() {
-        adapter = new RideHistoryAdapter(new ArrayList<>(), this, this);
+        boolean showFavorite = ROLE_PASSENGER.equals(currentRole);
+        adapter = new RideHistoryAdapter(
+            new ArrayList<>(),
+            this,
+            this,
+            showFavorite,
+            showFavorite ? this : null
+        );
         if (recyclerView != null) {
             recyclerView.setLayoutManager(new LinearLayoutManager(this));
             recyclerView.setAdapter(adapter);
@@ -628,6 +636,75 @@ public class RideHistoryActivity extends AppCompatActivity implements RideHistor
             return;
         }
         RideHistoryDetailsBottomSheet.show(this, ride);
+    }
+
+    @Override
+    public void onFavoriteToggled(Ride ride) {
+        if (ride == null || passengerApiService == null || sessionManager == null) {
+            return;
+        }
+        long passengerId = sessionManager.getUserId();
+        if (passengerId <= 0) {
+            Toast.makeText(this, R.string.favorite_error, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Long rideId = ride.getId();
+        if (rideId == null) {
+            return;
+        }
+        if (ride.isFavorite()) {
+            passengerApiService.deleteFavoriteRouteByRide(passengerId, rideId).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+                    if (response.isSuccessful()) {
+                        updateRideFavoriteState(ride.getId(), false, null);
+                        Toast.makeText(RideHistoryActivity.this, R.string.favorite_removed, Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(RideHistoryActivity.this, R.string.favorite_error, Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                    Toast.makeText(RideHistoryActivity.this, R.string.favorite_error, Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else {
+            passengerApiService.createFavoriteRouteFromRide(passengerId, rideId).enqueue(new Callback<FavoriteRouteResponse>() {
+                @Override
+                public void onResponse(
+                    @NonNull Call<FavoriteRouteResponse> call,
+                    @NonNull Response<FavoriteRouteResponse> response
+                ) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        updateRideFavoriteState(ride.getId(), true, response.body().id);
+                        Toast.makeText(RideHistoryActivity.this, R.string.favorite_added, Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(RideHistoryActivity.this, R.string.favorite_error, Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(
+                    @NonNull Call<FavoriteRouteResponse> call,
+                    @NonNull Throwable t
+                ) {
+                    Toast.makeText(RideHistoryActivity.this, R.string.favorite_error, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+    }
+
+    private void updateRideFavoriteState(Long rideId, boolean favorite, Long favoriteRouteId) {
+        for (int i = 0; i < fetchedRides.size(); i++) {
+            Ride r = fetchedRides.get(i);
+            if (r != null && rideId.equals(r.getId())) {
+                r.setFavorite(favorite);
+                r.setFavoriteRouteId(favoriteRouteId);
+                adapter.updateRides(new ArrayList<>(fetchedRides));
+                break;
+            }
+        }
     }
 
     @Override

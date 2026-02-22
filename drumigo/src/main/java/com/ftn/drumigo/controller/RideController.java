@@ -11,6 +11,7 @@ import com.ftn.drumigo.dto.ReviewResponse;
 import com.ftn.drumigo.dto.ActiveRideIdResponse;
 import com.ftn.drumigo.dto.RideCreateRequest;
 import com.ftn.drumigo.dto.RideDetailsResponse;
+import com.ftn.drumigo.dto.VehicleLocationUpdateRequest;
 import com.ftn.drumigo.dto.RideInconsistencyCreateRequest;
 import com.ftn.drumigo.dto.RideInconsistencyResponse;
 import com.ftn.drumigo.dto.RideTrackingResponse;
@@ -144,6 +145,20 @@ public class RideController {
      * Start simulated vehicle movement for this ride (demo/E2E).
      * Ride must be ACTIVE with driver and at least 2 waypoints.
      */
+    /**
+     * Sync the displayed (e.g. capped) vehicle position back to the backend so backend and client stay aligned.
+     * Allowed for the ride's driver or any passenger. Call after computing display position so next poll returns it.
+     */
+    @PutMapping("/{id}/tracking-position")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> updateTrackingPosition(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody VehicleLocationUpdateRequest request) {
+        rideService.updateTrackingPosition(id, userDetails.getUserId(), userDetails.getRole(), request);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/{id}/tracking-demo/start")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> startTrackingDemo(@PathVariable Long id) {

@@ -139,6 +139,16 @@ public class VehicleService {
         return persistLocation(vehicle, request);
     }
 
+    /**
+     * Update a vehicle's current location. Caller is responsible for authorization (e.g. ride tracking sync).
+     */
+    public Vehicle updateLocationForRide(Vehicle vehicle, VehicleLocationUpdateRequest request) {
+        if (vehicle == null) {
+            throw new ResourceNotFoundException("Vehicle is null");
+        }
+        return persistLocation(vehicle, request);
+    }
+
     private Vehicle persistLocation(Vehicle vehicle, VehicleLocationUpdateRequest request) {
         vehicle.setCurrentLat(request.lat());
         vehicle.setCurrentLng(request.lng());

@@ -22,7 +22,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -80,11 +83,24 @@ public class FavoriteRouteService {
         return favoriteRoute;
     }
     
+    /**
+     * Returns favorite routes for the passenger, at most one per source ride (by sourceRideId).
+     * Duplicates from the same starred ride are collapsed to a single entry (keeps latest by id).
+     */
     public List<FavoriteRoute> getByPassenger(Long passengerId) {
         Passenger passenger = passengerRepository.findById(passengerId)
             .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with id: " + passengerId));
-        
-        return favoriteRouteRepository.findByPassenger(passenger);
+
+        List<FavoriteRoute> all = favoriteRouteRepository.findByPassenger(passenger);
+        Map<Long, FavoriteRoute> uniqueBySourceRide = all.stream()
+            .collect(Collectors.toMap(
+                fr -> fr.getSourceRideId() != null ? fr.getSourceRideId() : -fr.getId(),
+                fr -> fr,
+                (a, b) -> a.getId() > b.getId() ? a : b
+            ));
+        return uniqueBySourceRide.values().stream()
+            .sorted(Comparator.comparing(FavoriteRoute::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+            .collect(Collectors.toList());
     }
     
     public void delete(Long favoriteRouteId) {

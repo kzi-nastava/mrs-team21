@@ -135,6 +135,16 @@
     <string name="ride_tracking_to">To</string>
     <string name="ride_tracking_from_placeholder">Start address</string>
     <string name="ride_tracking_to_placeholder">Destination address</string>
+    <string name="ride_tracking_start_ride">Start Ride</string>
+    <string name="ride_tracking_start_ride_loading">Starting…</string>
+    <string name="ride_tracking_start_success">Ride started successfully.</string>
+    <string name="ride_tracking_start_failed">Failed to start ride. Please try again.</string>
+    <string name="ride_tracking_start_accepted_only">Ride can be started only when ACCEPTED. Current status: %1$s.</string>
+    <string name="ride_tracking_end_ride">End Ride</string>
+    <string name="ride_tracking_end_ride_loading">Ending…</string>
+    <string name="ride_tracking_end_success">Ride completed.</string>
+    <string name="ride_tracking_end_failed">Failed to end ride. Please try again.</string>
+    <string name="ride_tracking_end_active_only">Ride can be ended only when ACTIVE. Current status: %1$s.</string>
     <string name="ride_tracking_stop_ride">Stop Ride</string>
     <string name="ride_tracking_cancel_ride">Cancel Ride</string>
     <string name="ride_tracking_cancel_sheet_title_driver">Cancel this ride?</string>
@@ -202,7 +212,21 @@
     <string name="ride_tracking_stop_failed_with_code">Failed to stop ride (%1$d).</string>
     <string name="ride_tracking_panic">Emergency / Panic</string>
     <string name="ride_tracking_report_issue">Report route issue</string>
+    <string name="ride_tracking_inconsistency_sheet_title">Report route issue</string>
+    <string name="ride_tracking_inconsistency_sheet_close">Close</string>
+    <string name="ride_tracking_inconsistency_hint">Describe the issue (minimum 10 characters)</string>
+    <string name="ride_tracking_inconsistency_submit">Submit report</string>
+    <string name="ride_tracking_inconsistency_submitting">Submitting…</string>
+    <string name="ride_tracking_inconsistency_success">Report submitted.</string>
+    <string name="ride_tracking_inconsistency_failed">Failed to submit report. Please try again.</string>
+    <string name="ride_tracking_inconsistency_note_too_short">Please enter at least %1$d characters.</string>
     <string name="ride_tracking_completed">Ride completed</string>
+    <string name="ride_tracking_next_ride_pickup">Next pickup</string>
+    <string name="ride_tracking_next_ride_destination">Destination</string>
+    <string name="ride_tracking_next_ride_scheduled">Scheduled</string>
+    <string name="ride_tracking_open_next_ride">Open next ride</string>
+    <string name="ride_tracking_view_upcoming">View upcoming</string>
+    <string name="ride_tracking_no_upcoming">No upcoming scheduled rides.</string>
     <string name="ride_tracking_load_failed">Unable to load ride tracking</string>
     <string name="ride_tracking_not_implemented">This action is not implemented yet</string>
     <string name="ride_tracking_open_panel">Ride details</string>
@@ -239,6 +263,13 @@
     <string name="ride_tracking_panic_already_sent">Panic alert already sent for this ride.</string>
     <string name="ride_tracking_loading_active_ride">Loading active ride...</string>
     <string name="ride_tracking_no_active_ride">No active ride found.</string>
+    <string name="ride_tracking_not_started_pending">Your ride request is pending driver assignment.</string>
+    <string name="ride_tracking_not_started_accepted">Your ride has been accepted. Waiting for the driver to start the ride.</string>
+    <string name="ride_tracking_checkpoints_title">Checkpoints</string>
+    <string name="ride_tracking_checkpoint_pickup">Pickup</string>
+    <string name="ride_tracking_checkpoint_destination">Destination</string>
+    <string name="ride_tracking_checkpoint_label">Checkpoint %1$d</string>
+    <string name="ride_tracking_checkpoint_waypoint_fallback">Waypoint %1$d</string>
 
     <!-- Registration Messages -->
     <string name="register_success">Registration successful. Please check your email.</string>
@@ -254,7 +285,7 @@
     <string name="login_error_invalid_credentials">Invalid email or password</string>
 
     <!-- Landing -->
-    <string name="landing_title">Estimate your ride</string>
+    <string name="landing_title">Order a ride</string>
     <string name="landing_pickup_hint">Pickup location</string>
     <string name="landing_destination_hint">Destination</string>
     <string name="landing_calculate_estimate">Calculate estimate</string>
@@ -267,6 +298,8 @@
     <string name="landing_vehicle_type_hint">Vehicle type</string>
     <string name="landing_estimate_summary">Route calculated</string>
     <string name="landing_signup_cta">Sign up to book</string>
+    <string name="landing_order_ride_cta">Order ride</string>
+    <string name="landing_order_ride_launcher">Order a ride</string>
     <string name="landing_cta_title">Ready to book this ride?</string>
     <string name="landing_cta_description">Create a free account to book rides, track your driver in real-time, and enjoy seamless travel.</string>
     <string name="landing_estimate_note">This is an estimate only. Actual price may vary based on traffic, route changes, and selected vehicle type.</string>
@@ -287,12 +320,54 @@
     <string name="landing_estimate_price_format">Estimated price: ~%.0f RSD</string>
     <string name="landing_estimate_distance_format">Distance: %.1f km</string>
 
+    <!-- Order ride 3-step flow -->
+    <string name="order_step_route">Route</string>
+    <string name="order_step_options">Options</string>
+    <string name="order_step_confirm">Confirm</string>
+    <string name="order_where_going">Where are you going?</string>
+    <string name="order_quick_pick_favorites">Quick pick from favorites</string>
+    <string name="order_favorite_route_hint">Choose favorite route</string>
+    <string name="order_enter_address_manually">Enter address manually</string>
+    <string name="order_add_stop">Add stop</string>
+    <string name="order_stop_hint">Stop address</string>
+    <string name="order_continue">Continue</string>
+    <string name="order_ride_options">Ride options</string>
+    <string name="order_schedule_ride">Schedule ride</string>
+    <string name="order_schedule_now">For now</string>
+    <string name="order_schedule_later">For later</string>
+    <string name="order_schedule_hours">Hours</string>
+    <string name="order_schedule_minutes">Minutes</string>
+    <string name="order_schedule_max_hint">Max 5 hours from now</string>
+    <string name="order_baby_seat">Baby seat required</string>
+    <string name="order_pet_transport">Pet transport</string>
+    <string name="order_additional_passengers">Additional passengers</string>
+    <string name="order_add_passenger">Add passenger</string>
+    <string name="order_passenger_email_hint">Passenger email</string>
+    <string name="order_confirm_title">Confirm your ride</string>
+    <string name="order_route_summary">Route summary</string>
+    <string name="order_pickup">Pickup</string>
+    <string name="order_stop">Stop</string>
+    <string name="order_dropoff">Dropoff</string>
+    <string name="order_vehicle_type">Vehicle type</string>
+    <string name="order_distance">Distance</string>
+    <string name="order_duration">Duration</string>
+    <string name="order_scheduled">Scheduled</string>
+    <string name="order_scheduled_now">Now</string>
+    <string name="order_estimated_fare">Estimated fare</string>
+    <string name="order_terms_accept">I agree to the terms and conditions</string>
+    <string name="order_request_ride">Request ride</string>
+    <string name="order_back">Back</string>
+
     <!-- Ride History -->
     <string name="ride_history_subtitle">View all your completed and cancelled rides</string>
     <string name="ride_history_sort_label">Sort by</string>
     <string name="ride_history_amount_label">Amount:</string>
     <string name="ride_history_cancellation_label">Cancellation:</string>
     <string name="ride_history_none">--</string>
+    <string name="ride_history_favorite_toggle">Add or remove from favorites</string>
+    <string name="favorite_added">Added to favorites</string>
+    <string name="favorite_removed">Removed from favorites</string>
+    <string name="favorite_error">Failed to update favorite</string>
     <string name="ride_history_not_cancelled">No cancellation</string>
     <string name="ride_history_panic_active">Panic triggered</string>
     <string name="ride_history_panic_inactive">No panic event</string>
