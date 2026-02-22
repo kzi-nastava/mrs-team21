@@ -36,7 +36,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Drumigo.Auth"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustPan">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -54,7 +54,33 @@
                     android:pathPrefix="/reset-password" />
             </intent-filter>
 
-            <!-- Custom scheme deep link -->
+            <!-- Deep link for driver activation (set password) - production -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="drumigo.com"
+                    android:pathPrefix="/activate-driver" />
+            </intent-filter>
+
+            <!-- Deep link for driver activation via ngrok (dev: backend at ngrok http 8080) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="*ngrok-free.app"
+                    android:pathPrefix="/activate-driver" />
+                <data
+                    android:scheme="https"
+                    android:host="*ngrok.io"
+                    android:pathPrefix="/activate-driver" />
+            </intent-filter>
+
+            <!-- Custom scheme deep link - reset password -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -62,6 +88,16 @@
                 <data
                     android:scheme="drumigo"
                     android:host="reset-password" />
+            </intent-filter>
+
+            <!-- Custom scheme deep link - driver activation -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="drumigo"
+                    android:host="activate-driver" />
             </intent-filter>
 
         </activity>
