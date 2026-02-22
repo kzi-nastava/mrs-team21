@@ -9,6 +9,7 @@ import com.ftn.drumigo.domain.users.Driver;
 import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.dto.RideCreateRequest;
+import com.ftn.drumigo.dto.VehicleLocationUpdateRequest;
 import com.ftn.drumigo.dto.ride.request.RideStopRequest;
 import com.ftn.drumigo.dto.ride.request.RideCancelByDriverRequest;
 import com.ftn.drumigo.event.RideFinishedEvent;
@@ -166,6 +167,39 @@ public class RideService {
         inconsistency.setNote(note);
         
         return rideInconsistencyRepository.save(inconsistency);
+    }
+
+    /**
+     * Update the ride's vehicle current location to the given position (e.g. display/capped position from client).
+     * Keeps backend in sync with what the client shows so next poll returns the same position.
+     * Allowed for the ride's driver or any passenger (ordering or linked).
+     */
+    public void updateTrackingPosition(Long rideId, Long userId, String role, VehicleLocationUpdateRequest request) {
+        Ride ride = getById(rideId);
+        if (ride.getVehicle() == null) {
+            throw new BadRequestException("Ride has no assigned vehicle");
+        }
+        boolean isDriver = ride.getDriver() != null && ride.getDriver().getId().equals(userId);
+        if (isDriver) {
+            ride.getVehicle().setCurrentLat(request.lat());
+            ride.getVehicle().setCurrentLng(request.lng());
+            vehicleRepository.save(ride.getVehicle());
+            return;
+        }
+        if ("PASSENGER".equals(role)) {
+            Passenger passenger = passengerRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with ID: " + userId));
+            boolean isOrdering = ride.getOrderingPassenger() != null && ride.getOrderingPassenger().getId().equals(passenger.getId());
+            boolean isLinked = ridePassengerRepository.findByRide(ride).stream()
+                .anyMatch(rp -> rp.getPassengerEmail().equals(passenger.getEmail()));
+            if (isOrdering || isLinked) {
+                ride.getVehicle().setCurrentLat(request.lat());
+                ride.getVehicle().setCurrentLng(request.lng());
+                vehicleRepository.save(ride.getVehicle());
+                return;
+            }
+        }
+        throw new BadRequestException("You are not authorized to update tracking position for this ride");
     }
     
     public List<RideInconsistency> getRideInconsistencies(Long rideId) {
@@ -535,7 +569,9 @@ public class RideService {
             );
             Instant availableAt = estimateDriverAvailableAt(driverAssignments, now);
             long remainingToFinishSec = estimateRemainingToFinishSec(availableAt, now);
-            boolean currentlyOccupied = remainingToFinishSec > 0;
+            // Driver is occupied if time estimate says so, or they have any ACTIVE ride (never assign a second ride to a driver who is currently on one)
+            boolean currentlyOccupied = remainingToFinishSec > 0
+                || driverAssignments.stream().anyMatch(r -> r.getStatus() == RideStatus.ACTIVE);
             Instant assignmentStart = resolveAssignmentStart(ride, availableAt, now);
             boolean reservationConflict = hasReservationConflict(driverAssignments, ride, assignmentStart, now);
 

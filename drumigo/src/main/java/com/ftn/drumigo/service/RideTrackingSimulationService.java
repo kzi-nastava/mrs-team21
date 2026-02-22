@@ -31,7 +31,8 @@ public class RideTrackingSimulationService {
     private static final int TICK_INTERVAL_MS = 3000;
     private static final double DEFAULT_SIM_DURATION_SEC = 120.0;
     private static final double MIN_METERS_PER_TICK = 5.0;
-    private static final double MAX_METERS_PER_TICK = 120.0;
+    /** Cap movement per tick so backend position never jumps more than mobile's display cap (40m); keeps backend and shown position aligned. */
+    private static final double MAX_METERS_PER_TICK = 40.0;
     private static final double EARTH_RADIUS_M = 6_371_000.0;
 
     private final RideService rideService;
@@ -115,9 +116,20 @@ public class RideTrackingSimulationService {
             return;
         }
 
+        double baseDistanceMeters = state.distanceTraveledMeters();
+        if (ride.getVehicle() != null && ride.getVehicle().getCurrentLat() != null && ride.getVehicle().getCurrentLng() != null) {
+            double fromVehicle = distanceAlongRouteFromPosition(
+                ride.getVehicle().getCurrentLat().doubleValue(),
+                ride.getVehicle().getCurrentLng().doubleValue(),
+                state.routePoints(),
+                state.cumulativeDistancesMeters()
+            );
+            baseDistanceMeters = Math.max(baseDistanceMeters, fromVehicle);
+        }
+
         double nextDistanceMeters = Math.min(
             state.totalDistanceMeters(),
-            state.distanceTraveledMeters() + state.metersPerTick()
+            baseDistanceMeters + state.metersPerTick()
         );
         RoutePoint nextPoint = resolvePointAtDistance(state.routePoints(), state.cumulativeDistancesMeters(), nextDistanceMeters);
         updateVehicleLocation(ride, BigDecimal.valueOf(nextPoint.lat()), BigDecimal.valueOf(nextPoint.lng()));
@@ -129,6 +141,46 @@ public class RideTrackingSimulationService {
         }
 
         simulatedRides.put(rideId, state.withDistanceTraveled(nextDistanceMeters));
+    }
+
+    private double distanceAlongRouteFromPosition(double lat, double lng, List<RoutePoint> points, List<Double> cumulativeDistances) {
+        if (points == null || points.size() < 2 || cumulativeDistances == null || cumulativeDistances.size() < 2) {
+            return 0.0;
+        }
+        double minDistSq = Double.POSITIVE_INFINITY;
+        double closestDistance = 0.0;
+        double refLatRad = Math.toRadians(lat);
+        double cosLat = Math.cos(refLatRad);
+        if (Math.abs(cosLat) < 1e-9) cosLat = 1e-9;
+        for (int i = 0; i < points.size() - 1; i++) {
+            RoutePoint a = points.get(i);
+            RoutePoint b = points.get(i + 1);
+            double ax = Math.toRadians(a.lng()) * EARTH_RADIUS_M * cosLat;
+            double ay = Math.toRadians(a.lat()) * EARTH_RADIUS_M;
+            double bx = Math.toRadians(b.lng()) * EARTH_RADIUS_M * cosLat;
+            double by = Math.toRadians(b.lat()) * EARTH_RADIUS_M;
+            double px = Math.toRadians(lng) * EARTH_RADIUS_M * cosLat;
+            double py = Math.toRadians(lat) * EARTH_RADIUS_M;
+            double abx = bx - ax;
+            double aby = by - ay;
+            double apx = px - ax;
+            double apy = py - ay;
+            double abLenSq = abx * abx + aby * aby;
+            double t = abLenSq <= 0 ? 0 : (apx * abx + apy * aby) / abLenSq;
+            double clampedT = Math.max(0.0, Math.min(1.0, t));
+            double projX = ax + abx * clampedT;
+            double projY = ay + aby * clampedT;
+            double dx = px - projX;
+            double dy = py - projY;
+            double distSq = dx * dx + dy * dy;
+            if (distSq < minDistSq) {
+                minDistSq = distSq;
+                double segStart = cumulativeDistances.get(i);
+                double segEnd = cumulativeDistances.get(i + 1);
+                closestDistance = segStart + (segEnd - segStart) * clampedT;
+            }
+        }
+        return closestDistance;
     }
 
     private void updateVehicleLocation(Ride ride, BigDecimal lat, BigDecimal lng) {

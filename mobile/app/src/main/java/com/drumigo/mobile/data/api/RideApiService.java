@@ -10,6 +10,7 @@ import com.drumigo.mobile.data.model.ride.RideInconsistencyCreateRequest;
 import com.drumigo.mobile.data.model.ride.RideInconsistencyResponse;
 import com.drumigo.mobile.data.model.ride.RideResponse;
 import com.drumigo.mobile.data.model.ride.RideStopRequest;
+import com.drumigo.mobile.data.model.ride.RideTrackingPositionRequest;
 import com.drumigo.mobile.data.model.ride.RideTrackingResponse;
 
 import java.util.List;
@@ -25,6 +26,9 @@ public interface RideApiService {
 
     @GET("rides/{id}")
     Call<RideTrackingResponse> getRideTracking(@Path("id") long rideId);
+
+    @PUT("rides/{id}/tracking-position")
+    Call<Void> updateTrackingPosition(@Path("id") long rideId, @Body RideTrackingPositionRequest position);
 
     @GET("rides/{id}/details")
     Call<RideDetailsResponse> getRideDetails(@Path("id") long rideId);

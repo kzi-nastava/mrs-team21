@@ -79,7 +79,12 @@ public class RideTrackingFragment extends Fragment {
     private static final double DEFAULT_LAT = 45.2500;
     private static final double DEFAULT_ZOOM = 13.5;
     private static final String MAPBOX_STYLE_URI = "mapbox://styles/mapbox/streets-v12";
-    private static final long LOCATION_POLLING_INTERVAL_MS = 2500L;
+    /**
+     * Match backend simulation tick (RideTrackingSimulationService.TICK_INTERVAL_MS = 3000) and frontend
+     * (POLL_INTERVAL_MS = 3000). Polling faster or out of sync can see multiple ticks in one response
+     * (e.g. 400m) when the app was briefly backgrounded or the main thread was busy.
+     */
+    private static final long LOCATION_POLLING_INTERVAL_MS = 3000L;
     private static final long ROUTE_REFRESH_INTERVAL_MS = 20_000L;
     private static final double WAYPOINT_REACHED_RADIUS_METERS = 70.0;
     private static final int MAPBOX_MAX_ROUTE_POINTS = 25;
@@ -88,7 +93,9 @@ public class RideTrackingFragment extends Fragment {
     private static final double MIN_FORWARD_MOVE_METERS = 8.0;
     private static final double MAX_FORWARD_MOVE_METERS = 90.0;
     private static final double DEFAULT_FORWARD_MOVE_METERS = 20.0;
-    private static final double MAX_PROJECTION_CATCHUP_METERS = 60.0;
+    private static final double MAX_PROJECTION_CATCHUP_METERS = 120.0;
+    /** Hard cap: progress along route never advances more than this in one update (prevents visible jumps). */
+    private static final double MAX_PROGRESS_ADVANCE_PER_UPDATE_METERS = 40.0;
     private static final long PANEL_SHOW_ANIMATION_MS = 240L;
     private static final long PANEL_HIDE_ANIMATION_MS = 200L;
 
@@ -100,6 +107,7 @@ public class RideTrackingFragment extends Fragment {
     private Bitmap carIcon;
     private Bitmap startIcon;
     private Bitmap destinationIcon;
+    private Bitmap waypointIcon;
 
     private RideApiService rideApiService;
     private DriverApiService driverApiService;
@@ -1247,6 +1255,7 @@ public class RideTrackingFragment extends Fragment {
         lastBackendLocation = backendLocation;
         activeRide.estimatedArrivalTimeSec = update.estimatedArrivalTimeSec;
         currentBearing = update.bearing;
+        syncDisplayPositionToBackend(displayLocation);
         // Update which waypoints we've passed: use progress along route when available, else 70m distance (frontend heuristic)
         if (renderedRoute != null && renderedRoute.size() >= 2 && routeCumulativeDistancesMeters.length >= 2) {
             updateLastPassedWaypointOrderFromRouteProgress();
@@ -1259,6 +1268,24 @@ public class RideTrackingFragment extends Fragment {
         }
         updateMapContent();
         requestRouteIfNeeded(false);
+    }
+
+    /** Sends the displayed (capped) position to the backend so it stays in sync with what we show. */
+    private void syncDisplayPositionToBackend(RoutePoint displayLocation) {
+        if (rideId == 0L || displayLocation == null || rideApiService == null) {
+            return;
+        }
+        rideApiService.updateTrackingPosition(rideId, new com.drumigo.mobile.data.model.ride.RideTrackingPositionRequest(displayLocation.lat, displayLocation.lng))
+            .enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+                    // Ignore success – backend is now in sync
+                }
+                @Override
+                public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                    // Ignore – next poll will still work
+                }
+            });
     }
 
     /**
@@ -1381,6 +1408,18 @@ public class RideTrackingFragment extends Fragment {
                 .withPoint(Point.fromLngLat(activeRide.destinationLocation.lng, activeRide.destinationLocation.lat))
                 .withIconImage(getDestinationIcon())
                 .withIconAnchor(IconAnchor.CENTER));
+        }
+
+        if (activeRide.route != null && activeRide.route.size() > 2) {
+            List<RoutePoint> sortedWaypoints = new ArrayList<>(activeRide.route);
+            Collections.sort(sortedWaypoints, Comparator.comparingInt(wp -> wp.order));
+            for (int i = 1; i < sortedWaypoints.size() - 1; i++) {
+                RoutePoint wp = sortedWaypoints.get(i);
+                pointAnnotationManager.create(new PointAnnotationOptions()
+                    .withPoint(Point.fromLngLat(wp.lng, wp.lat))
+                    .withIconImage(getWaypointIcon())
+                    .withIconAnchor(IconAnchor.CENTER));
+            }
         }
 
         if (activeRide.currentLocation != null) {
@@ -1653,12 +1692,16 @@ public class RideTrackingFragment extends Fragment {
         if (!route.isEmpty()) {
             renderedRoute = route;
             routeCumulativeDistancesMeters = buildRouteCumulativeDistances(renderedRoute);
+            double totalRouteDistance = routeCumulativeDistancesMeters.length >= 2
+                ? routeCumulativeDistancesMeters[routeCumulativeDistancesMeters.length - 1]
+                : 0.0;
             if (routeCumulativeDistancesMeters.length >= 2 && activeRide.currentLocation != null) {
-                routeProgressMeters = closestDistanceAlongRoute(
+                double projectedOnNewRoute = closestDistanceAlongRoute(
                     activeRide.currentLocation,
                     renderedRoute,
                     routeCumulativeDistancesMeters
                 );
+                routeProgressMeters = Math.min(totalRouteDistance, Math.max(routeProgressMeters, projectedOnNewRoute));
             } else {
                 routeProgressMeters = 0.0;
             }
@@ -1672,6 +1715,18 @@ public class RideTrackingFragment extends Fragment {
         }
         if (renderedRoute == null || renderedRoute.isEmpty()) {
             renderedRoute = new ArrayList<>(activeRide.route);
+        }
+        routeCumulativeDistancesMeters = buildRouteCumulativeDistances(renderedRoute);
+        double totalRouteDistance = routeCumulativeDistancesMeters.length >= 2
+            ? routeCumulativeDistancesMeters[routeCumulativeDistancesMeters.length - 1]
+            : 0.0;
+        if (routeCumulativeDistancesMeters.length >= 2 && activeRide.currentLocation != null) {
+            double projectedOnNewRoute = closestDistanceAlongRoute(
+                activeRide.currentLocation,
+                renderedRoute,
+                routeCumulativeDistancesMeters
+            );
+            routeProgressMeters = Math.min(totalRouteDistance, Math.max(routeProgressMeters, projectedOnNewRoute));
         }
         updateMapContent();
     }
@@ -1688,12 +1743,15 @@ public class RideTrackingFragment extends Fragment {
         if (routeCumulativeDistancesMeters.length != route.size()) {
             routeCumulativeDistancesMeters = buildRouteCumulativeDistances(route);
         }
+        double previousProgress = routeProgressMeters;
         double backendProjectedDistance = closestDistanceAlongRoute(
             backendLocation,
             route,
             routeCumulativeDistancesMeters
         );
-        routeProgressMeters = Math.max(routeProgressMeters, backendProjectedDistance);
+        double maxProgressFromBackend = routeProgressMeters + MAX_PROJECTION_CATCHUP_METERS;
+        double cappedBackendProjected = Math.min(backendProjectedDistance, maxProgressFromBackend);
+        routeProgressMeters = Math.max(routeProgressMeters, cappedBackendProjected);
 
         double forwardMoveMeters = DEFAULT_FORWARD_MOVE_METERS;
         if (lastBackendLocation != null) {
@@ -1709,6 +1767,7 @@ public class RideTrackingFragment extends Fragment {
         double projectedTarget = canCatchUpToProjection ? backendProjectedDistance : routeProgressMeters;
         double stepTarget = routeProgressMeters + forwardMoveMeters;
         routeProgressMeters = Math.min(totalRouteDistance, Math.max(stepTarget, projectedTarget));
+        routeProgressMeters = Math.min(routeProgressMeters, previousProgress + MAX_PROGRESS_ADVANCE_PER_UPDATE_METERS);
 
         return pointAlongRouteAtDistance(route, routeCumulativeDistancesMeters, routeProgressMeters);
     }
@@ -1856,6 +1915,13 @@ public class RideTrackingFragment extends Fragment {
             destinationIcon = createTintedMarker(R.drawable.ic_circle, R.color.success);
         }
         return destinationIcon;
+    }
+
+    private Bitmap getWaypointIcon() {
+        if (waypointIcon == null) {
+            waypointIcon = createTintedMarker(R.drawable.ic_circle, R.color.accent);
+        }
+        return waypointIcon;
     }
 
     private Bitmap createTintedMarker(int drawableResId, int colorResId) {

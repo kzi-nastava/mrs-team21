@@ -4,6 +4,8 @@ import java.util.List;
 
 public class RideDetailsResponse {
     public RideInfo ride;
+    /** Top-level waypoints (pickup -> waypoint 1 -> ... -> destination). Backend sends this; use when ride.waypoints is null/empty. */
+    public List<WaypointInfo> waypoints;
     public DriverInfo driver;
     public List<PassengerInfo> passengers;
 
