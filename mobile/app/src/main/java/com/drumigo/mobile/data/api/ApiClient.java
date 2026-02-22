@@ -52,6 +52,10 @@ public class ApiClient {
         return getRetrofit().create(NotificationApiService.class);
     }
 
+    public static PanicApiService getPanicApiService() {
+        return getRetrofit().create(PanicApiService.class);
+    }
+
     public static UserApiService getUserApiService() {
         return getRetrofit().create(UserApiService.class);
     }
