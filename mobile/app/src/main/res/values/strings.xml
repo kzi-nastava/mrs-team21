@@ -104,8 +104,6 @@
     <string name="nav_ride_history">Ride History</string>
     <string name="nav_favorite_routes">Favorite Routes</string>
     <string name="nav_support">Support</string>
-    <string name="nav_dashboard">Dashboard</string>
-    <string name="nav_active_rides_admin">Active Rides</string>
     <string name="nav_panic_notifications">Panic Notifications</string>
     <string name="nav_live_support">Live Support / Chat</string>
     <string name="nav_register_driver">Register Driver</string>
@@ -467,6 +465,7 @@
     <string name="ride_history_route_map_loading">Loading route map...</string>
     <string name="ride_history_route_map_error">Unable to load route on map</string>
     <string name="ride_history_route_map_missing_addresses">Missing pickup or destination address</string>
+    <string name="ride_history_track_ride">Track ride</string>
 
     <!-- Ride rating (passenger) -->
     <string name="ride_rating_title">Rate your ride</string>

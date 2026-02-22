@@ -87,6 +87,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private static final long MY_NOTIFICATION_POLLING_INTERVAL_MS = 6_000L;
     private static final int MY_NOTIFICATION_PAGE_SIZE = 20;
 
+    /** Intent extra: ride ID when opening ride tracking from admin ride history (view-only). */
+    public static final String EXTRA_ADMIN_TRACK_RIDE_ID = "admin_track_ride_id";
+    /** Intent extra: true when opening ride tracking in admin view-only mode. */
+    public static final String EXTRA_ADMIN_VIEW_ONLY = "admin_view_only";
+
     private ActivityMainBinding binding;
     private NavController navController;
     private DrawerLayout drawerLayout;
@@ -238,6 +243,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         startAdminPanicNotificationPollingIfNeeded();
         startMyNotificationPollingIfNeeded();
         openNotificationsIfRequested();
+        openAdminTrackRideIfRequested();
     }
 
     private void openNotificationsIfRequested() {
@@ -247,6 +253,19 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         NavDestination current = navController.getCurrentDestination();
         if (current != null && current.getId() == R.id.notificationsFragment) return;
         navController.navigate(R.id.notificationsFragment);
+    }
+
+    private void openAdminTrackRideIfRequested() {
+        if (navController == null || getIntent() == null) return;
+        if (!getIntent().hasExtra(EXTRA_ADMIN_TRACK_RIDE_ID) || !getIntent().getBooleanExtra(EXTRA_ADMIN_VIEW_ONLY, false)) return;
+        long rideId = getIntent().getLongExtra(EXTRA_ADMIN_TRACK_RIDE_ID, 0L);
+        getIntent().removeExtra(EXTRA_ADMIN_TRACK_RIDE_ID);
+        getIntent().removeExtra(EXTRA_ADMIN_VIEW_ONLY);
+        if (rideId <= 0L) return;
+        Bundle args = new Bundle();
+        args.putLong("rideId", rideId);
+        args.putBoolean("adminViewOnly", true);
+        navController.navigate(R.id.rideTrackingFragment, args);
     }
 
     @Override
@@ -407,9 +426,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
 
         if (ROLE_ADMIN.equals(role)) {
-            // Mirrors web admin navbar placeholders.
-            setDrawerItemState(menu, R.id.nav_dashboard, true, false);
-            setDrawerItemState(menu, R.id.nav_active_rides_admin, true, false);
             setDrawerItemState(menu, R.id.nav_ride_history, true, true);
             setDrawerItemState(menu, R.id.nav_panic_notifications, true, true);
             setDrawerItemState(menu, R.id.nav_live_support, true, true);
@@ -461,8 +477,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             R.id.nav_ride_tracking,
             R.id.nav_ride_history,
             R.id.nav_notifications,
-            R.id.nav_dashboard,
-            R.id.nav_active_rides_admin,
             R.id.nav_panic_notifications,
             R.id.nav_live_support,
             R.id.nav_register_driver,

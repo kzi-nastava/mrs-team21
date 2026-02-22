@@ -73,6 +73,7 @@ import retrofit2.Response;
 public class RideTrackingFragment extends Fragment {
 
     private static final String ARG_RIDE_ID = "rideId";
+    private static final String ARG_ADMIN_VIEW_ONLY = "adminViewOnly";
     private static final String ROLE_DRIVER = "DRIVER";
     private static final String ROLE_PASSENGER = "PASSENGER";
     private static final double DEFAULT_LNG = 19.8200;
@@ -123,6 +124,7 @@ public class RideTrackingFragment extends Fragment {
     private RoutePoint lastBackendLocation = null;
     private String currentRoleNormalized = "";
     private long rideId;
+    private boolean adminViewOnly = false;
     private boolean pendingActiveRideLookup = false;
     private RoutePoint previousLocation;
     private int lastPassedWaypointOrder = Integer.MIN_VALUE;
@@ -160,7 +162,8 @@ public class RideTrackingFragment extends Fragment {
         sessionManager = SessionManager.getInstance(requireContext());
         currentRoleNormalized = getCurrentRoleNormalized();
         rideId = getArguments() != null ? getArguments().getLong(ARG_RIDE_ID, 0L) : 0L;
-        if (rideId == 0L) {
+        adminViewOnly = getArguments() != null && getArguments().getBoolean(ARG_ADMIN_VIEW_ONLY, false);
+        if (rideId == 0L && !adminViewOnly) {
             if (RideTrackingConfig.USE_MOCK_UPDATES) {
                 rideId = RideTrackingConfig.MOCK_RIDE_ID;
             } else {
@@ -186,6 +189,14 @@ public class RideTrackingFragment extends Fragment {
         mapView = binding.mapView;
         setupMap();
         setupActions();
+        if (adminViewOnly) {
+            if (binding.actionButtons != null) {
+                binding.actionButtons.setVisibility(View.GONE);
+            }
+            if (binding.nextRideCard != null) {
+                binding.nextRideCard.setVisibility(View.GONE);
+            }
+        }
         setupTrackingPanel();
     }
 
@@ -964,6 +975,16 @@ public class RideTrackingFragment extends Fragment {
     }
 
     private void startTracking() {
+        if (adminViewOnly) {
+            if (rideId <= 0L) {
+                showNoActiveRideError();
+                return;
+            }
+            fetchRideTracking();
+            pollingHandler.removeCallbacks(backendPollingRunnable);
+            pollingHandler.postDelayed(backendPollingRunnable, LOCATION_POLLING_INTERVAL_MS);
+            return;
+        }
         if (pendingActiveRideLookup || rideId == 0L) {
             resolveActiveRideAndStartTracking();
             return;
@@ -1272,7 +1293,7 @@ public class RideTrackingFragment extends Fragment {
 
     /** Sends the displayed (capped) position to the backend so it stays in sync with what we show. */
     private void syncDisplayPositionToBackend(RoutePoint displayLocation) {
-        if (rideId == 0L || displayLocation == null || rideApiService == null) {
+        if (adminViewOnly || rideId == 0L || displayLocation == null || rideApiService == null) {
             return;
         }
         rideApiService.updateTrackingPosition(rideId, new com.drumigo.mobile.data.model.ride.RideTrackingPositionRequest(displayLocation.lat, displayLocation.lng))

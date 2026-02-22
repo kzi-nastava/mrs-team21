@@ -1,5 +1,6 @@
 package com.drumigo.mobile.ui.history;
 
+import android.content.Intent;
 import android.app.DatePickerDialog;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -24,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.tabs.TabLayout;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.drumigo.mobile.MainActivity;
 import com.drumigo.mobile.R;
 import com.drumigo.mobile.data.api.AdminApiService;
 import com.drumigo.mobile.data.api.ApiClient;
@@ -56,7 +58,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class RideHistoryActivity extends AppCompatActivity
-    implements RideHistoryAdapter.OnRideClickListener, RideHistoryAdapter.OnFavoriteToggleListener {
+    implements RideHistoryAdapter.OnRideClickListener, RideHistoryAdapter.OnFavoriteToggleListener,
+    RideHistoryAdapter.OnTrackRideClickListener {
 
     private static final String TAG = "RideHistoryActivity";
     private static final String ROLE_DRIVER = "DRIVER";
@@ -279,12 +282,15 @@ public class RideHistoryActivity extends AppCompatActivity
 
     private void setupRecyclerView() {
         boolean showFavorite = ROLE_PASSENGER.equals(currentRole);
+        boolean showTrackButton = ROLE_ADMIN.equals(currentRole);
         adapter = new RideHistoryAdapter(
             new ArrayList<>(),
             this,
             this,
             showFavorite,
-            showFavorite ? this : null
+            showFavorite ? this : null,
+            showTrackButton,
+            showTrackButton ? this : null
         );
         if (recyclerView != null) {
             recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -709,6 +715,18 @@ public class RideHistoryActivity extends AppCompatActivity
         boolean showRating = ROLE_PASSENGER.equals(currentRole);
         RideApiService rideApiService = showRating ? ApiClient.getRideApiService() : null;
         RideHistoryDetailsBottomSheet.show(this, ride, showRating, rideApiService);
+    }
+
+    @Override
+    public void onTrackRideClicked(Ride ride) {
+        if (ride == null || ride.getId() == null) {
+            return;
+        }
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.putExtra(MainActivity.EXTRA_ADMIN_TRACK_RIDE_ID, ride.getId().longValue());
+        intent.putExtra(MainActivity.EXTRA_ADMIN_VIEW_ONLY, true);
+        startActivity(intent);
     }
 
     @Override
