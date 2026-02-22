@@ -21,11 +21,15 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.tabs.TabLayout;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 import com.drumigo.mobile.R;
 import com.drumigo.mobile.data.api.AdminApiService;
 import com.drumigo.mobile.data.api.ApiClient;
 import com.drumigo.mobile.data.api.DriverApiService;
 import com.drumigo.mobile.data.api.PassengerApiService;
+import com.drumigo.mobile.data.api.RideApiService;
 import com.drumigo.mobile.data.model.Ride;
 import com.drumigo.mobile.data.model.favorite.FavoriteRouteResponse;
 import com.drumigo.mobile.data.model.history.DriverRideHistoryItemResponse;
@@ -72,6 +76,8 @@ public class RideHistoryActivity extends AppCompatActivity
     private TextView resultsCountText;
     private Spinner sortSpinner;
     private Button applyFilterButton;
+    private TabLayout tabLayout;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     private Calendar fromDate;
     private Calendar toDate;
@@ -154,6 +160,7 @@ public class RideHistoryActivity extends AppCompatActivity
             passengerApiService = ApiClient.getPassengerApiService();
             adminApiService = ApiClient.getAdminApiService();
 
+            setupTabs();
             setupRecyclerView();
             setupDatePickers();
             setupSortControl();
@@ -205,6 +212,8 @@ public class RideHistoryActivity extends AppCompatActivity
         resultsCountText = findViewById(R.id.resultsCountText);
         sortSpinner = findViewById(R.id.sortSpinner);
         applyFilterButton = findViewById(R.id.applyFilterButton);
+        tabLayout = findViewById(R.id.rideHistoryTabLayout);
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshRideHistory);
 
         if (fromDateText != null) {
             fromDateText.setText(dateFormat.format(fromDate.getTime()));
@@ -216,6 +225,56 @@ public class RideHistoryActivity extends AppCompatActivity
         if (applyFilterButton != null) {
             applyFilterButton.setOnClickListener(v -> loadRideHistory());
         }
+
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setOnRefreshListener(this::loadRideHistory);
+        }
+    }
+
+    private void setupTabs() {
+        if (tabLayout == null) {
+            return;
+        }
+        tabLayout.removeAllTabs();
+        tabLayout.addTab(tabLayout.newTab().setText(R.string.ride_history_tab_passenger));
+        tabLayout.addTab(tabLayout.newTab().setText(R.string.ride_history_tab_driver));
+        tabLayout.addTab(tabLayout.newTab().setText(R.string.ride_history_tab_admin));
+
+        int initialTabIndex = roleToTabIndex(currentRole);
+        TabLayout.Tab initialTab = tabLayout.getTabAt(initialTabIndex);
+        if (initialTab != null) {
+            initialTab.select();
+        }
+
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                int position = tab.getPosition();
+                currentRole = tabIndexToRole(position);
+                setupRecyclerView();
+                loadRideHistory();
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {}
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {}
+        });
+    }
+
+    private static int roleToTabIndex(String role) {
+        if (ROLE_PASSENGER.equals(role)) return 0;
+        if (ROLE_DRIVER.equals(role)) return 1;
+        if (ROLE_ADMIN.equals(role)) return 2;
+        return 1;
+    }
+
+    private static String tabIndexToRole(int index) {
+        if (index == 0) return ROLE_PASSENGER;
+        if (index == 1) return ROLE_DRIVER;
+        if (index == 2) return ROLE_ADMIN;
+        return ROLE_DRIVER;
     }
 
     private void setupRecyclerView() {
@@ -365,6 +424,7 @@ public class RideHistoryActivity extends AppCompatActivity
                     if (!response.isSuccessful() || response.body() == null || response.body().content == null) {
                         showHistoryLoadError();
                         updateHistoryResults(Collections.emptyList());
+                        stopRefresh();
                         return;
                     }
 
@@ -389,6 +449,7 @@ public class RideHistoryActivity extends AppCompatActivity
                 public void onFailure(@NonNull Call<PageResponse<DriverRideHistoryItemResponse>> call, @NonNull Throwable t) {
                     showHistoryLoadError();
                     updateHistoryResults(Collections.emptyList());
+                    stopRefresh();
                 }
             });
     }
@@ -432,6 +493,7 @@ public class RideHistoryActivity extends AppCompatActivity
                     if (!response.isSuccessful() || response.body() == null || response.body().content == null) {
                         showHistoryLoadError();
                         updateHistoryResults(Collections.emptyList());
+                        stopRefresh();
                         return;
                     }
 
@@ -456,6 +518,7 @@ public class RideHistoryActivity extends AppCompatActivity
                 public void onFailure(@NonNull Call<PageResponse<PassengerRideHistoryItemResponse>> call, @NonNull Throwable t) {
                     showHistoryLoadError();
                     updateHistoryResults(Collections.emptyList());
+                    stopRefresh();
                 }
             });
     }
@@ -490,6 +553,7 @@ public class RideHistoryActivity extends AppCompatActivity
                     if (!response.isSuccessful() || response.body() == null || response.body().content == null) {
                         showHistoryLoadError();
                         updateHistoryResults(Collections.emptyList());
+                        stopRefresh();
                         return;
                     }
 
@@ -518,12 +582,19 @@ public class RideHistoryActivity extends AppCompatActivity
             });
     }
 
+    private void stopRefresh() {
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setRefreshing(false);
+        }
+    }
+
     private void updateHistoryResults(List<Ride> rides) {
         fetchedRides.clear();
         if (rides != null) {
             fetchedRides.addAll(rides);
         }
         renderSortedResults();
+        stopRefresh();
     }
 
     private void renderSortedResults() {
@@ -635,7 +706,9 @@ public class RideHistoryActivity extends AppCompatActivity
         if (ride == null) {
             return;
         }
-        RideHistoryDetailsBottomSheet.show(this, ride);
+        boolean showRating = ROLE_PASSENGER.equals(currentRole);
+        RideApiService rideApiService = showRating ? ApiClient.getRideApiService() : null;
+        RideHistoryDetailsBottomSheet.show(this, ride, showRating, rideApiService);
     }
 
     @Override

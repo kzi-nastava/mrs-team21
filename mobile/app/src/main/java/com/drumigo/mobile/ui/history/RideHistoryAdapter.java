@@ -35,6 +35,7 @@ public class RideHistoryAdapter extends RecyclerView.Adapter<RideHistoryAdapter.
     private List<Ride> rides;
     private final Context context;
     private final OnRideClickListener onRideClickListener;
+    /** True only for Passenger tab; Driver and Admin do not show favorite button. */
     private final boolean showFavoriteButton;
     private final OnFavoriteToggleListener onFavoriteToggleListener;
 

@@ -113,6 +113,22 @@
     <string name="nav_reports">Reports</string>
     <string name="nav_all_notifications">All Notifications</string>
     <string name="nav_not_implemented">This page is not implemented yet</string>
+    <string name="support_subtitle">Chat with our admin support team.</string>
+    <string name="support_empty">No messages yet. Start the conversation with support.</string>
+    <string name="support_message_hint">Type your message for support…</string>
+    <string name="support_send">Send</string>
+    <string name="support_loading">Loading support chat…</string>
+    <string name="support_error">Failed to load or send. Please try again.</string>
+    <string name="support_admin_use_web">Admin support: view and reply to conversations in the web app.</string>
+    <string name="admin_support_subtitle">Handle incoming support conversations from drivers and passengers.</string>
+    <string name="admin_support_empty">No support conversations yet.</string>
+    <string name="admin_support_load_error">Unable to load support conversations.</string>
+    <string name="admin_support_chat_title">Chat with %1$s</string>
+    <string name="admin_support_chat_title_fallback">Support Chat</string>
+    <string name="admin_support_reply_hint">Type a support reply...</string>
+    <string name="admin_support_send_reply">Send Reply</string>
+    <string name="admin_support_load_chat_error">Unable to load selected conversation.</string>
+    <string name="admin_support_send_error">Unable to send support reply right now.</string>
     <string name="admin_panic_notification_channel_name">Panic Alerts</string>
     <string name="admin_panic_notification_channel_description">Emergency panic alerts from active rides</string>
     <string name="admin_panic_notification_title">PANIC alert</string>
@@ -359,6 +375,10 @@
     <string name="order_back">Back</string>
 
     <!-- Ride History -->
+    <string name="ride_history_tab_passenger">Passenger</string>
+    <string name="ride_history_tab_driver">Driver</string>
+    <string name="ride_history_tab_admin">Admin</string>
+    <string name="ride_history_tabs_content_description">Ride history tabs: Passenger, Driver, Admin</string>
     <string name="ride_history_subtitle">View all your completed and cancelled rides</string>
     <string name="ride_history_sort_label">Sort by</string>
     <string name="ride_history_amount_label">Amount:</string>
@@ -394,6 +414,35 @@
     <string name="ride_history_route_map_loading">Loading route map...</string>
     <string name="ride_history_route_map_error">Unable to load route on map</string>
     <string name="ride_history_route_map_missing_addresses">Missing pickup or destination address</string>
+
+    <!-- Ride rating (passenger) -->
+    <string name="ride_rating_title">Rate your ride</string>
+    <string name="ride_rating_close">Close</string>
+    <string name="ride_rating_driver_label">How was your driver?</string>
+    <string name="ride_rating_vehicle_label">How was the vehicle?</string>
+    <string name="ride_rating_comment_hint">Comments (optional)</string>
+    <string name="ride_rating_comment_placeholder">Share your experience…</string>
+    <string name="ride_rating_char_count">%1$d characters remaining</string>
+    <string name="ride_rating_skip">Skip</string>
+    <string name="ride_rating_submit">Submit rating</string>
+    <string name="ride_rating_submitting">Submitting…</string>
+    <string name="ride_rating_require_both">Please rate both driver and vehicle</string>
+    <string name="ride_rating_success">Thank you for your feedback!</string>
+    <string name="ride_rating_failed">Failed to submit review. Please try again.</string>
+    <string name="ride_rating_star">%1$d star</string>
+    <string name="ride_rating_stars">%1$d stars</string>
+
+    <!-- Ride history rating section -->
+    <string name="ride_history_rating_section_title">Ratings</string>
+    <string name="ride_history_rating_days_left">%1$d days left to rate</string>
+    <string name="ride_history_rating_day_left">Less than 1 day left to rate</string>
+    <string name="ride_history_rating_action">Rate this ride</string>
+    <string name="ride_history_rating_submitted">You\'ve rated this ride</string>
+    <string name="ride_history_rating_deadline_passed">Rating deadline has passed</string>
+    <string name="ride_history_rating_loading">Loading rating status…</string>
+    <string name="ride_history_rating_driver">Driver</string>
+    <string name="ride_history_rating_vehicle">Vehicle</string>
+    <string name="ride_history_rating_your_comment">Your comment</string>
 
     <string-array name="ride_history_sort_options">
         <item>@string/ride_history_sort_newest</item>
