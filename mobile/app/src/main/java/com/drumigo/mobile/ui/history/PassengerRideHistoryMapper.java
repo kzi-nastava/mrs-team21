@@ -54,6 +54,8 @@ public final class PassengerRideHistoryMapper {
         );
         ride.setSortTimestampEpochMs(start != null ? start.toInstant().toEpochMilli() : 0L);
         ride.setAmountValue(item.totalCost == null ? 0.0d : item.totalCost);
+        ride.setFavorite(item.isFavorite != null && item.isFavorite);
+        ride.setFavoriteRouteId(item.favoriteRouteId);
         return ride;
     }
 

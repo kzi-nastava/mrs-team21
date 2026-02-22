@@ -330,7 +330,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             setDrawerItemState(menu, R.id.nav_ride_tracking, true, true);
             setDrawerItemState(menu, R.id.nav_ride_history, true, true);
             setDrawerItemState(menu, R.id.nav_profile, true, true);
-            setDrawerItemState(menu, R.id.nav_support, true, false);
+            setDrawerItemState(menu, R.id.nav_support, true, true);
             setDrawerItemState(menu, R.id.nav_logout, true, true);
             return;
         }
@@ -341,7 +341,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             setDrawerItemState(menu, R.id.nav_active_rides_admin, true, false);
             setDrawerItemState(menu, R.id.nav_ride_history, true, true);
             setDrawerItemState(menu, R.id.nav_panic_notifications, true, false);
-            setDrawerItemState(menu, R.id.nav_live_support, true, false);
+            setDrawerItemState(menu, R.id.nav_live_support, true, true);
             setDrawerItemState(menu, R.id.nav_register_driver, true, false);
             setDrawerItemState(menu, R.id.nav_drivers, false, false);
             setDrawerItemState(menu, R.id.nav_passengers, true, true);
@@ -356,9 +356,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setDrawerItemState(menu, R.id.nav_order_ride, true, true);
         setDrawerItemState(menu, R.id.nav_ride_tracking, true, true);
         setDrawerItemState(menu, R.id.nav_ride_history, true, true);
-        setDrawerItemState(menu, R.id.nav_favorite_routes, true, false);
         setDrawerItemState(menu, R.id.nav_profile, true, true);
-        setDrawerItemState(menu, R.id.nav_support, true, false);
+        setDrawerItemState(menu, R.id.nav_support, true, true);
         setDrawerItemState(menu, R.id.nav_logout, true, true);
     }
 
@@ -388,7 +387,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             R.id.nav_order_ride,
             R.id.nav_ride_tracking,
             R.id.nav_ride_history,
-            R.id.nav_favorite_routes,
             R.id.nav_dashboard,
             R.id.nav_active_rides_admin,
             R.id.nav_panic_notifications,
@@ -434,6 +432,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             menuItemId = R.id.nav_profile;
         } else if (destinationId == R.id.rideTrackingFragment) {
             menuItemId = R.id.nav_ride_tracking;
+        } else if (destinationId == R.id.supportFragment) {
+            menuItemId = R.id.nav_support;
+        } else if (destinationId == R.id.adminSupportConversationsFragment
+                || destinationId == R.id.adminSupportChatFragment) {
+            menuItemId = ROLE_ADMIN.equals(getCurrentRoleNormalized()) ? R.id.nav_live_support : R.id.nav_support;
         } else {
             return;
         }
@@ -465,6 +468,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (destinationId == R.id.profileFragment) {
             if (getSupportActionBar() != null) getSupportActionBar().setDisplayShowTitleEnabled(true);
             toolbar.setTitle(R.string.profile_title);
+        } else if (destinationId == R.id.supportFragment) {
+            if (getSupportActionBar() != null) getSupportActionBar().setDisplayShowTitleEnabled(true);
+            toolbar.setTitle(R.string.nav_support);
+        } else if (destinationId == R.id.adminSupportConversationsFragment
+                || destinationId == R.id.adminSupportChatFragment) {
+            if (getSupportActionBar() != null) getSupportActionBar().setDisplayShowTitleEnabled(true);
+            toolbar.setTitle(R.string.nav_live_support);
         } else {
             if (getSupportActionBar() != null) getSupportActionBar().setDisplayShowTitleEnabled(false);
             toolbar.setTitle("");
@@ -509,7 +519,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (itemId == R.id.nav_home) {
             navController.navigate(R.id.landingFragment);
         } else if (itemId == R.id.nav_order_ride) {
-            navController.navigate(R.id.activeVehiclesMapFragment);
+            navController.navigate(R.id.landingFragment);
         } else if (itemId == R.id.nav_login) {
             navController.navigate(R.id.loginFragment);
         } else if (itemId == R.id.nav_registration) {

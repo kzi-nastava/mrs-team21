@@ -51,6 +51,15 @@
                     android:textSize="13sp" />
             </LinearLayout>
 
+            <ImageButton
+                android:id="@+id/favoriteStar"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/ride_history_favorite_toggle"
+                android:src="@drawable/ic_star_outline"
+                android:visibility="gone" />
+
             <LinearLayout
                 android:id="@+id/statusBadge"
                 android:layout_width="wrap_content"

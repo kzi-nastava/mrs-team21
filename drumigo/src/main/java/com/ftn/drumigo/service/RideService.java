@@ -9,6 +9,7 @@ import com.ftn.drumigo.domain.users.Driver;
 import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.users.User;
 import com.ftn.drumigo.dto.RideCreateRequest;
+import com.ftn.drumigo.dto.VehicleLocationUpdateRequest;
 import com.ftn.drumigo.dto.ride.request.RideStopRequest;
 import com.ftn.drumigo.dto.ride.request.RideCancelByDriverRequest;
 import com.ftn.drumigo.event.RideFinishedEvent;
@@ -57,7 +58,7 @@ public class RideService {
     private final MapService mapService;
     private final AssignmentNotificationService assignmentNotificationService;
     private static final String NO_ACTIVE_DRIVERS_MESSAGE = "There are currently no active drivers.";
-    private static final long TEN_MINUTES_IN_SECONDS = Duration.ofMinutes(10).getSeconds();
+    private static final String NO_AVAILABLE_DRIVERS_MESSAGE = "No drivers available. All drivers are currently busy.";
     private static final long DEFAULT_RIDE_DURATION_SECONDS = Duration.ofMinutes(15).getSeconds();
     private static final List<RideStatus> ASSIGNMENT_BLOCKING_STATUSES = List.of(RideStatus.ACTIVE, RideStatus.ACCEPTED);
 
@@ -166,6 +167,39 @@ public class RideService {
         inconsistency.setNote(note);
         
         return rideInconsistencyRepository.save(inconsistency);
+    }
+
+    /**
+     * Update the ride's vehicle current location to the given position (e.g. display/capped position from client).
+     * Keeps backend in sync with what the client shows so next poll returns the same position.
+     * Allowed for the ride's driver or any passenger (ordering or linked).
+     */
+    public void updateTrackingPosition(Long rideId, Long userId, String role, VehicleLocationUpdateRequest request) {
+        Ride ride = getById(rideId);
+        if (ride.getVehicle() == null) {
+            throw new BadRequestException("Ride has no assigned vehicle");
+        }
+        boolean isDriver = ride.getDriver() != null && ride.getDriver().getId().equals(userId);
+        if (isDriver) {
+            ride.getVehicle().setCurrentLat(request.lat());
+            ride.getVehicle().setCurrentLng(request.lng());
+            vehicleRepository.save(ride.getVehicle());
+            return;
+        }
+        if ("PASSENGER".equals(role)) {
+            Passenger passenger = passengerRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with ID: " + userId));
+            boolean isOrdering = ride.getOrderingPassenger() != null && ride.getOrderingPassenger().getId().equals(passenger.getId());
+            boolean isLinked = ridePassengerRepository.findByRide(ride).stream()
+                .anyMatch(rp -> rp.getPassengerEmail().equals(passenger.getEmail()));
+            if (isOrdering || isLinked) {
+                ride.getVehicle().setCurrentLat(request.lat());
+                ride.getVehicle().setCurrentLng(request.lng());
+                vehicleRepository.save(ride.getVehicle());
+                return;
+            }
+        }
+        throw new BadRequestException("You are not authorized to update tracking position for this ride");
     }
     
     public List<RideInconsistency> getRideInconsistencies(Long rideId) {
@@ -535,7 +569,9 @@ public class RideService {
             );
             Instant availableAt = estimateDriverAvailableAt(driverAssignments, now);
             long remainingToFinishSec = estimateRemainingToFinishSec(availableAt, now);
-            boolean currentlyOccupied = remainingToFinishSec > 0;
+            // Driver is occupied if time estimate says so, or they have any ACTIVE ride (never assign a second ride to a driver who is currently on one)
+            boolean currentlyOccupied = remainingToFinishSec > 0
+                || driverAssignments.stream().anyMatch(r -> r.getStatus() == RideStatus.ACTIVE);
             Instant assignmentStart = resolveAssignmentStart(ride, availableAt, now);
             boolean reservationConflict = hasReservationConflict(driverAssignments, ride, assignmentStart, now);
 
@@ -585,6 +621,10 @@ public class RideService {
         return DriverAssignmentResult.assigned(reservedDriver);
     }
 
+    /**
+     * Assign a driver for an immediate ride. Only drivers who are not currently on a ride
+     * (inactive / free) are considered. If none are available, returns a clear "no drivers available" message.
+     */
     private DriverAssignmentResult assignImmediateRideDriver(List<DriverAssignmentCandidate> eligibleCandidates) {
         List<DriverAssignmentCandidate> freeCandidates = eligibleCandidates.stream()
             .filter(candidate -> !candidate.currentlyOccupied())
@@ -602,33 +642,7 @@ public class RideService {
             return DriverAssignmentResult.assigned(nearestFreeDriver);
         }
 
-        if (eligibleCandidates.stream().allMatch(
-                candidate -> candidate.reservationConflict()
-                    || (candidate.currentlyOccupied() && candidate.hasFutureScheduledRide())
-        )) {
-            return DriverAssignmentResult.rejected(NO_ACTIVE_DRIVERS_MESSAGE);
-        }
-
-        List<DriverAssignmentCandidate> fallbackCandidates = eligibleCandidates.stream()
-            .filter(DriverAssignmentCandidate::currentlyOccupied)
-            .filter(candidate -> !candidate.reservationConflict())
-            .filter(candidate -> !candidate.hasFutureScheduledRide())
-            .filter(candidate -> candidate.remainingToFinishSec() <= TEN_MINUTES_IN_SECONDS)
-            .toList();
-
-        if (fallbackCandidates.isEmpty()) {
-            return DriverAssignmentResult.rejected(NO_ACTIVE_DRIVERS_MESSAGE);
-        }
-
-        Driver fallbackDriver = fallbackCandidates.stream()
-            .min(Comparator
-                .comparingLong(DriverAssignmentCandidate::remainingToFinishSec)
-                .thenComparingDouble(DriverAssignmentCandidate::pickupDistanceKm)
-                .thenComparing(candidate -> candidate.driver().getId()))
-            .orElseThrow()
-            .driver();
-
-        return DriverAssignmentResult.assigned(fallbackDriver);
+        return DriverAssignmentResult.rejected(NO_AVAILABLE_DRIVERS_MESSAGE);
     }
 
     private boolean isVehicleEligibleForRide(Ride ride, VehicleType vehicleType, Vehicle vehicle) {

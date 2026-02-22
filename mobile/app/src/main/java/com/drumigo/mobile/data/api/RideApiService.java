@@ -4,24 +4,34 @@ import com.drumigo.mobile.data.model.estimate.EstimateRequest;
 import com.drumigo.mobile.data.model.estimate.EstimateResponse;
 import com.drumigo.mobile.data.model.ride.ActiveRideIdResponse;
 import com.drumigo.mobile.data.model.ride.RideCancelByDriverRequest;
+import com.drumigo.mobile.data.model.ride.RideCreateRequest;
 import com.drumigo.mobile.data.model.ride.RideDetailsResponse;
+import com.drumigo.mobile.data.model.ride.ReviewCreateRequest;
+import com.drumigo.mobile.data.model.ride.ReviewResponse;
+import com.drumigo.mobile.data.model.ride.RideInconsistencyCreateRequest;
+import com.drumigo.mobile.data.model.ride.RideInconsistencyResponse;
+import com.drumigo.mobile.data.model.ride.RideRatingStatusResponse;
 import com.drumigo.mobile.data.model.ride.RideResponse;
 import com.drumigo.mobile.data.model.ride.RideStopRequest;
+import com.drumigo.mobile.data.model.ride.RideTrackingPositionRequest;
 import com.drumigo.mobile.data.model.ride.RideTrackingResponse;
 
 import java.util.List;
 
 import retrofit2.Call;
-import retrofit2.http.PUT;
+import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
-import retrofit2.http.Body;
 
 public interface RideApiService {
 
     @GET("rides/{id}")
     Call<RideTrackingResponse> getRideTracking(@Path("id") long rideId);
+
+    @PUT("rides/{id}/tracking-position")
+    Call<Void> updateTrackingPosition(@Path("id") long rideId, @Body RideTrackingPositionRequest position);
 
     @GET("rides/{id}/details")
     Call<RideDetailsResponse> getRideDetails(@Path("id") long rideId);
@@ -31,6 +41,9 @@ public interface RideApiService {
 
     @GET("rides/me/active")
     Call<ActiveRideIdResponse> getMyActiveRide();
+
+    @POST("rides")
+    Call<RideResponse> createRide(@Body RideCreateRequest request);
 
     @POST("rides/estimate")
     Call<EstimateResponse> estimateRide(@Body EstimateRequest request);
@@ -46,4 +59,28 @@ public interface RideApiService {
 
     @PUT("rides/{id}/stop")
     Call<RideResponse> stopRide(@Path("id") long rideId, @Body RideStopRequest request);
+
+    @PUT("rides/{id}/start")
+    Call<RideResponse> startRide(@Path("id") long rideId);
+
+    @PUT("rides/{id}/end")
+    Call<RideResponse> endRide(@Path("id") long rideId);
+
+    @POST("rides/{id}/inconsistencies")
+    Call<RideInconsistencyResponse> reportInconsistency(
+        @Path("id") long rideId,
+        @Body RideInconsistencyCreateRequest request
+    );
+
+    @GET("rides/{id}/inconsistencies")
+    Call<List<RideInconsistencyResponse>> getInconsistencies(@Path("id") long rideId);
+
+    @GET("rides/{id}/rating-status")
+    Call<RideRatingStatusResponse> getRatingStatus(@Path("id") long rideId);
+
+    @POST("rides/{id}/reviews")
+    Call<ReviewResponse> createReview(@Path("id") long rideId, @Body ReviewCreateRequest request);
+
+    @GET("rides/{id}/reviews")
+    Call<List<ReviewResponse>> getRideReviews(@Path("id") long rideId);
 }

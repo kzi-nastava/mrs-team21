@@ -13,4 +13,6 @@ public class PassengerRideHistoryItemResponse {
     public Boolean canceled;
     public String canceledBy;
     public Boolean hasPanic;
+    public Boolean isFavorite;
+    public Long favoriteRouteId;
 }
