@@ -33,6 +33,11 @@
             android:title="@string/nav_ride_history" />
 
         <item
+            android:id="@+id/nav_notifications"
+            android:icon="@drawable/ic_bell"
+            android:title="@string/nav_notifications" />
+
+        <item
             android:id="@+id/nav_dashboard"
             android:icon="@drawable/ic_menu_dark"
             android:title="@string/nav_dashboard" />

@@ -5,11 +5,12 @@ import com.drumigo.mobile.data.model.history.PageResponse;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 /**
- * Notifications API. Use for passenger and admin (GET user notifications).
+ * Notifications API. Use for passenger, driver, and admin (GET user notifications).
  */
 public interface NotificationApiService {
 
@@ -20,4 +21,7 @@ public interface NotificationApiService {
         @Query("size") int size,
         @Query("sort") String sort
     );
+
+    @PUT("notifications/{id}/read")
+    Call<NotificationResponse> markAsRead(@Path("id") long id);
 }

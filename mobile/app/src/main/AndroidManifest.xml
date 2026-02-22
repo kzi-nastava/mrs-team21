@@ -82,6 +82,11 @@
             android:exported="false"
             android:label="@string/admin_pricing_title" />
 
+        <activity
+            android:name="com.drumigo.mobile.ui.admin.AdminNotificationsActivity"
+            android:exported="false"
+            android:label="@string/admin_notifications_title" />
+
     </application>
 
 </manifest>
