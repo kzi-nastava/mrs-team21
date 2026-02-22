@@ -5,6 +5,7 @@
     <!-- Permissions -->
     <!-- Internet permission for API calls -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Location permissions for driver location pinging -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />

@@ -1,6 +1,10 @@
 package com.drumigo.mobile.ui.history;
 
 import android.app.DatePickerDialog;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
@@ -58,6 +62,8 @@ public class RideHistoryActivity extends AppCompatActivity
     private static final int DEFAULT_PAGE = 0;
     private static final int DEFAULT_PAGE_SIZE = 100;
     private static final String DEFAULT_SORT = "requestedAt,desc";
+    private static final float SHAKE_THRESHOLD_GRAVITY = 2.3F;
+    private static final long SHAKE_SLOP_TIME_MS = 800L;
 
     private RecyclerView recyclerView;
     private RideHistoryAdapter adapter;
@@ -75,6 +81,10 @@ public class RideHistoryActivity extends AppCompatActivity
     private PassengerApiService passengerApiService;
     private AdminApiService adminApiService;
     private SessionManager sessionManager;
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
+    private long lastShakeAtMs = 0L;
+    private boolean shakeSortDescending = true;
 
     private String currentRole = ROLE_DRIVER;
     private final List<Ride> fetchedRides = new ArrayList<>();
@@ -87,6 +97,33 @@ public class RideHistoryActivity extends AppCompatActivity
         AMOUNT_ASC,
         STATUS_ASC
     }
+
+    private final SensorEventListener shakeListener = new SensorEventListener() {
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            if (event == null || event.values == null || event.values.length < 3) {
+                return;
+            }
+            float gX = event.values[0] / SensorManager.GRAVITY_EARTH;
+            float gY = event.values[1] / SensorManager.GRAVITY_EARTH;
+            float gZ = event.values[2] / SensorManager.GRAVITY_EARTH;
+            float gForce = (float) Math.sqrt(gX * gX + gY * gY + gZ * gZ);
+            if (gForce < SHAKE_THRESHOLD_GRAVITY) {
+                return;
+            }
+
+            long now = System.currentTimeMillis();
+            if (now - lastShakeAtMs < SHAKE_SLOP_TIME_MS) {
+                return;
+            }
+            lastShakeAtMs = now;
+            toggleDateSortByShake();
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,6 +145,10 @@ public class RideHistoryActivity extends AppCompatActivity
                 finish();
                 return;
             }
+            sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+            if (sensorManager != null) {
+                accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            }
             currentRole = resolveCurrentRole();
             driverApiService = ApiClient.getDriverApiService();
             passengerApiService = ApiClient.getPassengerApiService();
@@ -122,6 +163,26 @@ public class RideHistoryActivity extends AppCompatActivity
             Log.e(TAG, "Error while opening ride history", e);
             Toast.makeText(this, "Unable to open ride history", Toast.LENGTH_LONG).show();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (sensorManager != null && accelerometer != null) {
+            sensorManager.registerListener(
+                shakeListener,
+                accelerometer,
+                SensorManager.SENSOR_DELAY_UI
+            );
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        if (sensorManager != null) {
+            sensorManager.unregisterListener(shakeListener);
+        }
+        super.onPause();
     }
 
     private void setupToolbar() {
@@ -475,6 +536,20 @@ public class RideHistoryActivity extends AppCompatActivity
         if (resultsCountText != null) {
             resultsCountText.setText(getString(R.string.ride_history_results_count, sorted.size()));
         }
+    }
+
+    private void toggleDateSortByShake() {
+        shakeSortDescending = !shakeSortDescending;
+        selectedSort = shakeSortDescending ? SortOption.NEWEST_FIRST : SortOption.OLDEST_FIRST;
+        if (sortSpinner != null) {
+            sortSpinner.setSelection(shakeSortDescending ? 0 : 1);
+        }
+        renderSortedResults();
+        Toast.makeText(
+            this,
+            shakeSortDescending ? getString(R.string.ride_history_sort_newest) : getString(R.string.ride_history_sort_oldest),
+            Toast.LENGTH_SHORT
+        ).show();
     }
 
     private Comparator<Ride> buildComparator(SortOption option) {
