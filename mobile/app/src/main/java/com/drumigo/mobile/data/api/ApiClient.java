@@ -64,6 +64,10 @@ public class ApiClient {
         return getRetrofit().create(SupportApiService.class);
     }
 
+    public static ReportApiService getReportApiService() {
+        return getRetrofit().create(ReportApiService.class);
+    }
+
     private static Retrofit getRetrofit() {
         if (retrofit == null) {
             retrofit = new Retrofit.Builder()
