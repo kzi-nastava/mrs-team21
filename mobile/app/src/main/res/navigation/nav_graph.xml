@@ -92,6 +92,11 @@
         android:label="Reset Password"
         tools:layout="@layout/fragment_reset_password">
 
+        <argument
+            android:name="activationToken"
+            app:argType="string"
+            app:nullable="true" />
+
         <action
             android:id="@+id/action_reset_password_to_login"
             app:destination="@id/loginFragment"
@@ -140,5 +145,11 @@
             app:argType="string"
             android:defaultValue="" />
     </fragment>
+
+    <fragment
+        android:id="@+id/registerDriverFragment"
+        android:name="com.drumigo.mobile.ui.admin.RegisterDriverFragment"
+        android:label="@string/nav_register_driver"
+        tools:layout="@layout/fragment_register_driver" />
 
 </navigation>

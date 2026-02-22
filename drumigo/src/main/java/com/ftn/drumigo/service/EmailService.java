@@ -17,6 +17,10 @@ public class EmailService {
     @Value("${app.frontend.url}")
     private String frontendUrl;
 
+    /** Optional. If set (e.g. drumigo://activate-driver), driver activation email uses this so the link opens the mobile app. */
+    @Value("${app.driver-activation.link:}")
+    private String driverActivationLink;
+
     @Value("${spring.mail.username}")
     private String sender;
 
@@ -38,7 +42,7 @@ public class EmailService {
 
         } catch (Exception e) {
             // Email delivery must never break core business flows. Persisted domain data remains intact.
-            log.warn("Failed to send email to {}: {}", email, e.getMessage());
+            log.warn("Failed to send email to {}: {} - check SMTP config and spam folder", email, e.getMessage());
             return false;
         }
     }
@@ -62,7 +66,25 @@ public class EmailService {
 
     @Async
     public void sendDriverActivationEmail(String email, String token) {
-        String activationLink = frontendUrl + "/activate-driver/" + token;
+        log.info("Sending driver activation email to {} (link base configured: {})", email, driverActivationLink != null && !driverActivationLink.isBlank());
+        String activationLink;
+        if (driverActivationLink != null && !driverActivationLink.isBlank()) {
+            String base = driverActivationLink.trim();
+            // Strip /api so link points to backend root: /activate-driver (redirect controller), not /api/activate-driver
+            if (base.endsWith("/api")) {
+                base = base.substring(0, base.length() - 4);
+            } else if (base.endsWith("/api/")) {
+                base = base.substring(0, base.length() - 5);
+            }
+            if (base.contains("/activate-driver")) {
+                activationLink = base.endsWith("/") ? base + token : base + "/" + token;
+            } else {
+                String noTrailing = base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
+                activationLink = noTrailing + "/activate-driver/" + token;
+            }
+        } else {
+            activationLink = frontendUrl + "/activate-driver/" + token;
+        }
         String subject = "Set Your Drumigo Driver Password";
         String body = String.format(
                 "Hello,\n\n" +

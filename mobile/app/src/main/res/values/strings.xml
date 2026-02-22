@@ -80,6 +80,7 @@
     <string name="new_password_placeholder">Enter new password</string>
     <string name="confirm_new_password_placeholder">Confirm new password</string>
     <string name="reset_password">Reset password</string>
+    <string name="reset_password_success_driver">Password set. You can now sign in as a driver.</string>
     <string name="password_requirements_title">Password requirements</string>
     <string name="requirement_length">At least 6 characters</string>
     <string name="requirement_uppercase">One uppercase letter</string>
@@ -515,6 +516,34 @@
         <item>VAN</item>
     </string-array>
 
+
+    <!-- Register Driver (admin) -->
+    <string name="register_driver_step1_title">Driver information</string>
+    <string name="register_driver_step1_subtitle">Personal details</string>
+    <string name="register_driver_step2_title">Vehicle information</string>
+    <string name="register_driver_step2_subtitle">Car details &amp; features</string>
+    <string name="register_driver_continue">Continue to vehicle</string>
+    <string name="register_driver_back">Back</string>
+    <string name="register_driver_submit">Register driver</string>
+    <string name="register_driver_submitting">Registering…</string>
+    <string name="register_driver_success">Driver created. Activation email sent.</string>
+    <string name="register_driver_failed">Failed to register driver. Please try again.</string>
+    <string name="register_driver_photo_hint">A password setup link will be sent to the driver\'s email</string>
+    <string name="register_driver_activation_note">After registration, an email will be sent to the driver with a link to set their password.</string>
+    <string name="register_driver_vehicle_model">Vehicle model</string>
+    <string name="register_driver_vehicle_model_placeholder">e.g. Toyota Corolla 2020</string>
+    <string name="register_driver_vehicle_category">Vehicle category</string>
+    <string name="register_driver_vehicle_license_plate">License plate</string>
+    <string name="register_driver_vehicle_license_plate_placeholder">e.g. NS-123-AB</string>
+    <string name="register_driver_vehicle_seats">Number of passenger seats</string>
+    <string name="register_driver_vehicle_baby_seats">Baby seats</string>
+    <string name="register_driver_vehicle_pet_friendly">Pet friendly</string>
+    <string name="register_driver_register_another">Register another driver</string>
+    <string name="register_driver_upload_photo_failed">Photo upload failed. Continuing without photo.</string>
+    <string name="register_driver_validation_email">Please enter a valid email</string>
+    <string name="register_driver_validation_license">Enter a valid license plate (4–12 characters)</string>
+    <string name="register_driver_validation_seats">Seats must be between 1 and 8</string>
+    <string name="register_driver_vehicle_model_required">Vehicle model is required</string>
 
     <!-- Validation Messages -->
     <string name="error_email_required">Email is required</string>

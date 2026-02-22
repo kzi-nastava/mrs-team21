@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -16,7 +17,13 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
 import com.drumigo.mobile.R;
+import com.drumigo.mobile.data.remote.ApiClient;
+import com.drumigo.mobile.data.remote.dto.auth.request.SetPasswordRequest;
 import com.drumigo.mobile.databinding.FragmentResetPasswordBinding;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
  * ResetPasswordFragment - Handles password reset with new password.
@@ -144,9 +151,9 @@ public class ResetPasswordFragment extends Fragment {
     }
 
     private void handleResetPassword() {
-        String newPassword = binding.newPasswordInput.getText() != null ? 
+        String newPassword = binding.newPasswordInput.getText() != null ?
                 binding.newPasswordInput.getText().toString() : "";
-        String confirmPassword = binding.confirmPasswordInput.getText() != null ? 
+        String confirmPassword = binding.confirmPasswordInput.getText() != null ?
                 binding.confirmPasswordInput.getText().toString() : "";
 
         binding.newPasswordInputLayout.setError(null);
@@ -162,7 +169,46 @@ public class ResetPasswordFragment extends Fragment {
             return;
         }
 
-        // TODO KT2: Implement actual password reset
+        String activationToken = getArguments() != null ? getArguments().getString("activationToken") : null;
+        if (activationToken != null && !activationToken.isEmpty()) {
+            // Driver activation: set password via PUT /api/activation/{token}/set-password
+            SetPasswordRequest request = new SetPasswordRequest(newPassword);
+            ApiClient.getAuthApi().setDriverPassword(activationToken, request).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+                    if (!isAdded()) return;
+                    if (response.isSuccessful()) {
+                        Toast.makeText(requireContext(), R.string.reset_password_success_driver, Toast.LENGTH_SHORT).show();
+                        Navigation.findNavController(requireView()).navigate(R.id.action_reset_password_to_login);
+                    } else {
+                        String msg = getString(R.string.register_driver_failed);
+                        if (response.errorBody() != null) {
+                            try {
+                                String body = response.errorBody().string();
+                                if (body.contains("\"message\"")) {
+                                    int q = body.indexOf("\"message\"");
+                                    int c = body.indexOf(":", q);
+                                    int q1 = body.indexOf("\"", c + 1);
+                                    int q2 = body.indexOf("\"", q1 + 1);
+                                    if (q1 > 0 && q2 > q1) msg = body.substring(q1 + 1, q2);
+                                }
+                            } catch (Exception ignored) { }
+                        }
+                        Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                    if (isAdded()) {
+                        Toast.makeText(requireContext(), getString(R.string.register_driver_failed) + " " + t.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
+            return;
+        }
+
+        // Forgot-password flow: TODO when backend integration is added
         Navigation.findNavController(requireView())
                 .navigate(R.id.action_reset_password_to_login);
     }

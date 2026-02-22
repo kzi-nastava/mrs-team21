@@ -1,8 +1,10 @@
 package com.drumigo.mobile.data.api;
 
+import com.drumigo.mobile.data.model.DriverCreateRequest;
 import com.drumigo.mobile.data.model.DriverLocationUpdateRequest;
 import com.drumigo.mobile.data.model.DriverProfileChangeRequestCreateRequest;
 import com.drumigo.mobile.data.model.DriverProfileChangeRequestResponse;
+import com.drumigo.mobile.data.model.DriverResponse;
 import com.drumigo.mobile.data.model.history.DriverRideHistoryItemResponse;
 import com.drumigo.mobile.data.model.history.PageResponse;
 import com.drumigo.mobile.data.model.DriverLocationUpdateRequest;
@@ -17,6 +19,9 @@ import retrofit2.http.PUT;
 import retrofit2.http.Query;
 
 public interface DriverApiService {
+
+    @POST("drivers")
+    Call<DriverResponse> createDriver(@Body DriverCreateRequest request);
 
     @POST("drivers/{id}/profile-change-requests")
     Call<DriverProfileChangeRequestResponse> createProfileChangeRequest(

@@ -2,7 +2,9 @@ package com.drumigo.mobile.data.remote;
 
 import com.drumigo.mobile.BuildConfig;
 
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -36,9 +38,19 @@ public final class ApiClient {
     private static OkHttpClient buildClient() {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-        return new OkHttpClient.Builder()
+        OkHttpClient.Builder builder = new OkHttpClient.Builder()
                 .addInterceptor(logging)
-                .build();
+                .addInterceptor(chain -> {
+                    Request request = chain.request();
+                    HttpUrl url = request.url();
+                    if (url.host().contains("ngrok")) {
+                        request = request.newBuilder()
+                                .addHeader("ngrok-skip-browser-warning", "true")
+                                .build();
+                    }
+                    return chain.proceed(request);
+                });
+        return builder.build();
     }
 
     private static String normalizeBaseUrl(String baseUrl) {

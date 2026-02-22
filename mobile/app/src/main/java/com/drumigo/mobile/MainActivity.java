@@ -7,6 +7,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
@@ -43,6 +44,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.navigation.NavController;
 import androidx.navigation.NavDestination;
+import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.drumigo.mobile.databinding.ActivityMainBinding;
@@ -179,12 +181,48 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         sessionManager.getToken();
         updateDrawerMenuForCurrentUser();
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
+        handleDeepLink(getIntent());
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        handleDeepLink(intent);
+    }
+
+    /**
+     * Handle deep links: reset-password, activate-driver (driver set password).
+     * Navigates to the appropriate fragment with token and clears back stack.
+     */
+    private void handleDeepLink(Intent intent) {
+        if (intent == null || intent.getData() == null || navController == null) {
+            return;
+        }
+        Uri data = intent.getData();
+        String host = data.getHost();
+        List<String> pathSegments = data.getPathSegments();
+        if (pathSegments == null || pathSegments.isEmpty()) {
+            return;
+        }
+
+        // activate-driver: https://drumigo.com/activate-driver/TOKEN or drumigo://activate-driver/TOKEN
+        String token = null;
+        if (pathSegments.size() >= 2 && "activate-driver".equals(pathSegments.get(0))) {
+            token = pathSegments.get(1);  // https URL
+        } else if ("activate-driver".equals(host) && pathSegments.size() >= 1) {
+            token = pathSegments.get(0);  // drumigo://activate-driver/TOKEN
+        }
+        if (token != null && !token.isEmpty()) {
+            Bundle args = new Bundle();
+            args.putString("activationToken", token);
+            NavOptions navOptions = new NavOptions.Builder()
+                .setPopUpTo(R.id.landingFragment, true)
+                .build();
+            navController.navigate(R.id.resetPasswordFragment, args, navOptions);
+            intent.setData(null);
+        }
     }
 
     @Override
@@ -375,7 +413,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             setDrawerItemState(menu, R.id.nav_ride_history, true, true);
             setDrawerItemState(menu, R.id.nav_panic_notifications, true, true);
             setDrawerItemState(menu, R.id.nav_live_support, true, true);
-            setDrawerItemState(menu, R.id.nav_register_driver, true, false);
+            setDrawerItemState(menu, R.id.nav_register_driver, true, true);
             setDrawerItemState(menu, R.id.nav_drivers, false, false);
             setDrawerItemState(menu, R.id.nav_passengers, true, true);
             setDrawerItemState(menu, R.id.nav_ride_pricing, true, true);
@@ -476,6 +514,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if (destinationId == R.id.adminSupportConversationsFragment
                 || destinationId == R.id.adminSupportChatFragment) {
             menuItemId = ROLE_ADMIN.equals(getCurrentRoleNormalized()) ? R.id.nav_live_support : R.id.nav_support;
+        } else if (destinationId == R.id.registerDriverFragment) {
+            menuItemId = R.id.nav_register_driver;
         } else {
             return;
         }
@@ -517,6 +557,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 || destinationId == R.id.adminSupportChatFragment) {
             if (getSupportActionBar() != null) getSupportActionBar().setDisplayShowTitleEnabled(true);
             toolbar.setTitle(R.string.nav_live_support);
+        } else if (destinationId == R.id.registerDriverFragment) {
+            if (getSupportActionBar() != null) getSupportActionBar().setDisplayShowTitleEnabled(true);
+            toolbar.setTitle(R.string.nav_register_driver);
         } else {
             if (getSupportActionBar() != null) getSupportActionBar().setDisplayShowTitleEnabled(false);
             toolbar.setTitle("");
@@ -602,6 +645,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if (itemId == R.id.nav_live_support) {
             if (isUserAuthenticated()) {
                 navController.navigate(R.id.adminSupportConversationsFragment);
+            }
+        } else if (itemId == R.id.nav_register_driver) {
+            if (isUserAuthenticated()) {
+                navController.navigate(R.id.registerDriverFragment);
             }
         } else if (itemId == R.id.nav_all_notifications) {
             if (isUserAuthenticated() && ROLE_ADMIN.equals(getCurrentRoleNormalized())) {
