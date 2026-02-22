@@ -40,6 +40,7 @@ dependencyResolutionManagement {
                 create<BasicAuthentication>("basic")
             }
         }
+        maven("https://jitpack.io")
     }
 }
 

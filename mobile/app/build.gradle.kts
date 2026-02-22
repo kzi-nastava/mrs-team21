@@ -87,6 +87,9 @@ dependencies {
     // Image loading (profile picture)
     implementation("com.github.bumptech.glide:glide:4.16.0")
 
+    // Charts (reports)
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
