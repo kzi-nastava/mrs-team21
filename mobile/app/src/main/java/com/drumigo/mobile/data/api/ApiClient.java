@@ -40,6 +40,10 @@ public class ApiClient {
         return getRetrofit().create(AdminApiService.class);
     }
 
+    public static VehicleTypeApiService getVehicleTypeApiService() {
+        return getRetrofit().create(VehicleTypeApiService.class);
+    }
+
     public static ProfileApiService getProfileApiService() {
         return getRetrofit().create(ProfileApiService.class);
     }
