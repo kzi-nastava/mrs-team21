@@ -10,6 +10,8 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.android.material.button.MaterialButton;
+
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
@@ -32,20 +34,30 @@ public class RideHistoryAdapter extends RecyclerView.Adapter<RideHistoryAdapter.
         void onFavoriteToggled(Ride ride);
     }
 
+    public interface OnTrackRideClickListener {
+        void onTrackRideClicked(Ride ride);
+    }
+
     private List<Ride> rides;
     private final Context context;
     private final OnRideClickListener onRideClickListener;
     /** True only for Passenger tab; Driver and Admin do not show favorite button. */
     private final boolean showFavoriteButton;
     private final OnFavoriteToggleListener onFavoriteToggleListener;
+    /** True only for Admin tab; show "Track ride" for in-progress rides. */
+    private final boolean showTrackButton;
+    private final OnTrackRideClickListener onTrackRideClickListener;
 
     public RideHistoryAdapter(List<Ride> rides, Context context, OnRideClickListener onRideClickListener,
-                              boolean showFavoriteButton, OnFavoriteToggleListener onFavoriteToggleListener) {
+                              boolean showFavoriteButton, OnFavoriteToggleListener onFavoriteToggleListener,
+                              boolean showTrackButton, OnTrackRideClickListener onTrackRideClickListener) {
         this.rides = rides == null ? Collections.emptyList() : rides;
         this.context = context;
         this.onRideClickListener = onRideClickListener;
         this.showFavoriteButton = showFavoriteButton;
         this.onFavoriteToggleListener = onFavoriteToggleListener;
+        this.showTrackButton = showTrackButton;
+        this.onTrackRideClickListener = onTrackRideClickListener;
     }
 
     @NonNull
@@ -73,6 +85,7 @@ public class RideHistoryAdapter extends RecyclerView.Adapter<RideHistoryAdapter.
         bindStatusSection(holder, ride);
         bindBottomSummary(holder, ride);
         bindFavoriteStar(holder, ride);
+        bindTrackButton(holder, ride);
 
         holder.itemView.setOnClickListener(v -> {
             if (onRideClickListener != null) {
@@ -98,6 +111,29 @@ public class RideHistoryAdapter extends RecyclerView.Adapter<RideHistoryAdapter.
             }
             v.setClickable(true);
         });
+    }
+
+    private void bindTrackButton(RideViewHolder holder, Ride ride) {
+        boolean show = showTrackButton && isInProgress(ride) && onTrackRideClickListener != null;
+        holder.btnTrackRide.setVisibility(show ? View.VISIBLE : View.GONE);
+        if (!show) {
+            return;
+        }
+        holder.btnTrackRide.setOnClickListener(v -> {
+            v.setClickable(false);
+            if (onTrackRideClickListener != null) {
+                onTrackRideClickListener.onTrackRideClicked(ride);
+            }
+            v.setClickable(true);
+        });
+    }
+
+    private static boolean isInProgress(Ride ride) {
+        if (ride == null || ride.getStatus() == null) {
+            return false;
+        }
+        String normalized = ride.getStatus().trim().toUpperCase().replace(" ", "_");
+        return "ACTIVE".equals(normalized) || "IN_PROGRESS".equals(normalized);
     }
 
     private void bindRouteAndTime(RideViewHolder holder, Ride ride) {
@@ -178,6 +214,7 @@ public class RideHistoryAdapter extends RecyclerView.Adapter<RideHistoryAdapter.
         TextView priceText;
         View panicIndicator;
         ImageView panicIcon;
+        MaterialButton btnTrackRide;
 
         RideViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -194,6 +231,7 @@ public class RideHistoryAdapter extends RecyclerView.Adapter<RideHistoryAdapter.
             priceText = itemView.findViewById(R.id.priceText);
             panicIndicator = itemView.findViewById(R.id.panicIndicator);
             panicIcon = itemView.findViewById(R.id.panicIcon);
+            btnTrackRide = itemView.findViewById(R.id.btnTrackRide);
         }
     }
 }

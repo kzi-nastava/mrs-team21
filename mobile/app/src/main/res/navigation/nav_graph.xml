@@ -27,6 +27,10 @@
             android:name="rideId"
             app:argType="long"
             android:defaultValue="0L" />
+        <argument
+            android:name="adminViewOnly"
+            app:argType="boolean"
+            android:defaultValue="false" />
     </fragment>
 
     <fragment

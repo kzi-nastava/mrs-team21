@@ -38,16 +38,6 @@
             android:title="@string/nav_notifications" />
 
         <item
-            android:id="@+id/nav_dashboard"
-            android:icon="@drawable/ic_menu_dark"
-            android:title="@string/nav_dashboard" />
-
-        <item
-            android:id="@+id/nav_active_rides_admin"
-            android:icon="@drawable/ic_car"
-            android:title="@string/nav_active_rides_admin" />
-
-        <item
             android:id="@+id/nav_panic_notifications"
             android:icon="@drawable/ic_warning"
             android:title="@string/nav_panic_notifications" />
