@@ -5,6 +5,8 @@ import { CommonModule } from '@angular/common';
 import { PersonalInfoFormComponent } from '../../../shared/components/personal-info-form/personal-info-form.component';
 import { ProfilePhotoUploadComponent } from '../../../shared/components/profile-photo-upload/profile-photo-upload.component';
 import { DriverRegistrationService } from '../services/driver-registration.service';
+import { finalize } from 'rxjs/operators';
+import { ToastService } from '../../../shared/services/toast.service';
 
 type VehicleCategory = 'Standard' | 'Luxury' | 'Van';
 
@@ -42,6 +44,7 @@ export class DriverRegistrationComponent implements OnInit {
   private fb = inject(FormBuilder);
   private driverRegistrationService = inject(DriverRegistrationService);
   private router = inject(Router);
+  private toastService = inject(ToastService);
 
   currentStep = 1;
   totalSteps = 2;
@@ -97,8 +100,6 @@ export class DriverRegistrationComponent implements OnInit {
   onPhotoSelected(file: File): void {
     this.selectedPhotoFile = file;
     console.log('Driver photo selected (auto-cropped to 1:1):', file.name, file.size, 'bytes');
-    // TODO: Upload to backend storage and get URL
-    // this.uploadService.uploadProfilePhoto(file).subscribe(url => ...);
   }
 
   nextStep(): void {
@@ -152,35 +153,59 @@ export class DriverRegistrationComponent implements OnInit {
 
     this.isSubmitting = true;
 
-    // Prepare the data
     const driverData: DriverFormData = this.driverForm.value;
     const vehicleData: VehicleFormData = this.vehicleForm.value;
 
-    const registrationRequest = {
+    const buildRequest = (profilePictureUrl: string | null) => ({
       name: driverData.firstName,
       surname: driverData.lastName,
       email: driverData.email,
       phone: driverData.countryCode + driverData.phone,
       address: driverData.address,
+      profilePictureUrl,
       vehicleTypeId: this.driverRegistrationService.mapCategoryToTypeId(vehicleData.category),
       vehicleModel: vehicleData.model,
       vehicleLicensePlate: vehicleData.licensePlate.toUpperCase(),
       vehicleNumSeats: vehicleData.seats,
       vehicleBabyFriendly: vehicleData.babySeats,
       vehiclePetFriendly: vehicleData.petFriendly,
+    });
+
+    const doRegister = (registrationRequest: ReturnType<typeof buildRequest>) => {
+      this.driverRegistrationService
+        .registerDriver(registrationRequest)
+        .pipe(
+          finalize(() => {
+            this.isSubmitting = false;
+          }),
+        )
+        .subscribe({
+          next: (response) => {
+            console.log('Driver registered successfully:', response);
+            this.toastService.success('Driver created. Activation email sent.');
+            this.addAnotherDriver();
+          },
+          error: (error) => {
+            console.error('Error registering driver:', error);
+            alert(error.error?.message || 'Failed to register driver. Please try again.');
+          },
+        });
     };
 
-    this.driverRegistrationService.registerDriver(registrationRequest).subscribe({
-      next: (response) => {
-        console.log('Driver registered successfully:', response);
-        this.isSubmitting = false;
-        this.showSuccessMessage = true;
+    const file = this.selectedPhotoFile;
+    if (!file) {
+      doRegister(buildRequest(null));
+      return;
+    }
+
+    this.driverRegistrationService.uploadProfilePicture(file).subscribe({
+      next: (res) => {
+        doRegister(buildRequest(res.url));
       },
-      error: (error) => {
-        console.error('Error registering driver:', error);
+      error: (err) => {
         this.isSubmitting = false;
-        // TODO: Show error message to user
-        alert(error.error?.message || 'Failed to register driver. Please try again.');
+        console.error('Profile picture upload failed:', err);
+        doRegister(buildRequest(null));
       },
     });
   }

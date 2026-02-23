@@ -6,11 +6,14 @@ import com.ftn.drumigo.dto.VehicleLocationUpdateRequest;
 import com.ftn.drumigo.dto.VehicleResponse;
 import com.ftn.drumigo.dto.VehicleUpdateRequest;
 import com.ftn.drumigo.mapper.VehicleMapper;
+import com.ftn.drumigo.security.CustomUserDetails;
 import com.ftn.drumigo.service.VehicleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,11 +29,7 @@ public class VehicleController {
     
     @GetMapping("/active")
     public ResponseEntity<List<VehicleResponse>> getActiveVehicles() {
-        List<Vehicle> vehicles = vehicleService.getActiveVehicles();
-        List<VehicleResponse> responses = vehicles.stream()
-            .map(vehicleMapper::toResponse)
-            .collect(Collectors.toList());
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(vehicleService.getActiveVehicleResponses());
     }
     
     @GetMapping
@@ -63,8 +62,13 @@ public class VehicleController {
     
     @PutMapping("/{id}/location")
     public ResponseEntity<VehicleResponse> updateVehicleLocation(@PathVariable Long id,
+                                                                  @AuthenticationPrincipal CustomUserDetails userDetails,
                                                                   @Valid @RequestBody VehicleLocationUpdateRequest request) {
-        Vehicle vehicle = vehicleService.updateLocation(id, request);
+        if (userDetails == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required");
+        }
+
+        Vehicle vehicle = vehicleService.updateLocation(id, request, userDetails.getUserId(), userDetails.getRole());
         return ResponseEntity.ok(vehicleMapper.toResponse(vehicle));
     }
     

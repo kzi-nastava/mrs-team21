@@ -1,5 +1,7 @@
 package com.ftn.drumigo.service;
 
+import com.ftn.drumigo.domain.Ride;
+import com.ftn.drumigo.domain.enums.RideStatus;
 import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.UserToken;
 import com.ftn.drumigo.domain.enums.TokenType;
@@ -7,16 +9,18 @@ import com.ftn.drumigo.domain.enums.UserRole;
 import com.ftn.drumigo.dto.auth.request.PassengerRegisterRequest;
 import com.ftn.drumigo.exception.BadRequestException;
 import com.ftn.drumigo.exception.ConflictException;
-import com.ftn.drumigo.repository.PassengerRepository;
-import com.ftn.drumigo.repository.UserRepository;
-import com.ftn.drumigo.repository.UserTokenRepository;
+import com.ftn.drumigo.exception.ResourceNotFoundException;
+import com.ftn.drumigo.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ftn.drumigo.util.TokenUtil;
 import com.ftn.drumigo.util.PasswordUtil;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -27,7 +31,10 @@ public class PassengerService {
     private final PassengerRepository passengerRepository;
     private final UserRepository userRepository;
     private final UserTokenRepository userTokenRepository;
+    private final RideRepository rideRepository;
+
     private final EmailService emailService;
+    private final PasswordUtil passwordUtil;
     
     public Passenger register(PassengerRegisterRequest request) {
         String password = request.password();
@@ -39,7 +46,7 @@ public class PassengerService {
         }
 
         // Validate password strength: 6-64 chars, at least one uppercase, one lowercase, and one digit or special char
-        if (!isValidPassword(password)) {
+        if (!passwordUtil.isValid(password)) {
             throw new BadRequestException(
                 "Password must be 6-64 characters and contain at least one uppercase letter, one lowercase letter, and one digit or special character"
             );
@@ -60,9 +67,14 @@ public class PassengerService {
         passenger.setRole(UserRole.PASSENGER);
 
         passenger.setBlocked(false);
+        passenger.setActive(false);
         passenger.setCreatedAt(Instant.now());
         passenger.setUpdatedAt(Instant.now());
         passenger.setPasswordHash(PasswordUtil.hashPassword(password)); // Hash password
+
+        if (request.profilePictureUrl() != null && !request.profilePictureUrl().isBlank()) {
+            passenger.setProfilePictureUrl(request.profilePictureUrl());
+        }
 
         passenger = passengerRepository.save(passenger);
         
@@ -72,7 +84,7 @@ public class PassengerService {
 
         return passenger;
     }
-    
+
     public void activate(String token) {
         // Hash the token to find it in DB
         String tokenHash = TokenUtil.hashToken(token);
@@ -89,6 +101,8 @@ public class PassengerService {
         // Fetch the Passenger entity directly to avoid proxy casting issues
         Passenger passenger = passengerRepository.findById(userToken.getUser().getId())
             .orElseThrow(() -> new BadRequestException("Passenger not found"));
+
+        passenger.setActive(true);
 
         // Update timestamp
         passenger.setUpdatedAt(Instant.now());
@@ -116,5 +130,26 @@ public class PassengerService {
     private boolean isValidPassword(String password) {
         if (password == null) return false;
         return password.matches("(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9\\W]).{6,64}");
+    }
+
+    public Page<Ride> getPassengerRideHistory(Long passengerId, Instant from, Instant to,
+                                              List<RideStatus> statuses, Boolean hasPanic, Pageable pageable) {
+        final Instant fromFinal = from == null ? Instant.ofEpochMilli(0) : from;
+        final Instant toFinal = to == null ? Instant.now() : to;
+
+        Passenger passenger = passengerRepository.findById(passengerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with id: " + passengerId));
+
+        List<RideStatus> statusFilter = (statuses == null || statuses.isEmpty()) ? null : statuses;
+
+        return rideRepository.findPassengerHistory(
+                passengerId,
+                passenger.getEmail(),
+                fromFinal,
+                toFinal,
+                statusFilter,
+                hasPanic,
+                pageable
+        );
     }
 }

@@ -96,14 +96,15 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
+  overflow: hidden;
   flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
 }
 
 .driver-name {
@@ -170,6 +171,20 @@
 
 .passenger-avatars {
   display: flex;
+  align-items: center;
+}
+
+.passenger-avatar-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--white);
+  margin-left: -8px;
+
+  &:first-child {
+    margin-left: 0;
+  }
 }
 
 .passenger-avatar {
@@ -185,9 +200,14 @@
   font-weight: 600;
   border: 2px solid var(--white);
   margin-left: -8px;
+  flex-shrink: 0;
 
   &:first-child {
     margin-left: 0;
+  }
+
+  &--count {
+    margin-left: -8px;
   }
 }
 

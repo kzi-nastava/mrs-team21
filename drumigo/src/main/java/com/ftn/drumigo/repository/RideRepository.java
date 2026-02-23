@@ -17,13 +17,36 @@ import java.util.List;
 public interface RideRepository extends JpaRepository<Ride, Long> {
     List<Ride> findByStatus(RideStatus status);
     List<Ride> findByDriverAndStatus(Driver driver, RideStatus status);
+    List<Ride> findByDriverAndStatusIn(Driver driver, List<RideStatus> statuses);
     Page<Ride> findByDriverAndStatusAndScheduledForAfter(Driver driver, RideStatus status, Instant scheduledFor, Pageable pageable);
     
+    @Query("""
+           SELECT r
+           FROM Ride r
+           WHERE r.driver = :driver
+             AND r.startTime IS NOT NULL
+             AND (
+                 r.startTime >= :since
+                 OR r.endTime >= :since
+                 OR r.endTime IS NULL
+             )
+           """)
+    List<Ride> findDriverRidesWithActivitySince(@Param("driver") Driver driver, @Param("since") Instant since);
+    
     @Query("SELECT r FROM Ride r WHERE r.driver = :driver AND r.requestedAt BETWEEN :from AND :to")
-    Page<Ride> findByDriverAndRequestedAtBetween(@Param("driver") Driver driver, 
-                                                   @Param("from") Instant from, 
-                                                   @Param("to") Instant to, 
+    Page<Ride> findByDriverAndRequestedAtBetween(@Param("driver") Driver driver,
+                                                   @Param("from") Instant from,
+                                                   @Param("to") Instant to,
                                                    Pageable pageable);
+
+    /**
+     * Finished rides for a driver whose end time falls within the date range (for chart reports).
+     */
+    @Query("SELECT r FROM Ride r WHERE r.driver = :driver AND r.status = :status AND r.endTime IS NOT NULL AND r.endTime >= :from AND r.endTime <= :to")
+    List<Ride> findByDriverAndStatusAndEndTimeBetween(@Param("driver") Driver driver,
+                                                       @Param("status") RideStatus status,
+                                                       @Param("from") Instant from,
+                                                       @Param("to") Instant to);
     
     @Query("SELECT r FROM Ride r WHERE r.driver.name LIKE CONCAT('%', :name, '%') OR r.driver.surname LIKE CONCAT('%', :name, '%')")
     List<Ride> findByDriverNameContaining(@Param("name") String name);
@@ -32,13 +55,118 @@ public interface RideRepository extends JpaRepository<Ride, Long> {
     List<Ride> findByStatusAndRequestedAtBetween(@Param("status") RideStatus status,
                                                    @Param("from") Instant from,
                                                    @Param("to") Instant to);
+
+    /**
+     * Finished rides whose report date (endTime or requestedAt) falls in range.
+     */
+    @Query("SELECT r FROM Ride r WHERE r.status = :status AND COALESCE(r.endTime, r.requestedAt) >= :from AND COALESCE(r.endTime, r.requestedAt) <= :to")
+    List<Ride> findFinishedRidesByReportDateBetween(@Param("status") RideStatus status,
+                                                      @Param("from") Instant from,
+                                                      @Param("to") Instant to);
     
     @Query("SELECT r FROM Ride r WHERE r.status = :status AND r.requestedAt >= :from AND r.requestedAt <= :to " +
            "AND (r.orderingPassenger.id = :userId OR EXISTS " +
-           "(SELECT rp FROM RidePassenger rp WHERE rp.ride = r AND rp.passenger.id = :userId))")
+           "(SELECT rp FROM RidePassenger rp WHERE rp.ride = r AND rp.passengerEmail = :passengerEmail))")
     List<Ride> findByStatusAndUserAndRequestedAtBetween(@Param("status") RideStatus status,
                                                           @Param("userId") Long userId,
+                                                          @Param("passengerEmail") String passengerEmail,
                                                           @Param("from") Instant from,
                                                           @Param("to") Instant to);
-}
 
+    /**
+     * Finished rides for a passenger where report date (endTime or requestedAt) falls in range.
+     */
+    @Query("""
+           SELECT r FROM Ride r WHERE r.status = :status
+             AND (r.orderingPassenger.id = :userId OR EXISTS
+                 (SELECT rp FROM RidePassenger rp WHERE rp.ride = r AND rp.passengerEmail = :passengerEmail))
+             AND COALESCE(r.endTime, r.requestedAt) >= :from AND COALESCE(r.endTime, r.requestedAt) <= :to
+           """)
+    List<Ride> findFinishedPassengerRidesByReportDateBetween(@Param("status") RideStatus status,
+                                                              @Param("userId") Long userId,
+                                                              @Param("passengerEmail") String passengerEmail,
+                                                              @Param("from") Instant from,
+                                                              @Param("to") Instant to);
+
+    @Query("""
+           SELECT DISTINCT r
+           FROM Ride r
+           WHERE r.requestedAt >= :from AND r.requestedAt <= :to
+             AND (r.orderingPassenger.id = :passengerId OR EXISTS
+                 (SELECT rp FROM RidePassenger rp WHERE rp.ride = r AND rp.passengerEmail = :passengerEmail))
+             AND (:statuses IS NULL OR r.status IN :statuses)
+             AND (:hasPanic IS NULL OR
+                  (:hasPanic = TRUE AND EXISTS (SELECT pe FROM PanicEvent pe WHERE pe.ride = r)) OR
+                  (:hasPanic = FALSE AND NOT EXISTS (SELECT pe FROM PanicEvent pe WHERE pe.ride = r))
+             )
+           """)
+    Page<Ride> findPassengerHistory(@Param("passengerId") Long passengerId,
+                                   @Param("passengerEmail") String passengerEmail,
+                                   @Param("from") Instant from,
+                                   @Param("to") Instant to,
+                                   @Param("statuses") List<RideStatus> statuses,
+                                   @Param("hasPanic") Boolean hasPanic,
+                                   Pageable pageable);
+
+    @Query("""
+           SELECT DISTINCT r
+           FROM Ride r
+           WHERE r.requestedAt >= :from AND r.requestedAt <= :to
+             AND (:statuses IS NULL OR r.status IN :statuses)
+             AND (:hasPanic IS NULL OR
+                  (:hasPanic = TRUE AND EXISTS (SELECT pe FROM PanicEvent pe WHERE pe.ride = r)) OR
+                  (:hasPanic = FALSE AND NOT EXISTS (SELECT pe FROM PanicEvent pe WHERE pe.ride = r))
+             )
+           """)
+    Page<Ride> findAdminRideHistory(@Param("from") Instant from,
+                                    @Param("to") Instant to,
+                                    @Param("statuses") List<RideStatus> statuses,
+                                    @Param("hasPanic") Boolean hasPanic,
+                                    Pageable pageable);
+
+    /**
+     * Checks if a passenger has any ride in the given statuses (e.g. PENDING, ACCEPTED, ACTIVE).
+     * Passenger is matched as ordering passenger or linked passenger (spec 2.6.1).
+     */
+    @Query("""
+           SELECT COUNT(r) > 0 FROM Ride r
+           WHERE r.status IN :statuses
+             AND (r.orderingPassenger.id = :passengerId OR EXISTS
+             (SELECT rp FROM RidePassenger rp WHERE rp.ride = r AND rp.passengerEmail = :passengerEmail))
+           """)
+    boolean existsActiveRideForPassenger(
+            @Param("passengerId") Long passengerId,
+            @Param("passengerEmail") String passengerEmail,
+            @Param("statuses") List<RideStatus> statuses);
+
+    /**
+     * Single active ride for passenger (PENDING, ACCEPTED, ACTIVE) as ordering or linked passenger, most recent first.
+     */
+    @Query("""
+           SELECT r FROM Ride r
+           WHERE r.status IN :statuses
+             AND (r.orderingPassenger.id = :passengerId OR EXISTS
+             (SELECT rp FROM RidePassenger rp WHERE rp.ride = r AND rp.passengerEmail = :passengerEmail))
+           ORDER BY r.requestedAt DESC
+           """)
+    List<Ride> findActiveRidesForPassenger(
+            @Param("passengerId") Long passengerId,
+            @Param("passengerEmail") String passengerEmail,
+            @Param("statuses") List<RideStatus> statuses);
+
+    /**
+     * Rides that are accepted, scheduled, and start within the next 15 minutes (for reminder notifications).
+     */
+    @Query("""
+           SELECT r FROM Ride r
+           WHERE r.status = :status
+             AND r.scheduledFor IS NOT NULL
+             AND r.scheduledFor > :after
+             AND r.scheduledFor <= :before
+           """)
+    List<Ride> findAcceptedScheduledRidesInReminderWindow(
+        @Param("status") RideStatus status,
+        @Param("after") Instant after,
+        @Param("before") Instant before
+    );
+}

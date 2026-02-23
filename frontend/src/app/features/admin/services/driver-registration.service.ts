@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, timeout } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 
 export interface DriverRegistrationRequest {
@@ -9,6 +9,7 @@ export interface DriverRegistrationRequest {
   email: string;
   address: string;
   phone: string;
+  profilePictureUrl?: string | null;
   vehicleTypeId: number;
   vehicleModel: string;
   vehicleLicensePlate: string;
@@ -26,8 +27,8 @@ export interface DriverRegistrationResponse {
   phone: string;
   profilePictureUrl: string | null;
   blocked: boolean;
-  active: boolean;
   activeDriver: boolean;
+  isBusy: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -37,11 +38,19 @@ export interface DriverRegistrationResponse {
 })
 export class DriverRegistrationService {
   private apiUrl = `${environment.apiBaseUrl}/drivers`;
+  private authUrl = `${environment.apiBaseUrl}/auth`;
 
   constructor(private http: HttpClient) {}
 
+  uploadProfilePicture(file: File): Observable<{ url: string }> {
+    const formData = new FormData();
+    formData.set('file', file);
+    return this.http.post<{ url: string }>(`${this.authUrl}/profile-picture`, formData);
+  }
+
   registerDriver(request: DriverRegistrationRequest): Observable<DriverRegistrationResponse> {
-    return this.http.post<DriverRegistrationResponse>(this.apiUrl, request);
+    // Guard against indefinite spinner if backend gets stuck.
+    return this.http.post<DriverRegistrationResponse>(this.apiUrl, request).pipe(timeout(15000));
   }
 
   /**

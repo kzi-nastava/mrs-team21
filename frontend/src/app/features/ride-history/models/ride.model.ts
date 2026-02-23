@@ -39,8 +39,8 @@ export interface Ride {
   daysRemainingToRate?: number;
   ratingDeadline?: Date;
   
-  // TODO: Backend Integration - Link to RidePassenger.isFavorite
-  // This should be: isFavorite: boolean; (per user per ride)
-  // Currently local state only - Backend needs RidePassenger entity update
+  /** Set when ride is in passenger's favorites (from history star). */
   isFavorite?: boolean;
+  /** Favorite route id when isFavorite is true; used to remove from favorites. */
+  favoriteRouteId?: number | null;
 }

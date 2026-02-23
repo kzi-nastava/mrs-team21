@@ -24,6 +24,10 @@ bun-debug.log
 .settings/
 *.sublime-workspace
 
+# Cursor
+.cursor/
+scripts/
+
 # Visual Studio Code
 .vscode/*
 !.vscode/settings.json
@@ -60,7 +64,14 @@ target/
 # Local Spring Boot dev config
 **/application-dev.properties
 
+# Backend uploads (profile pictures, etc.)
+uploads/
+
 # Gradle (for mobile)
 .gradle/
 build/
 local.properties
+
+# Claude Code temporary working directories
+tmpclaude-*
+nul

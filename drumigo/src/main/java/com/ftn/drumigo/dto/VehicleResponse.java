@@ -9,10 +9,13 @@ public record VehicleResponse(
     String driverSurname,
     Long vehicleTypeId,
     String vehicleTypeName,
+    String model,
+    String licensePlate,
     Integer numSeats,
     Boolean babyFriendly,
     Boolean petFriendly,
     BigDecimal currentLat,
-    BigDecimal currentLng
+    BigDecimal currentLng,
+    Boolean available
 ) {}
 

@@ -3,6 +3,14 @@
     <!-- Profile Screen -->
     <string name="profile_title">My Profile</string>
     <string name="profile_subtitle">Manage your personal information and preferences</string>
+    <string name="profile_loading">Loading profile…</string>
+    <string name="retry">Retry</string>
+    <string name="profile_error_load">Failed to load profile</string>
+
+    <!-- Notifications (Passenger / Admin) -->
+    <string name="notifications_title">Notifications</string>
+    <string name="notifications_subtitle">Recent ride updates</string>
+    <string name="notifications_empty">No notifications yet.</string>
 
     <!-- Profile Header -->
     <string name="profile_driver">DRIVER</string>
@@ -36,9 +44,16 @@
 
     <!-- Change Password -->
     <string name="btn_change_password">Change Password</string>
+    <string name="password_changed">Password changed successfully</string>
+    <string name="error_change_password">Error changing password</string>
+    <string name="validation_current_password_required">Current password is required</string>
+    <string name="validation_new_password_required">New password is required</string>
+    <string name="validation_passwords_must_match">Passwords do not match</string>
+    <string name="validation_password_requirements">New password must have at least 6 characters, one capital letter and one number</string>
 
     <!-- Edit Profile Dialog/Screen -->
     <string name="edit_profile_title">Edit Profile</string>
+    <string name="edit_personal_info_title">Edit Personal Information</string>
     <string name="btn_save_changes">Save Changes</string>
     <string name="btn_cancel">Cancel</string>
 
@@ -52,6 +67,8 @@
     <string name="profile_update_pending">Changes have been submitted for admin approval</string>
     <string name="photo_updated">Profile photo changed successfully</string>
     <string name="error_update_profile">Error updating profile</string>
+    <string name="error_update_profile_picture">Error updating profile picture</string>
+    <string name="error_profile_picture_too_large">Image must be at most 5MB</string>
 
     <!-- Navigation -->
     <string name="nav_profile">Profile</string>

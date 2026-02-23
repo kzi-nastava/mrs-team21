@@ -1,8 +1,14 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { map, Observable, of, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { PageResponse, RideResponseDto } from '../../ride-history/models/ride-api.model';
+
+/** Response from GET /rides/me/active */
+export interface ActiveRideIdResponse {
+  rideId: number;
+}
 
 /** Response from creating/fetching a ride inconsistency report */
 export interface RideInconsistencyResponse {
@@ -27,9 +33,62 @@ export interface RideStopRequest {
   stopLng: number;
 }
 
+/** Response from GET /rides/:id (tracking). Maps to RideTrackingResponse.java */
+export interface RideTrackingResponseDto {
+  id: number;
+  status: string;
+  requestedAt: string;
+  startTime: string | null;
+  driverId: number | null;
+  driverName: string | null;
+  driverSurname: string | null;
+  vehicleId: number | null;
+  vehicleModel: string | null;
+  vehicleLicensePlate: string | null;
+  vehicleCurrentLat: number | null;
+  vehicleCurrentLng: number | null;
+  waypoints: { locationId: number; address: string; lat: number; lng: number; order: number }[];
+  estimatedArrivalAt: string | null;
+  estimatedDurationSec: number | null;
+  totalDistanceKm: number | null;
+  babyTransport: boolean | null;
+  petTransport: boolean | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RideApiService {
   private readonly http = inject(HttpClient);
+
+  /** Get current user's active ride id for tracking (passenger or driver). Returns null if 404. */
+  getMyActiveRide(): Observable<ActiveRideIdResponse | null> {
+    return this.http
+      .get<ActiveRideIdResponse>(`${environment.apiBaseUrl}/rides/me/active`)
+      .pipe(
+        catchError((error: HttpErrorResponse) =>
+          error.status === 404 ? of(null) : throwError(() => error),
+        ),
+      );
+  }
+
+  /** Get ride with tracking data (driver position, waypoints). Used by ride-tracking page. */
+  getRideForTracking(rideId: number): Observable<RideTrackingResponseDto> {
+    return this.http.get<RideTrackingResponseDto>(`${environment.apiBaseUrl}/rides/${rideId}`);
+  }
+
+  /** Start backend simulation of vehicle movement for demo (ride must be ACTIVE). */
+  startTrackingDemo(rideId: number): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/rides/${rideId}/tracking-demo/start`, {});
+  }
+
+  /** Stop backend simulation for this ride. */
+  stopTrackingDemo(rideId: number): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/rides/${rideId}/tracking-demo/stop`, {});
+  }
+
+  /** Start ride (driver action): transitions ACCEPTED -> ACTIVE. */
+  startRide(rideId: number): Observable<RideResponseDto> {
+    return this.http.put<RideResponseDto>(`${environment.apiBaseUrl}/rides/${rideId}/start`, null);
+  }
 
   endRide(rideId: number): Observable<RideResponseDto> {
     return this.http.put<RideResponseDto>(`${environment.apiBaseUrl}/rides/${rideId}/end`, null);

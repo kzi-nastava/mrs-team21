@@ -3,7 +3,35 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/loginFragment">
+    app:startDestination="@id/landingFragment">
+
+    <fragment
+        android:id="@+id/landingFragment"
+        android:name="com.drumigo.mobile.ui.landing.LandingFragment"
+        android:label="@string/nav_home"
+        tools:layout="@layout/fragment_landing" />
+
+    <fragment
+        android:id="@+id/activeVehiclesMapFragment"
+        android:name="com.drumigo.mobile.ui.map.ActiveVehiclesMapFragment"
+        android:label="@string/nav_active_vehicles"
+        tools:layout="@layout/fragment_active_vehicles_map" />
+
+    <fragment
+        android:id="@+id/rideTrackingFragment"
+        android:name="com.drumigo.mobile.ui.ride.RideTrackingFragment"
+        android:label="@string/ride_tracking_title"
+        tools:layout="@layout/fragment_ride_tracking">
+
+        <argument
+            android:name="rideId"
+            app:argType="long"
+            android:defaultValue="0L" />
+        <argument
+            android:name="adminViewOnly"
+            app:argType="boolean"
+            android:defaultValue="false" />
+    </fragment>
 
     <fragment
         android:id="@+id/loginFragment"
@@ -68,6 +96,11 @@
         android:label="Reset Password"
         tools:layout="@layout/fragment_reset_password">
 
+        <argument
+            android:name="activationToken"
+            app:argType="string"
+            app:nullable="true" />
+
         <action
             android:id="@+id/action_reset_password_to_login"
             app:destination="@id/loginFragment"
@@ -80,5 +113,53 @@
         android:name="com.drumigo.mobile.ui.profile.ProfileFragment"
         android:label="@string/profile_title"
         tools:layout="@layout/fragment_profile" />
+
+    <fragment
+        android:id="@+id/supportFragment"
+        android:name="com.drumigo.mobile.ui.support.SupportFragment"
+        android:label="@string/nav_support"
+        tools:layout="@layout/fragment_support" />
+
+    <fragment
+        android:id="@+id/notificationsFragment"
+        android:name="com.drumigo.mobile.ui.notifications.NotificationsFragment"
+        android:label="@string/notifications_title"
+        tools:layout="@layout/fragment_notifications" />
+
+    <fragment
+        android:id="@+id/adminSupportConversationsFragment"
+        android:name="com.drumigo.mobile.ui.support.AdminSupportConversationsFragment"
+        android:label="@string/nav_live_support"
+        tools:layout="@layout/fragment_admin_support_conversations" />
+
+    <fragment
+        android:id="@+id/adminSupportChatFragment"
+        android:name="com.drumigo.mobile.ui.support.AdminSupportChatFragment"
+        android:label="@string/nav_live_support"
+        tools:layout="@layout/fragment_admin_support_chat">
+        <argument
+            android:name="userId"
+            app:argType="long" />
+        <argument
+            android:name="userName"
+            app:argType="string"
+            android:defaultValue="" />
+        <argument
+            android:name="userSurname"
+            app:argType="string"
+            android:defaultValue="" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/registerDriverFragment"
+        android:name="com.drumigo.mobile.ui.admin.RegisterDriverFragment"
+        android:label="@string/nav_register_driver"
+        tools:layout="@layout/fragment_register_driver" />
+
+    <fragment
+        android:id="@+id/reportsFragment"
+        android:name="com.drumigo.mobile.ui.reports.ReportsFragment"
+        android:label="@string/reports_title"
+        tools:layout="@layout/fragment_reports" />
 
 </navigation>

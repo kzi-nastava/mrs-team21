@@ -249,18 +249,12 @@
   border-top: 1px solid var(--border);
 }
 
-.passenger-avatar {
+.passenger-avatar-img {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--white);
-  font-family: 'Outfit', sans-serif;
-  font-weight: 600;
-  font-size: 18px;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .passenger-details {

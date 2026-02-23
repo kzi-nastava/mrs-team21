@@ -1,0 +1,14 @@
+<div class="placeholder">
+  <div class="placeholder-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M12 6v6l4 2"/>
+    </svg>
+  </div>
+  <h1 class="placeholder-title">{{ featureName }}</h1>
+  <p class="placeholder-message">This feature is not yet implemented.</p>
+  @if (specRef) {
+    <p class="placeholder-spec">Required by spec: {{ specRef }}</p>
+  }
+  <p class="placeholder-docs">See <code>docs/navbar-removed-features-spec.md</code> and <code>docs/specifikacija.md</code>.</p>
+</div>

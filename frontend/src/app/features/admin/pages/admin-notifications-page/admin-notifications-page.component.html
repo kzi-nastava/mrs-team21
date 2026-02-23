@@ -1,0 +1,140 @@
+<div class="admin-notifications-page">
+  <header class="page-header">
+    <h1 class="page-title">All Notifications</h1>
+    <p class="page-subtitle">Select a user to view their notification history (drivers, passengers, or admins).</p>
+  </header>
+
+  <section class="search-card">
+    <label for="userEmail" class="search-label">Search by email</label>
+    <div class="search-input-wrap">
+      <input
+        id="userEmail"
+        type="text"
+        class="search-input"
+        placeholder="Type to search users..."
+        autocomplete="off"
+        [ngModel]="emailSearchQuery()"
+        (ngModelChange)="onEmailSearchInput($event)"
+        (focus)="onEmailSearchFocus()"
+        (blur)="onEmailSearchBlur()"
+      />
+      @if (selectedUser()) {
+        <button type="button" class="search-clear" (click)="clearSelectedUser()" title="Clear selection" aria-label="Clear">×</button>
+      }
+      @if (loadingSuggestions()) {
+        <span class="search-loading" aria-hidden="true">Searching…</span>
+      }
+    </div>
+    @if (showSuggestions()) {
+      <ul class="suggestions-list" role="listbox">
+        @for (u of userSuggestions(); track u.id) {
+          <li
+            role="option"
+            class="suggestion-item"
+            (click)="selectUser(u)"
+          >{{ userLabel(u) }}</li>
+        }
+      </ul>
+    }
+  </section>
+
+  @if (selectedUser()) {
+    <div class="selected-chip">
+      <span class="selected-chip__label">Viewing</span>
+      <span class="selected-chip__name">{{ userLabel(selectedUser()!) }}</span>
+      <button type="button" class="selected-chip__clear" (click)="clearSelectedUser()" aria-label="Clear user">×</button>
+    </div>
+
+    @if (notificationsError()) {
+      <div class="error-banner" role="alert">{{ notificationsError() }}</div>
+    }
+
+    @if (loadingNotifications()) {
+      <div class="state-card">Loading notifications…</div>
+    } @else {
+      @if (notifications().length === 0) {
+        <div class="state-card">No notifications for this user.</div>
+      } @else {
+        <div class="notifications-section">
+          <div class="list-wrap">
+            <table class="notifications-table">
+              <thead>
+                <tr>
+                  <th class="th-type">Type</th>
+                  <th class="th-message">Message</th>
+                  <th class="th-created">Created</th>
+                  <th class="th-read">Read</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (n of notifications(); track n.id) {
+                  <tr class="notification-row">
+                    <td class="col-type"><span class="type-pill">{{ typeLabel(n.type) }}</span></td>
+                    <td class="col-message"><span class="message-text">{{ n.message }}</span></td>
+                    <td class="col-date">{{ formatDate(n.createdAt) }}</td>
+                    <td class="col-read">{{ n.readAt ? formatDate(n.readAt) : '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="notification-cards">
+            @for (n of notifications(); track n.id) {
+              <article class="notification-card">
+                <div class="notification-card__meta">
+                  <span class="type-pill">{{ typeLabel(n.type) }}</span>
+                  <span class="notification-card__date">{{ formatDate(n.createdAt) }}</span>
+                </div>
+                <p class="notification-card__message">{{ n.message }}</p>
+                @if (n.readAt) {
+                  <p class="notification-card__read">Read {{ formatDate(n.readAt) }}</p>
+                }
+              </article>
+            }
+          </div>
+
+          <nav class="pagination" aria-label="Notifications pagination">
+            <div class="pagination__info">
+              <span class="pagination__total">{{ totalElements() }} total</span>
+              @if (totalElements() > 0) {
+                <span class="pagination__page">Page {{ currentPage() + 1 }} of {{ totalPages() }}</span>
+              }
+            </div>
+            <div class="pagination__controls">
+              <label for="pageSize" class="pagination__label">Per page</label>
+              <select
+                id="pageSize"
+                class="pagination__select"
+                [ngModel]="pageSize()"
+                (ngModelChange)="setPageSize(+$event)"
+              >
+                @for (opt of pageSizeOptions; track opt) {
+                  <option [value]="opt">{{ opt }}</option>
+                }
+              </select>
+              <div class="pagination__buttons">
+                <button
+                  type="button"
+                  class="pagination__btn"
+                  [disabled]="!hasPrev()"
+                  (click)="prevPage()"
+                  aria-label="Previous page"
+                >←</button>
+                <button
+                  type="button"
+                  class="pagination__btn"
+                  [disabled]="!hasNext()"
+                  (click)="nextPage()"
+                  aria-label="Next page"
+                >→</button>
+              </div>
+            </div>
+          </nav>
+        </div>
+      }
+    }
+  } @else {
+    <div class="state-card state-card--hint">Search and select a user above to view their notifications.</div>
+  }
+</div>

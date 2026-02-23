@@ -37,6 +37,7 @@ public class DriverService {
     private final VehicleRepository vehicleRepository;
     private final VehicleTypeRepository vehicleTypeRepository;
     private final UserTokenRepository userTokenRepository;
+    private final EmailService emailService;
     
     public Driver create(DriverCreateRequest request) {
         // Check if email already exists
@@ -56,27 +57,33 @@ public class DriverService {
         driver.setAddress(request.address());
         driver.setPhone(request.phone());
         driver.setRole(UserRole.DRIVER);
-        driver.setActive(false); // Not active until password is set
         driver.setActiveDriver(false);
         driver.setBlocked(false);
+        driver.setActive(true);
         driver.setCreatedAt(Instant.now());
         driver.setUpdatedAt(Instant.now());
-        
+        if (request.profilePictureUrl() != null && !request.profilePictureUrl().isBlank()) {
+            driver.setProfilePictureUrl(request.profilePictureUrl());
+        }
+
         driver = driverRepository.save(driver);
         
         // Create vehicle
         Vehicle vehicle = new Vehicle();
         vehicle.setDriver(driver);
         vehicle.setVehicleType(vehicleType);
-        vehicle.setModel(request.vehicleModel());
         vehicle.setLicensePlate(request.vehicleLicensePlate());
+        vehicle.setModel(request.vehicleModel());
         vehicle.setNumSeats(request.vehicleNumSeats());
         vehicle.setBabyFriendly(request.vehicleBabyFriendly() != null ? request.vehicleBabyFriendly() : false);
         vehicle.setPetFriendly(request.vehiclePetFriendly() != null ? request.vehiclePetFriendly() : false);
-        vehicle.setAvailable(true);
         
         vehicleRepository.save(vehicle);
-        
+
+        // Immediately create activation token and send setup email.
+        // If email sending fails, transaction is rolled back to avoid half-created accounts.
+        createActivationToken(driver.getId());
+
         return driver;
     }
     
@@ -134,7 +141,8 @@ public class DriverService {
         userToken.setCreatedAt(Instant.now());
         
         userTokenRepository.save(userToken);
-        
+
+        emailService.sendDriverActivationEmail(driver.getEmail(), token);
         return token;
     }
     
@@ -151,8 +159,10 @@ public class DriverService {
         // Set password hash (for KT1, simple hash; in production use BCrypt)
         String passwordHash = PasswordUtil.hashPassword(request.password());
 
-        Driver driver = (Driver) userToken.getUser();
+        Driver driver = driverRepository.findById(userToken.getUser().getId())
+            .orElseThrow(() -> new BadRequestException("Driver not found"));
         driver.setPasswordHash(passwordHash);
+        driver.setActive(true);
         driver.setUpdatedAt(Instant.now());
         
         driverRepository.save(driver);

@@ -13,7 +13,12 @@
 
   <!-- Map Section -->
   <div class="map-section">
-    <app-map [markers]="vehicleMarkers()" [config]="mapConfig"></app-map>
+    <app-map
+      [markers]="vehicleMarkers()"
+      [config]="mapConfig"
+      [routeCoordinates]="routeCoordinates()"
+      [showRoute]="showRoute()"
+    ></app-map>
 
     <!-- Floating Estimate Button -->
     <div class="estimate-cta">
@@ -38,5 +43,6 @@
   <app-ride-estimate-panel
     [isOpen]="isPanelOpen()"
     (panelClosed)="closePanel()"
+    (routeReady)="onRouteReady($event)"
   ></app-ride-estimate-panel>
 </div>

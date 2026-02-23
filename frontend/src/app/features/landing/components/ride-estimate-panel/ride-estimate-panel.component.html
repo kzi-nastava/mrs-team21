@@ -52,7 +52,7 @@
             <circle cx="12" cy="12" r="8" />
           </svg>
         </div>
-        <div class="location-input-wrapper">
+        <div class="location-input-wrapper input-with-suggest">
           <label class="location-label">Pickup location</label>
           <input
             type="text"
@@ -60,7 +60,20 @@
             placeholder="Enter pickup address..."
             [value]="pickupLocation()"
             (input)="updatePickup($any($event.target).value)"
+            (focus)="showPickupSuggestions.set(pickupSuggestions().length > 0)"
+            (blur)="hidePickupSuggestions()"
           />
+          @if (showPickupSuggestions() && pickupSuggestions().length) {
+            <ul class="suggest-list" role="listbox">
+              @for (s of pickupSuggestions(); track s.address) {
+                <li
+                  role="option"
+                  class="suggest-item"
+                  (mousedown)="selectPickupSuggestion(s); $event.preventDefault()"
+                >{{ s.address }}</li>
+              }
+            </ul>
+          }
         </div>
       </div>
 
@@ -78,7 +91,7 @@
             <circle cx="12" cy="10" r="3" />
           </svg>
         </div>
-        <div class="location-input-wrapper">
+        <div class="location-input-wrapper input-with-suggest">
           <label class="location-label">Destination</label>
           <input
             type="text"
@@ -86,7 +99,20 @@
             placeholder="Enter destination address..."
             [value]="destinationLocation()"
             (input)="updateDestination($any($event.target).value)"
+            (focus)="showDestinationSuggestions.set(destinationSuggestions().length > 0)"
+            (blur)="hideDestinationSuggestions()"
           />
+          @if (showDestinationSuggestions() && destinationSuggestions().length) {
+            <ul class="suggest-list" role="listbox">
+              @for (s of destinationSuggestions(); track s.address) {
+                <li
+                  role="option"
+                  class="suggest-item"
+                  (mousedown)="selectDestinationSuggestion(s); $event.preventDefault()"
+                >{{ s.address }}</li>
+              }
+            </ul>
+          }
         </div>
       </div>
 

@@ -1,0 +1,90 @@
+<div class="pricing-page">
+  <header class="pricing-header">
+    <div class="pricing-header__inner">
+      <div class="pricing-header__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23"/>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+      </div>
+      <div class="pricing-header__text">
+        <h1 class="pricing-header__title">Ride pricing</h1>
+        <p class="pricing-header__subtitle">Set start price and price per km for each vehicle type. Amounts are in RSD.</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="pricing-main">
+    @if (loading) {
+      <div class="pricing-state pricing-state--loading">
+        <div class="pricing-state__spinner"></div>
+        <p class="pricing-state__text">Loading vehicle types…</p>
+      </div>
+    } @else if (vehicleTypes.length === 0) {
+      <div class="pricing-state">
+        <p class="pricing-state__text">No vehicle types found.</p>
+      </div>
+    } @else {
+      <div class="pricing-grid">
+        @for (vt of vehicleTypes; track vt.id) {
+          @let form = getForm(vt.id);
+          @if (form) {
+            <article class="pricing-card" [attr.data-type]="vt.name.toLowerCase()">
+              <div class="pricing-card__header">
+                <span class="pricing-card__badge">{{ vt.name }}</span>
+              </div>
+              <form class="pricing-card__form" [formGroup]="form" (ngSubmit)="save(vt.id)">
+                <div class="pricing-fields">
+                  <div class="pricing-field">
+                    <label [for]="'start-' + vt.id">Start price</label>
+                    <div class="pricing-input-wrap">
+                      <input
+                        [id]="'start-' + vt.id"
+                        type="number"
+                        min="0"
+                        step="1"
+                        formControlName="startPrice"
+                        placeholder="0"
+                        class="pricing-input"
+                      />
+                      <span class="pricing-input__suffix">RSD</span>
+                    </div>
+                    @if (form.get('startPrice')?.invalid && form.get('startPrice')?.touched) {
+                      <span class="pricing-field__error">Required, ≥ 0</span>
+                    }
+                  </div>
+                  <div class="pricing-field">
+                    <label [for]="'perkm-' + vt.id">Per km</label>
+                    <div class="pricing-input-wrap">
+                      <input
+                        [id]="'perkm-' + vt.id"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        formControlName="pricePerKm"
+                        placeholder="0"
+                        class="pricing-input"
+                      />
+                      <span class="pricing-input__suffix">RSD</span>
+                    </div>
+                    @if (form.get('pricePerKm')?.invalid && form.get('pricePerKm')?.touched) {
+                      <span class="pricing-field__error">Required, ≥ 0</span>
+                    }
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  class="pricing-save"
+                  [disabled]="form.invalid || savingId !== null"
+                  [class.pricing-save--busy]="savingId === vt.id"
+                >
+                  <span class="pricing-save__label">{{ savingId === vt.id ? 'Saving…' : 'Save' }}</span>
+                </button>
+              </form>
+            </article>
+          }
+        }
+      </div>
+    }
+  </main>
+</div>

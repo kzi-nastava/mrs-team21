@@ -1,0 +1,117 @@
+<div class="admin-panic-page">
+  <header class="page-header">
+    <h1 class="page-title">Panic Notifications</h1>
+    <p class="page-subtitle">
+      Review emergency alerts from passengers and drivers during rides. Use ride history to follow up as needed.
+    </p>
+  </header>
+
+  @if (error()) {
+    <div class="error-banner" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="state-card">
+      <span class="state-card__spinner" aria-hidden="true"></span>
+      <span>Loading…</span>
+    </div>
+  } @else {
+    @if (events().length === 0) {
+      <div class="state-card state-card--empty">
+        <span class="state-card__icon" aria-hidden="true">✓</span>
+        <p class="state-card__text">No panic notifications</p>
+        <p class="state-card__hint">Alerts will appear here when triggered during active rides.</p>
+      </div>
+    } @else {
+      <section class="panic-section">
+        <div class="list-wrap">
+          <table class="panic-table">
+            <thead>
+              <tr>
+                <th class="th-time">Time</th>
+                <th class="th-ride">Ride</th>
+                <th class="th-user">Triggered by</th>
+                <th class="th-reason">Reason</th>
+                <th class="th-action">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of events(); track e.id) {
+                <tr class="panic-row">
+                  <td class="col-time">{{ formatEventDate(e.createdAt) }}</td>
+                  <td class="col-ride">
+                    <span class="ride-id">Ride #{{ e.rideId }}</span>
+                  </td>
+                  <td class="col-user">
+                    <span class="user-email">{{ e.userEmail }}</span>
+                  </td>
+                  <td class="col-reason">{{ e.reason || '—' }}</td>
+                  <td class="col-action">
+                    <a [routerLink]="['/admin', 'ride-history']" class="link-ride">View ride</a>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panic-cards">
+          @for (e of events(); track e.id) {
+            <article class="panic-card">
+              <div class="panic-card__header">
+                <span class="panic-card__badge">Alert</span>
+                <time class="panic-card__time" [attr.datetime]="e.createdAt">{{ formatEventDate(e.createdAt) }}</time>
+              </div>
+              <div class="panic-card__body">
+                <p class="panic-card__ride">Ride #{{ e.rideId }}</p>
+                <p class="panic-card__user">{{ e.userEmail }}</p>
+                @if (e.reason) {
+                  <p class="panic-card__reason">{{ e.reason }}</p>
+                }
+              </div>
+              <a [routerLink]="['/admin', 'ride-history']" class="panic-card__link">View ride</a>
+            </article>
+          }
+        </div>
+
+        <nav class="pagination" aria-label="Panic notifications pagination">
+          <div class="pagination__info">
+            <span class="pagination__total">{{ totalElements() }} total</span>
+            @if (totalElements() > 0) {
+              <span class="pagination__page">Page {{ currentPage() + 1 }} of {{ totalPages() }}</span>
+            }
+          </div>
+          <div class="pagination__controls">
+            <label for="pageSize" class="pagination__label">Per page</label>
+            <select
+              id="pageSize"
+              class="pagination__select"
+              [ngModel]="pageSize()"
+              (ngModelChange)="setPageSize(+$event)"
+            >
+              @for (opt of pageSizeOptions; track opt) {
+                <option [value]="opt">{{ opt }}</option>
+              }
+            </select>
+            <div class="pagination__buttons">
+              <button
+                type="button"
+                class="pagination__btn"
+                [disabled]="!hasPrev()"
+                (click)="prevPage()"
+                aria-label="Previous page"
+              >←</button>
+              <button
+                type="button"
+                class="pagination__btn"
+                [disabled]="!hasNext()"
+                (click)="nextPage()"
+                aria-label="Next page"
+              >→</button>
+            </div>
+          </div>
+        </nav>
+      </section>
+    }
+  }
+</div>

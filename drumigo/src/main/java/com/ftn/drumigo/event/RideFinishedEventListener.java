@@ -1,7 +1,6 @@
 package com.ftn.drumigo.event;
 
 import com.ftn.drumigo.domain.Notification;
-import com.ftn.drumigo.domain.users.Passenger;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RidePassenger;
 import com.ftn.drumigo.domain.RideWaypoint;
@@ -11,6 +10,7 @@ import com.ftn.drumigo.repository.NotificationRepository;
 import com.ftn.drumigo.repository.RidePassengerRepository;
 import com.ftn.drumigo.repository.RideRepository;
 import com.ftn.drumigo.repository.RideWaypointRepository;
+import com.ftn.drumigo.repository.UserRepository;
 import com.ftn.drumigo.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -35,6 +35,7 @@ public class RideFinishedEventListener {
     private final RidePassengerRepository ridePassengerRepository;
     private final RideWaypointRepository rideWaypointRepository;
     private final NotificationRepository notificationRepository;
+    private final UserRepository userRepository;
     private final EmailService emailService;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -51,8 +52,9 @@ public class RideFinishedEventListener {
         if (ride.getOrderingPassenger() != null) {
             recipients.add(ride.getOrderingPassenger());
         }
+        // Add registered linked passengers
         for (RidePassenger ridePassenger : linkedPassengers) {
-            recipients.add(ridePassenger.getPassenger());
+            userRepository.findByEmail(ridePassenger.getPassengerEmail()).ifPresent(recipients::add);
         }
 
         List<RideWaypoint> waypoints = rideWaypointRepository.findByRideOrderByWaypointOrderAsc(ride);

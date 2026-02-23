@@ -1,7 +1,13 @@
 <div class="order-ride-container">
   <!-- Map Section -->
   <div class="map-section">
-    <app-map class="full-map" [showControls]="true" [showRoute]="false"></app-map>
+    <app-map
+      class="full-map"
+      [markers]="vehicleMarkers()"
+      [showControls]="true"
+      [showRoute]="showRoute()"
+      [routeCoordinates]="routeCoordinates()"
+    ></app-map>
   </div>
 
   <!-- Form Section -->
@@ -74,32 +80,102 @@
         <div class="step-content">
           <h2 class="step-title">Where are you going?</h2>
 
+          @if (favoriteRoutes().length > 0) {
+            <div class="favorite-routes-picker" role="group" aria-label="Quick pick from favorites">
+              <h3 class="favorite-routes-picker__title">
+                <svg class="favorite-routes-picker__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" fill="none"/>
+                </svg>
+                Quick pick from favorites
+              </h3>
+              <div class="favorite-routes-cards">
+                <button
+                  type="button"
+                  class="favorite-route-card favorite-route-card--manual"
+                  [class.active]="selectedFavoriteId() === null"
+                  [attr.aria-pressed]="selectedFavoriteId() === null"
+                  (click)="selectManualEntry()"
+                >
+                  <span class="favorite-route-card__label">Enter address manually</span>
+                </button>
+                @for (fav of favoriteRoutes(); track fav.id) {
+                  <button
+                    type="button"
+                    class="favorite-route-card"
+                    [class.active]="selectedFavoriteId() === fav.id"
+                    [attr.aria-pressed]="selectedFavoriteId() === fav.id"
+                    (click)="onFavoriteSelected(fav.id + '')"
+                  >
+                    <svg class="favorite-route-card__icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                    <span class="favorite-route-card__label">{{ getFavoriteLabel(fav) }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          @if (estimateLoading()) {
+            <p class="estimate-loading">Calculating route and price...</p>
+          }
+
           <!-- Pickup Address -->
           <div class="form-group">
             <label for="pickup">Pickup Location</label>
-            <input
-              id="pickup"
-              type="text"
-              [ngModel]="rideOrder().pickup"
-              (ngModelChange)="updatePickup($event)"
-              (change)="onRouteChange()"
-              placeholder="Enter pickup address"
-              class="form-input"
-            />
+            <div class="input-with-suggest">
+              <input
+                id="pickup"
+                type="text"
+                [ngModel]="rideOrder().pickup"
+                (ngModelChange)="updatePickup($event); onPickupInput($event)"
+                (change)="onRouteChange()"
+                (focus)="showSuggestionsFor.set(addressSuggestions().length > 0 ? 'pickup' : null)"
+                (blur)="hideAddressSuggestions()"
+                placeholder="Enter pickup address"
+                class="form-input"
+              />
+              @if (showSuggestionsFor() === 'pickup' && addressSuggestions().length) {
+                <ul class="suggest-list" role="listbox">
+                  @for (s of addressSuggestions(); track s.address) {
+                    <li
+                      role="option"
+                      class="suggest-item"
+                      (mousedown)="selectAddressSuggestion(s.address); $event.preventDefault()"
+                    >{{ s.address }}</li>
+                  }
+                </ul>
+              }
+            </div>
           </div>
 
           <!-- Dropoff Address -->
           <div class="form-group">
             <label for="destination">Destination Location</label>
-            <input
-              id="destination"
-              type="text"
-              [ngModel]="rideOrder().destination"
-              (ngModelChange)="updateDestination($event)"
-              (change)="onRouteChange()"
-              placeholder="Enter destination address"
-              class="form-input"
-            />
+            <div class="input-with-suggest">
+              <input
+                id="destination"
+                type="text"
+                [ngModel]="rideOrder().destination"
+                (ngModelChange)="updateDestination($event); onDestinationInput($event)"
+                (change)="onRouteChange()"
+                (focus)="showSuggestionsFor.set(addressSuggestions().length > 0 ? 'destination' : null)"
+                (blur)="hideAddressSuggestions()"
+                placeholder="Enter destination address"
+                class="form-input"
+              />
+              @if (showSuggestionsFor() === 'destination' && addressSuggestions().length) {
+                <ul class="suggest-list" role="listbox">
+                  @for (s of addressSuggestions(); track s.address) {
+                    <li
+                      role="option"
+                      class="suggest-item"
+                      (mousedown)="selectAddressSuggestion(s.address); $event.preventDefault()"
+                    >{{ s.address }}</li>
+                  }
+                </ul>
+              }
+            </div>
           </div>
 
           <!-- Stops -->
@@ -117,13 +193,29 @@
 
             @for (stop of rideOrder().stops; track stop.id) {
               <div class="stop-input-group">
-                <input
-                  type="text"
-                  [(ngModel)]="stop.address"
-                  (change)="onRouteChange()"
-                  placeholder="Stop address"
-                  class="form-input"
-                />
+                <div class="input-with-suggest">
+                  <input
+                    type="text"
+                    [ngModel]="stop.address"
+                    (ngModelChange)="updateStopAddress(stop.id, $event); onStopAddressInput(stop.id, $event)"
+                    (change)="onRouteChange()"
+                    (focus)="showSuggestionsFor.set(addressSuggestions().length > 0 ? stop.id : null)"
+                    (blur)="hideAddressSuggestions()"
+                    placeholder="Stop address"
+                    class="form-input"
+                  />
+                  @if (showSuggestionsFor() === stop.id && addressSuggestions().length) {
+                    <ul class="suggest-list" role="listbox">
+                      @for (s of addressSuggestions(); track s.address) {
+                        <li
+                          role="option"
+                          class="suggest-item"
+                          (mousedown)="selectAddressSuggestion(s.address); $event.preventDefault()"
+                        >{{ s.address }}</li>
+                      }
+                    </ul>
+                  }
+                </div>
                 <button
                   type="button"
                   class="btn-remove-stop"
@@ -409,11 +501,14 @@
           Continue
         </button>
       } @else {
+        @if (estimateError()) {
+          <p class="form-error">{{ estimateError() }}</p>
+        }
         <button
           type="button"
           class="btn-primary"
           (click)="confirmRide()"
-          [disabled]="!termsAccepted() || !isStepValid(currentStep())"
+          [disabled]="!termsAccepted() || !isStepValid(currentStep()) || !lastGeocodedWaypoints()"
         >
           Request Ride
         </button>

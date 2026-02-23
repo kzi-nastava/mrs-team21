@@ -28,6 +28,6 @@ public record PassengerRegisterRequest(
         @NotBlank(message = "Phone number is required")
         String phoneNumber,
 
-        String profilePicture
+        String profilePictureUrl
 ) {}
 

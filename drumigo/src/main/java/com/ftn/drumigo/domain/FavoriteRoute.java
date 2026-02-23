@@ -37,5 +37,12 @@ public class FavoriteRoute {
     
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
+
+    /**
+     * When set, this favorite was created from a past ride (ride history).
+     * Used to show isFavorite in history and to remove-by-ride.
+     */
+    @Column(name = "source_ride_id")
+    private Long sourceRideId;
 }
 

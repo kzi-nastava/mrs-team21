@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs';
 import { RideHistoryService } from '../../services/ride-history.service';
 import { Ride } from '../../models';
 import { passengerHistoryConfig } from '../../config/passenger-history.config';
@@ -12,6 +13,9 @@ import {
   RideForRating,
 } from '../../components/rating-modal/rating-modal.component';
 import { ReviewResponse, ReviewService } from '../../services/review.service';
+import { FavoriteRoutesService } from '../../services/favorite-routes.service';
+import { AuthService } from '../../../../shared/services/auth.service';
+import { ToastService } from '../../../../shared/services/toast.service';
 
 /**
  * Smart page component for passenger ride history.
@@ -34,7 +38,10 @@ import { ReviewResponse, ReviewService } from '../../services/review.service';
 export class PassengerHistoryPageComponent implements OnInit {
   private readonly rideHistoryService = inject(RideHistoryService);
   private readonly reviewService = inject(ReviewService);
+  private readonly favoriteRoutesService = inject(FavoriteRoutesService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly authService = inject(AuthService);
+  private readonly toastService = inject(ToastService);
 
   allRides = signal<Ride[]>([]);
   filteredRides = signal<Ride[]>([]);
@@ -42,7 +49,13 @@ export class PassengerHistoryPageComponent implements OnInit {
   endDate = signal<string>('');
   selectedRide = signal<Ride | null>(null);
   currentSort = signal<SortState>({ field: null, order: 'asc' });
-  
+
+  currentPage = signal<number>(0);
+  totalPages = signal<number>(0);
+  totalElements = signal<number>(0);
+  pageSize = signal<number>(10);
+  isLoading = signal<boolean>(false);
+
   // Rating modal state
   showRatingModal = signal<boolean>(false);
   rideToRate = signal<RideForRating | null>(null);
@@ -54,47 +67,83 @@ export class PassengerHistoryPageComponent implements OnInit {
   }
 
   private loadRides(): void {
-    const rides = this.rideHistoryService.getPassengerRideHistory();
-    this.allRides.set(rides);
-    this.filteredRides.set(rides);
+    const passengerId = this.authService.getUserId();
+    if (!passengerId) {
+      this.toastService.error('Please log in to view your ride history');
+      return;
+    }
+
+    this.isLoading.set(true);
+    const fromDate = this.startDate() ? new Date(this.startDate()) : null;
+    const toDate = this.endDate() ? new Date(this.endDate()) : null;
+
+    this.rideHistoryService
+      .getAllPassengerRideHistory(
+        passengerId,
+        fromDate,
+        toDate,
+      )
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isLoading.set(false)),
+      )
+      .subscribe({
+        next: (rides) => {
+          this.allRides.set(rides);
+          this.applySortingAndPagination();
+        },
+        error: (error) => {
+          console.error('Failed to load passenger ride history', error);
+          this.toastService.error('Failed to load ride history. Please try again.');
+          this.allRides.set([]);
+          this.filteredRides.set([]);
+          this.totalPages.set(0);
+          this.totalElements.set(0);
+        },
+      });
+  }
+
+  private applySortingAndPagination(): void {
+    let rides = [...this.allRides()];
+
+    if (this.currentSort().field) {
+      rides = this.rideHistoryService.sortRides(
+        rides,
+        this.currentSort().field,
+        this.currentSort().order,
+      );
+    }
+
+    const totalElements = rides.length;
+    const totalPages = Math.max(1, Math.ceil(totalElements / this.pageSize()));
+    const currentPage = Math.min(this.currentPage(), totalPages - 1);
+    const start = currentPage * this.pageSize();
+    const end = start + this.pageSize();
+
+    this.totalElements.set(totalElements);
+    this.totalPages.set(totalPages);
+    this.currentPage.set(currentPage);
+    this.filteredRides.set(rides.slice(start, end));
   }
 
   onFilterChanged(filter: { startDate: string; endDate: string }): void {
-    const start = filter.startDate ? new Date(filter.startDate) : null;
-    const end = filter.endDate ? new Date(filter.endDate) : null;
-    let filtered = this.rideHistoryService.filterRidesByDateRange(
-      this.allRides(),
-      start,
-      end,
-    );
-    
-    // Apply current sort if active
-    if (this.currentSort().field) {
-      filtered = this.rideHistoryService.sortRides(filtered, this.currentSort().field, this.currentSort().order);
-    }
-    
-    this.filteredRides.set(filtered);
+    this.startDate.set(filter.startDate);
+    this.endDate.set(filter.endDate);
+    this.currentPage.set(0);
+    this.loadRides();
   }
 
   onFilterCleared(): void {
     this.startDate.set('');
     this.endDate.set('');
-    let rides = this.allRides();
-    
-    // Apply current sort if active
-    if (this.currentSort().field) {
-      rides = this.rideHistoryService.sortRides(rides, this.currentSort().field, this.currentSort().order);
-    }
-    
-    this.filteredRides.set(rides);
+    this.currentPage.set(0);
+    this.loadRides();
   }
 
   onSortChanged(sortState: SortState): void {
     this.currentSort.set(sortState);
-    if (sortState.field) {
-      const sorted = this.rideHistoryService.sortRides(this.filteredRides(), sortState.field, sortState.order);
-      this.filteredRides.set(sorted);
-    }
+    this.currentPage.set(0);
+    this.applySortingAndPagination();
   }
 
   onRideSelected(ride: Ride): void {
@@ -126,19 +175,13 @@ export class PassengerHistoryPageComponent implements OnInit {
             ratingDeadline: status.ratingDeadline ? new Date(status.ratingDeadline) : undefined,
           });
 
-          // Update in allRides
-          this.allRides.update(rides => 
-            rides.map(r => r.id === rideId ? updateRide(r) : r)
-          );
-          
-          // Update in filteredRides
-          this.filteredRides.update(rides => 
-            rides.map(r => r.id === rideId ? updateRide(r) : r)
-          );
-          
+          this.filteredRides.update((rides) => rides.map((r) => (r.id === rideId ? updateRide(r) : r)));
+          this.allRides.update((rides) => rides.map((r) => (r.id === rideId ? updateRide(r) : r)));
+          this.applySortingAndPagination();
+
           // Update selectedRide
           if (this.selectedRide()?.id === rideId) {
-            this.selectedRide.update(r => r ? updateRide(r) : r);
+            this.selectedRide.update((r) => (r ? updateRide(r) : r));
           }
 
           // If already reviewed, fetch review details so we can show actual ratings
@@ -171,14 +214,11 @@ export class PassengerHistoryPageComponent implements OnInit {
             reviewComment: review.comment,
           });
 
-          this.allRides.update(rides =>
-            rides.map(r => r.id === rideId ? updateRide(r) : r)
-          );
-          this.filteredRides.update(rides =>
-            rides.map(r => r.id === rideId ? updateRide(r) : r)
-          );
+          this.filteredRides.update((rides) => rides.map((r) => (r.id === rideId ? updateRide(r) : r)));
+          this.allRides.update((rides) => rides.map((r) => (r.id === rideId ? updateRide(r) : r)));
+          this.applySortingAndPagination();
           if (this.selectedRide()?.id === rideId) {
-            this.selectedRide.update(r => r ? updateRide(r) : r);
+            this.selectedRide.update((r) => (r ? updateRide(r) : r));
           }
         },
         error: (error) => {
@@ -192,35 +232,48 @@ export class PassengerHistoryPageComponent implements OnInit {
   }
 
   onFavoriteToggled(ride: Ride): void {
-    // TODO: Backend Integration - Implement API call to mark ride as favorite
-    // 1. Create or update RidePassenger.isFavorite in the database
-    // 2. Call backend endpoint: PATCH /api/rides/{rideId}/favorite with { isFavorite: boolean }
-    // 3. Handle optimistic UI update vs. pessimistic (wait for response)
-    // 4. Add error handling and user feedback (toast notification)
-    // 5. Consider adding isFavorite to the Ride DTO in backend
-    
-    // For now: local toggle only
-    const updatedRide = { ...ride, isFavorite: !ride.isFavorite };
-    
-    // Update in allRides
-    const allRidesIndex = this.allRides().findIndex(r => r.id === ride.id);
-    if (allRidesIndex !== -1) {
-      const updated = [...this.allRides()];
-      updated[allRidesIndex] = updatedRide;
-      this.allRides.set(updated);
+    const passengerId = this.authService.getUserId();
+    if (!passengerId) {
+      this.toastService.error('Please log in to update favorites');
+      return;
     }
-    
-    // Update in filteredRides
-    const filteredIndex = this.filteredRides().findIndex(r => r.id === ride.id);
-    if (filteredIndex !== -1) {
-      const updated = [...this.filteredRides()];
-      updated[filteredIndex] = updatedRide;
-      this.filteredRides.set(updated);
-    }
-    
-    // Update selectedRide if it's the same ride
-    if (this.selectedRide()?.id === ride.id) {
-      this.selectedRide.set(updatedRide);
+
+    const rideIdNum = Number(ride.id);
+    if (ride.isFavorite) {
+      // Remove from favorites: use by-ride endpoint (we have ride id)
+      this.favoriteRoutesService
+        .deleteByRide(passengerId, rideIdNum)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            const updatedRide = { ...ride, isFavorite: false, favoriteRouteId: undefined };
+            this.allRides.update((rides) => rides.map((r) => (r.id === ride.id ? updatedRide : r)));
+            this.applySortingAndPagination();
+            if (this.selectedRide()?.id === ride.id) this.selectedRide.set(updatedRide);
+            this.toastService.success('Removed from favorites');
+          },
+          error: (err) => {
+            this.toastService.error(err?.error?.message ?? 'Failed to remove from favorites');
+          },
+        });
+    } else {
+      // Add to favorites
+      this.favoriteRoutesService
+        .createFromRide(passengerId, rideIdNum)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (fav) => {
+            const updatedRide = { ...ride, isFavorite: true, favoriteRouteId: fav.id };
+            this.allRides.update((rides) => rides.map((r) => (r.id === ride.id ? updatedRide : r)));
+            this.applySortingAndPagination();
+            if (this.selectedRide()?.id === ride.id) this.selectedRide.set(updatedRide);
+            this.toastService.success('Added to favorites');
+          },
+          error: (err) => {
+            const msg = err?.error?.message ?? err?.message ?? 'Failed to add to favorites';
+            this.toastService.error(msg);
+          },
+        });
     }
   }
 
@@ -259,14 +312,11 @@ export class PassengerHistoryPageComponent implements OnInit {
       daysRemainingToRate: 0,
     });
 
-    this.allRides.update(rides =>
-      rides.map(r => r.id === rideId ? updateRide(r) : r)
-    );
-    this.filteredRides.update(rides =>
-      rides.map(r => r.id === rideId ? updateRide(r) : r)
-    );
+    this.filteredRides.update((rides) => rides.map((r) => (r.id === rideId ? updateRide(r) : r)));
+    this.allRides.update((rides) => rides.map((r) => (r.id === rideId ? updateRide(r) : r)));
+    this.applySortingAndPagination();
     if (this.selectedRide()?.id === rideId) {
-      this.selectedRide.update(r => r ? updateRide(r) : r);
+      this.selectedRide.update((r) => (r ? updateRide(r) : r));
     }
 
     // Sync status from backend (source of truth)
@@ -288,24 +338,38 @@ export class PassengerHistoryPageComponent implements OnInit {
             daysRemainingToRate: status.daysRemaining,
           });
 
-          // Update in allRides
-          this.allRides.update(rides => 
-            rides.map(r => r.id === rideId ? updateRide(r) : r)
-          );
-          
-          // Update in filteredRides
-          this.filteredRides.update(rides => 
-            rides.map(r => r.id === rideId ? updateRide(r) : r)
-          );
-          
+          this.filteredRides.update((rides) => rides.map((r) => (r.id === rideId ? updateRide(r) : r)));
+          this.allRides.update((rides) => rides.map((r) => (r.id === rideId ? updateRide(r) : r)));
+          this.applySortingAndPagination();
+
           // Update selectedRide if needed
           if (this.selectedRide()?.id === rideId) {
-            this.selectedRide.update(r => r ? updateRide(r) : r);
+            this.selectedRide.update((r) => (r ? updateRide(r) : r));
           }
         },
         error: (error) => {
           console.error('Failed to fetch rating status:', error);
         },
       });
+  }
+
+  onPageChange(page: number): void {
+    if (page < 0 || page >= this.totalPages()) {
+      return;
+    }
+    this.currentPage.set(page);
+    this.applySortingAndPagination();
+  }
+
+  goToPreviousPage(): void {
+    if (this.currentPage() > 0) {
+      this.onPageChange(this.currentPage() - 1);
+    }
+  }
+
+  goToNextPage(): void {
+    if (this.currentPage() < this.totalPages() - 1) {
+      this.onPageChange(this.currentPage() + 1);
+    }
   }
 }

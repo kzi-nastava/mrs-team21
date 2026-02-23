@@ -1,7 +1,8 @@
 package com.ftn.drumigo.repository;
 
-import com.ftn.drumigo.domain.Driver;
+
 import com.ftn.drumigo.domain.Vehicle;
+import com.ftn.drumigo.domain.users.Driver;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -13,8 +14,6 @@ import java.util.Optional;
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 
     Optional<Vehicle> findByDriver(Driver driver);
-
-    List<Vehicle> findByAvailableTrue();
     boolean existsByLicensePlate(String licensePlate);
     
     /**

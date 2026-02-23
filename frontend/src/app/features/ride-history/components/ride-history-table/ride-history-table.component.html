@@ -118,7 +118,10 @@
         <td *ngIf="isColumnVisible('driver')">
           <div class="driver-cell">
             <div class="driver-avatar">
-              {{ getDriverInitials(ride.driver) }}
+              <img
+                [src]="ride.driver?.photoUrl || 'images/default-avatar.svg'"
+                [alt]="getDriverName(ride.driver)"
+              />
             </div>
             <span class="driver-name">{{ getDriverName(ride.driver) }}</span>
           </div>
@@ -126,10 +129,13 @@
         <td *ngIf="isColumnVisible('passengers')">
           <div class="passengers-cell">
             <div class="passenger-avatars">
-              <div class="passenger-avatar" *ngFor="let passenger of ride.passengers.slice(0, 3)">
-                {{ getPassengerInitials(passenger) }}
-              </div>
-              <div class="passenger-avatar" *ngIf="ride.passengers.length > 3">
+              <img
+                *ngFor="let passenger of ride.passengers.slice(0, 3)"
+                src="images/default-avatar.svg"
+                alt="Passenger"
+                class="passenger-avatar-img"
+              />
+              <div class="passenger-avatar passenger-avatar--count" *ngIf="ride.passengers.length > 3">
                 +{{ ride.passengers.length - 3 }}
               </div>
             </div>

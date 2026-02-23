@@ -20,7 +20,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -34,7 +33,7 @@ public class PanicService {
     private final AdminRepository adminRepository;
     private final NotificationRepository notificationRepository;
     
-    public void create(Long rideId, String email) {
+    public void create(Long rideId, Long userId) {
         Ride ride = rideRepository.findById(rideId)
             .orElseThrow(() -> new ResourceNotFoundException("Ride not found with id: " + rideId));
         
@@ -43,18 +42,39 @@ public class PanicService {
             throw new BadRequestException("Panic can only be triggered for ACTIVE rides. Current status: " + ride.getStatus());
         }
         
-        User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
-        
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
         // Create panic event
         PanicEvent panicEvent = new PanicEvent();
         panicEvent.setRide(ride);
         panicEvent.setUser(user);
-        panicEvent.setCreatedAt(Instant.now());
+
+        panicEventRepository.save(panicEvent);
         
-        panicEvent = panicEventRepository.save(panicEvent);
-        
-        //TODO: Send admin notifications
+        // Send notifications to all admins
+        sendAdminPanicNotifications(ride, user);
+    }
+
+    private void sendAdminPanicNotifications(Ride ride, User user) {
+        // Get all admins
+        List<Admin> admins = adminRepository.findAll();
+
+        // Send notification to each admin
+        for (Admin admin : admins) {
+            Notification notification = new Notification();
+            notification.setUser(admin);
+            notification.setRide(ride);
+            notification.setType(NotificationType.PANIC_ALERT);
+            notification.setMessage(String.format(
+                "PANIC EVENT: Ride #%d - User: %s %s (%s)",
+                ride.getId(),
+                user.getName(),
+                user.getSurname(),
+                user.getEmail()
+            ));
+            notificationRepository.save(notification);
+        }
     }
     
     public Page<PanicEvent> getAll(Pageable pageable) {

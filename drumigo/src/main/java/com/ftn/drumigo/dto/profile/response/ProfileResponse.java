@@ -25,6 +25,9 @@ public class ProfileResponse {
     
     // Driver-specific fields
     private Boolean activeDriver;
+    private Boolean isBusy;
     private Instant lastStateChangeAt;
     private VehicleInfoResponse vehicle;
+    /** Hours driven in the last 24h (for 8h daily limit). Present only for drivers. */
+    private ActiveHoursResponse activeHoursLast24h;
 }

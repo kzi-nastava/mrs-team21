@@ -57,11 +57,6 @@ public class ReviewService {
         Passenger passenger = passengerRepository.findById(passengerId)
             .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with id: " + passengerId));
         
-        // Validate that passenger is part of this ride
-        if (!ridePassengerRepository.existsByRideAndPassenger(ride, passenger)) {
-            throw new BadRequestException("Passenger is not part of this ride");
-        }
-        
         // Validate that passenger is the ordering passenger (only ordering passenger can review)
         if (ride.getOrderingPassenger() == null) {
             throw new BadRequestException("Ride has no ordering passenger set");
@@ -139,7 +134,12 @@ public class ReviewService {
             .orElseThrow(() -> new ResourceNotFoundException("Passenger not found with id: " + passengerId));
         
         // Security: verify passenger is part of this ride (prevent info leakage)
-        if (!ridePassengerRepository.existsByRideAndPassenger(ride, passenger)) {
+        // Passenger is part of ride if they are the ordering passenger OR an added passenger in ride_passengers
+        boolean isOrderingPassenger = ride.getOrderingPassenger() != null
+            && Objects.equals(ride.getOrderingPassenger().getId(), passengerId);
+        boolean isAddedPassenger = ridePassengerRepository.existsByRideAndPassengerEmail(ride, passenger.getEmail());
+
+        if (!isOrderingPassenger && !isAddedPassenger) {
             throw new BadRequestException("Passenger is not part of this ride");
         }
         
@@ -160,10 +160,7 @@ public class ReviewService {
                 long hoursRemaining = Duration.between(now, ratingDeadline).toHours();
                 daysRemaining = (int) (hoursRemaining / 24);
             }
-            
-            // Can rate if: ride is finished, within deadline, is ordering passenger, and no existing review
-            boolean isOrderingPassenger = ride.getOrderingPassenger() != null
-                && Objects.equals(ride.getOrderingPassenger().getId(), passengerId);
+
             boolean withinDeadline = now.isBefore(ratingDeadline) || now.equals(ratingDeadline);
             boolean isFinished = ride.getStatus() == RideStatus.FINISHED;
             

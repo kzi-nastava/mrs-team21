@@ -57,6 +57,7 @@ export class DriverHistoryPageComponent implements OnInit {
   private readonly rideHistoryService = inject(RideHistoryService);
 
   // Ride data
+  allRides = signal<Ride[]>([]);
   filteredRides = signal<Ride[]>([]);
   selectedRide = signal<Ride | null>(null);
 
@@ -83,7 +84,6 @@ export class DriverHistoryPageComponent implements OnInit {
   );
 
   ngOnInit(): void {
-    this.setDefaultDateRange();
     this.route.queryParamMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((params) => {
@@ -108,41 +108,52 @@ export class DriverHistoryPageComponent implements OnInit {
     const toDate = this.endDate() ? new Date(this.endDate()) : null;
 
     this.rideHistoryService
-      .getDriverRideHistory(
+      .getAllDriverRideHistory(
         driverId,
         fromDate,
         toDate,
-        this.currentPage(),
-        this.pageSize(),
       )
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isLoading.set(false)),
       )
       .subscribe({
-        next: (response) => {
-          let rides = response.rides;
-          // Apply client-side sorting if active
-          if (this.currentSort().field) {
-            rides = this.rideHistoryService.sortRides(
-              rides,
-              this.currentSort().field,
-              this.currentSort().order,
-            );
-          }
-          this.filteredRides.set(rides);
-          this.totalPages.set(response.totalPages);
-          this.totalElements.set(response.totalElements);
-          this.currentPage.set(response.currentPage);
+        next: (rides) => {
+          this.allRides.set(rides);
+          this.applySortingAndPagination();
         },
         error: (error) => {
           console.error('Failed to load ride history', error);
           this.toastService.error('Failed to load ride history. Please try again.');
+          this.allRides.set([]);
           this.filteredRides.set([]);
           this.totalPages.set(0);
           this.totalElements.set(0);
         },
       });
+  }
+
+  private applySortingAndPagination(): void {
+    let rides = [...this.allRides()];
+
+    if (this.currentSort().field) {
+      rides = this.rideHistoryService.sortRides(
+        rides,
+        this.currentSort().field,
+        this.currentSort().order,
+      );
+    }
+
+    const totalElements = rides.length;
+    const totalPages = Math.max(1, Math.ceil(totalElements / this.pageSize()));
+    const currentPage = Math.min(this.currentPage(), totalPages - 1);
+    const start = currentPage * this.pageSize();
+    const end = start + this.pageSize();
+
+    this.totalElements.set(totalElements);
+    this.totalPages.set(totalPages);
+    this.currentPage.set(currentPage);
+    this.filteredRides.set(rides.slice(start, end));
   }
 
   private loadUpcomingRides(): void {
@@ -161,6 +172,7 @@ export class DriverHistoryPageComponent implements OnInit {
       )
       .subscribe({
         next: (rides) => {
+          this.allRides.set([]);
           this.filteredRides.set(rides);
           // Reset pagination for upcoming rides (no pagination)
           this.totalPages.set(1);
@@ -173,15 +185,6 @@ export class DriverHistoryPageComponent implements OnInit {
           this.filteredRides.set([]);
         },
       });
-  }
-
-  private setDefaultDateRange(): void {
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30);
-
-    this.endDate.set(endDate.toISOString().split('T')[0]);
-    this.startDate.set(startDate.toISOString().split('T')[0]);
   }
 
   onFilterChanged(filter: { startDate: string; endDate: string }): void {
@@ -210,13 +213,14 @@ export class DriverHistoryPageComponent implements OnInit {
 
   onSortChanged(sortState: SortState): void {
     this.currentSort.set(sortState);
+    if (this.viewMode() === 'history') {
+      this.currentPage.set(0);
+      this.applySortingAndPagination();
+      return;
+    }
+
     if (sortState.field) {
-      // Apply client-side sorting on current page
-      const sorted = this.rideHistoryService.sortRides(
-        this.filteredRides(),
-        sortState.field,
-        sortState.order,
-      );
+      const sorted = this.rideHistoryService.sortRides(this.filteredRides(), sortState.field, sortState.order);
       this.filteredRides.set(sorted);
     }
   }
@@ -255,6 +259,10 @@ export class DriverHistoryPageComponent implements OnInit {
       return;
     }
     this.currentPage.set(page);
+    if (this.viewMode() === 'history') {
+      this.applySortingAndPagination();
+      return;
+    }
     this.loadRides();
   }
 

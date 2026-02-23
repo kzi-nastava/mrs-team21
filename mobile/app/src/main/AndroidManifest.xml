@@ -5,6 +5,11 @@
     <!-- Permissions -->
     <!-- Internet permission for API calls -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Location permissions for driver location pinging -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     
     <!-- Camera permission for profile photo -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -14,6 +19,7 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
     <application
+        android:name=".DrumigoApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -22,6 +28,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Drumigo"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
         <!-- Main Activity - Single Activity Architecture -->
@@ -29,7 +36,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Drumigo.Auth"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustPan">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -47,7 +54,33 @@
                     android:pathPrefix="/reset-password" />
             </intent-filter>
 
-            <!-- Custom scheme deep link -->
+            <!-- Deep link for driver activation (set password) - production -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="drumigo.com"
+                    android:pathPrefix="/activate-driver" />
+            </intent-filter>
+
+            <!-- Deep link for driver activation via ngrok (dev: backend at ngrok http 8080) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="*ngrok-free.app"
+                    android:pathPrefix="/activate-driver" />
+                <data
+                    android:scheme="https"
+                    android:host="*ngrok.io"
+                    android:pathPrefix="/activate-driver" />
+            </intent-filter>
+
+            <!-- Custom scheme deep link - reset password -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -57,13 +90,43 @@
                     android:host="reset-password" />
             </intent-filter>
 
+            <!-- Custom scheme deep link - driver activation -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="drumigo"
+                    android:host="activate-driver" />
+            </intent-filter>
+
         </activity>
 
         <!-- Ride History activity (explicit full name because it's in a different Java package) -->
         <activity
-            android:name="com.ridesharing.app.ui.history.RideHistoryActivity"
+            android:name="com.drumigo.mobile.ui.history.RideHistoryActivity"
             android:exported="false"
             android:label="@string/nav_ride_history" />
+
+        <activity
+            android:name="com.drumigo.mobile.ui.admin.AdminUserManagementActivity"
+            android:exported="false"
+            android:label="@string/admin_users_title" />
+
+        <activity
+            android:name="com.drumigo.mobile.ui.admin.AdminVehicleTypePricingActivity"
+            android:exported="false"
+            android:label="@string/admin_pricing_title" />
+
+        <activity
+            android:name="com.drumigo.mobile.ui.admin.AdminNotificationsActivity"
+            android:exported="false"
+            android:label="@string/admin_notifications_title" />
+
+        <activity
+            android:name="com.drumigo.mobile.ui.admin.AdminPanicNotificationsActivity"
+            android:exported="false"
+            android:label="@string/nav_panic_notifications" />
 
     </application>
 

@@ -42,5 +42,17 @@ public class Notification {
     
     @Column(name = "read_at")
     private Instant readAt;
+
+    /**
+     * For SCHEDULED_RIDE_REMINDER: minutes before ride start (15, 10, or 5).
+     * Null for other notification types.
+     */
+    @Column(name = "reminder_minutes_before")
+    private Integer reminderMinutes;
+
+    /** Explicit setter so IDEs and reflection reliably see it (column: reminder_minutes_before). */
+    public void setReminderMinutes(Integer reminderMinutes) {
+        this.reminderMinutes = reminderMinutes;
+    }
 }
 

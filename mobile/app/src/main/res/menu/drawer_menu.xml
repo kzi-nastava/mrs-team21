@@ -3,34 +3,94 @@
 
     <group android:checkableBehavior="single">
         <item
+            android:id="@+id/nav_home"
+            android:icon="@drawable/ic_car"
+            android:title="@string/nav_home" />
+
+        <item
             android:id="@+id/nav_login"
+            android:icon="@drawable/ic_nav_login"
             android:title="@string/nav_login" />
 
         <item
             android:id="@+id/nav_registration"
+            android:icon="@drawable/ic_nav_register"
             android:title="@string/nav_registration" />
 
         <item
-            android:id="@+id/nav_forgot_password"
-            android:title="@string/nav_forgot_password" />
+            android:id="@+id/nav_order_ride"
+            android:icon="@drawable/ic_clock_white"
+            android:title="@string/nav_order_ride" />
 
         <item
-            android:id="@+id/nav_reset_password"
-            android:title="@string/nav_reset_password" />
+            android:id="@+id/nav_ride_tracking"
+            android:icon="@drawable/ic_car"
+            android:title="@string/nav_ride_tracking" />
 
         <item
             android:id="@+id/nav_ride_history"
-            android:title="@string/nav_ride_history"
-            android:icon="@drawable/ic_clock_white" />
+            android:icon="@drawable/ic_clock_white"
+            android:title="@string/nav_ride_history" />
+
+        <item
+            android:id="@+id/nav_notifications"
+            android:icon="@drawable/ic_bell"
+            android:title="@string/nav_notifications" />
+
+        <item
+            android:id="@+id/nav_panic_notifications"
+            android:icon="@drawable/ic_warning"
+            android:title="@string/nav_panic_notifications" />
+
+        <item
+            android:id="@+id/nav_live_support"
+            android:icon="@drawable/ic_info"
+            android:title="@string/nav_live_support" />
+
+        <item
+            android:id="@+id/nav_register_driver"
+            android:icon="@drawable/ic_car"
+            android:title="@string/nav_register_driver" />
+
+        <item
+            android:id="@+id/nav_drivers"
+            android:icon="@drawable/ic_person"
+            android:title="@string/nav_drivers" />
+
+        <item
+            android:id="@+id/nav_passengers"
+            android:icon="@drawable/ic_person"
+            android:title="@string/nav_passengers" />
+
+        <item
+            android:id="@+id/nav_ride_pricing"
+            android:icon="@drawable/ic_dollar_white"
+            android:title="@string/nav_ride_pricing" />
+
+        <item
+            android:id="@+id/nav_reports"
+            android:icon="@drawable/ic_clock_white"
+            android:title="@string/nav_reports" />
+
+        <item
+            android:id="@+id/nav_all_notifications"
+            android:icon="@drawable/ic_warning"
+            android:title="@string/nav_all_notifications" />
 
         <item
             android:id="@+id/nav_profile"
-            android:title="@string/nav_profile"
-            android:icon="@drawable/ic_person" />
+            android:icon="@drawable/ic_person"
+            android:title="@string/nav_profile" />
+
+        <item
+            android:id="@+id/nav_support"
+            android:icon="@drawable/ic_info"
+            android:title="@string/nav_support" />
     </group>
 
     <item
         android:id="@+id/nav_logout"
+        android:icon="@drawable/ic_nav_logout"
         android:title="@string/nav_logout" />
 
 </menu>

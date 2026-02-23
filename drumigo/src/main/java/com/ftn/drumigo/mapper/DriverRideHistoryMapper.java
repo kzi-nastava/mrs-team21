@@ -1,10 +1,12 @@
 package com.ftn.drumigo.mapper;
 
 import com.ftn.drumigo.domain.*;
-import com.ftn.drumigo.dto.DriverRideHistoryItemResponse;
+import com.ftn.drumigo.dto.history.response.DriverRideHistoryItemResponse;
 import com.ftn.drumigo.repository.PanicEventRepository;
 import com.ftn.drumigo.repository.RidePassengerRepository;
 import com.ftn.drumigo.repository.RideWaypointRepository;
+import com.ftn.drumigo.repository.UserRepository;
+import com.ftn.drumigo.domain.users.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -18,21 +20,15 @@ public class DriverRideHistoryMapper {
     private final RidePassengerRepository ridePassengerRepository;
     private final RideWaypointRepository rideWaypointRepository;
     private final PanicEventRepository panicEventRepository;
-    
+    private final UserRepository userRepository;
+
     public DriverRideHistoryItemResponse toResponse(Ride ride) {
         List<RideWaypoint> waypoints = rideWaypointRepository.findByRideOrderByWaypointOrderAsc(ride);
-        List<RidePassenger> ridePassengers = ridePassengerRepository.findByRideWithPassenger(ride);
+        List<RidePassenger> ridePassengers = ridePassengerRepository.findByRide(ride);
         boolean panicOccurred = !panicEventRepository.findByRide(ride).isEmpty();
         
-        RideWaypoint startWaypoint = waypoints.stream()
-            .filter(wp -> wp.getWaypointOrder() == 0)
-            .findFirst()
-            .orElse(null);
-        
-        RideWaypoint endWaypoint = waypoints.stream()
-            .filter(wp -> wp.getWaypointOrder() == waypoints.size() - 1)
-            .findFirst()
-            .orElse(null);
+        RideWaypoint startWaypoint = waypoints.isEmpty() ? null : waypoints.get(0);
+        RideWaypoint endWaypoint = waypoints.isEmpty() ? null : waypoints.get(waypoints.size() - 1);
         
         DriverRideHistoryItemResponse.LocationInfo startLocation = null;
         DriverRideHistoryItemResponse.LocationInfo endLocation = null;
@@ -56,11 +52,24 @@ public class DriverRideHistoryMapper {
         }
         
         List<DriverRideHistoryItemResponse.PassengerInfo> passengers = ridePassengers.stream()
-            .map(rp -> new DriverRideHistoryItemResponse.PassengerInfo(
-                rp.getPassenger().getId(),
-                rp.getPassenger().getName(),
-                rp.getPassenger().getSurname()
-            ))
+            .map(rp -> {
+                // Try to find the user by email if they're registered
+                User user = userRepository.findByEmail(rp.getPassengerEmail()).orElse(null);
+                if (user != null) {
+                    return new DriverRideHistoryItemResponse.PassengerInfo(
+                        user.getId(),
+                        user.getName(),
+                        user.getSurname()
+                    );
+                } else {
+                    // If user not registered, use email as name and null for other fields
+                    return new DriverRideHistoryItemResponse.PassengerInfo(
+                        null,
+                        rp.getPassengerEmail(),
+                        "(Unregistered)"
+                    );
+                }
+            })
             .collect(Collectors.toList());
         
         return new DriverRideHistoryItemResponse(

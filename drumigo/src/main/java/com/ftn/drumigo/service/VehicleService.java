@@ -5,17 +5,21 @@ import com.ftn.drumigo.domain.Vehicle;
 import com.ftn.drumigo.domain.VehicleType;
 import com.ftn.drumigo.dto.VehicleCreateRequest;
 import com.ftn.drumigo.dto.VehicleLocationUpdateRequest;
+import com.ftn.drumigo.dto.VehicleResponse;
 import com.ftn.drumigo.dto.VehicleUpdateRequest;
-import com.ftn.drumigo.exception.ConflictException;
 import com.ftn.drumigo.exception.ResourceNotFoundException;
+import com.ftn.drumigo.mapper.VehicleMapper;
 import com.ftn.drumigo.repository.DriverRepository;
 import com.ftn.drumigo.repository.VehicleRepository;
 import com.ftn.drumigo.repository.VehicleTypeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +29,7 @@ public class VehicleService {
     private final VehicleRepository vehicleRepository;
     private final DriverRepository driverRepository;
     private final VehicleTypeRepository vehicleTypeRepository;
+    private final VehicleMapper vehicleMapper;
     
     /**
      * Get all vehicles from active drivers for display on the landing page map.
@@ -34,6 +39,16 @@ public class VehicleService {
     public List<Vehicle> getActiveVehicles() {
         return vehicleRepository.findByDriverActiveDriverTrue();
 
+    }
+
+    public List<VehicleResponse> getActiveVehicleResponses() {
+        List<Vehicle> vehicles = vehicleRepository.findByDriverActiveDriverTrue();
+        return vehicles.stream()
+            .map(vehicle -> vehicleMapper.toResponseWithAvailability(
+                vehicle,
+                vehicle.getDriver() == null || !Boolean.TRUE.equals(vehicle.getDriver().getBusy())
+            ))
+            .collect(Collectors.toList());
     }
     
     public Vehicle getById(Long id) {
@@ -55,6 +70,8 @@ public class VehicleService {
         Vehicle vehicle = new Vehicle();
         vehicle.setDriver(driver);
         vehicle.setVehicleType(vehicleType);
+        vehicle.setModel(request.model());
+        vehicle.setLicensePlate(request.licensePlate());
         vehicle.setNumSeats(request.numSeats());
         vehicle.setBabyFriendly(request.babyFriendly());
         vehicle.setPetFriendly(request.petFriendly());
@@ -72,7 +89,12 @@ public class VehicleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle type not found with id: " + request.vehicleTypeId()));
             vehicle.setVehicleType(vehicleType);
         }
-        
+        if (request.model() != null) {
+            vehicle.setModel(request.model());
+        }
+        if (request.licensePlate() != null) {
+            vehicle.setLicensePlate(request.licensePlate());
+        }
         if (request.numSeats() != null) {
             vehicle.setNumSeats(request.numSeats());
         }
@@ -92,8 +114,42 @@ public class VehicleService {
         return vehicleRepository.save(vehicle);
     }
     
-    public Vehicle updateLocation(Long id, VehicleLocationUpdateRequest request) {
+    public Vehicle updateLocation(Long id, VehicleLocationUpdateRequest request, Long requesterUserId, String requesterRole) {
         Vehicle vehicle = getById(id);
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(requesterRole);
+        boolean isVehicleOwnerDriver =
+            vehicle.getDriver() != null &&
+            vehicle.getDriver().getId() != null &&
+            vehicle.getDriver().getId().equals(requesterUserId);
+
+        if (!isAdmin && !isVehicleOwnerDriver) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only update your own vehicle location");
+        }
+
+        return persistLocation(vehicle, request);
+    }
+
+    public Vehicle updateCurrentDriverLocation(Long driverUserId, VehicleLocationUpdateRequest request) {
+        Driver driver = driverRepository.findById(driverUserId)
+            .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + driverUserId));
+
+        Vehicle vehicle = vehicleRepository.findByDriver(driver)
+            .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found for driver id: " + driverUserId));
+
+        return persistLocation(vehicle, request);
+    }
+
+    /**
+     * Update a vehicle's current location. Caller is responsible for authorization (e.g. ride tracking sync).
+     */
+    public Vehicle updateLocationForRide(Vehicle vehicle, VehicleLocationUpdateRequest request) {
+        if (vehicle == null) {
+            throw new ResourceNotFoundException("Vehicle is null");
+        }
+        return persistLocation(vehicle, request);
+    }
+
+    private Vehicle persistLocation(Vehicle vehicle, VehicleLocationUpdateRequest request) {
         vehicle.setCurrentLat(request.lat());
         vehicle.setCurrentLng(request.lng());
         return vehicleRepository.save(vehicle);

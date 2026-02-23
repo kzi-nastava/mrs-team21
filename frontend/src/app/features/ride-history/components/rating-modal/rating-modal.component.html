@@ -27,13 +27,10 @@
       <!-- Driver Info -->
       <div class="driver-info">
         <div class="driver-info__avatar">
-          @if (ride().driverPhotoUrl) {
-            <img [src]="ride().driverPhotoUrl" [alt]="ride().driverName" />
-          } @else {
-            <div class="driver-info__avatar-placeholder">
-              {{ ride().driverName.charAt(0) }}
-            </div>
-          }
+          <img
+            [src]="ride().driverPhotoUrl || 'images/default-avatar.svg'"
+            [alt]="ride().driverName"
+          />
         </div>
         <div class="driver-info__details">
           <div class="driver-info__name">{{ ride().driverName }}</div>

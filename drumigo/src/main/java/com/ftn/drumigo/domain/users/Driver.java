@@ -19,6 +19,9 @@ public class Driver extends User {
     
     @Column(name = "active_driver", nullable = false)
     private Boolean activeDriver = false;
+
+    @Column(name = "busy", nullable = false)
+    private Boolean busy = false;
     
     @Column(name = "last_state_change_at")
     private Instant lastStateChangeAt;

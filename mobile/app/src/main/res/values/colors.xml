@@ -23,9 +23,16 @@
     <color name="white">#FFFFFF</color>
     <color name="success">#22C55E</color>
     <color name="success_bg">#F0FDF4</color>
+    <color name="status_pending">#B45309</color>
+    <color name="status_scheduled">#4338CA</color>
+    <color name="status_active">#C2410C</color>
     <color name="error">#EF4444</color>
+    <color name="marker_available">#22C55E</color>
+    <color name="marker_busy">#F97316</color>
     <!-- danger is an alias used across code; keep for compatibility -->
     <color name="danger">#EF4444</color>
+    <!-- Favorite star (filled) - distinct yellow so it's clearly "favorited" -->
+    <color name="star_filled">#EAB308</color>
 
     <!-- Transparency variants -->
     <color name="primary_10">#1A5B4CDB</color>

@@ -4,15 +4,21 @@ import com.ftn.drumigo.domain.users.Driver;
 import com.ftn.drumigo.domain.Review;
 import com.ftn.drumigo.domain.Ride;
 import com.ftn.drumigo.domain.RideWaypoint;
+import com.ftn.drumigo.domain.Vehicle;
 import com.ftn.drumigo.dto.*;
+import com.ftn.drumigo.dto.history.request.RideHistoryRequest;
+import com.ftn.drumigo.dto.history.response.DriverRideHistoryItemResponse;
 import com.ftn.drumigo.dto.ride.response.RideResponse;
 import com.ftn.drumigo.mapper.DriverMapper;
 import com.ftn.drumigo.mapper.DriverRideHistoryMapper;
 import com.ftn.drumigo.mapper.ReviewMapper;
 import com.ftn.drumigo.mapper.RideMapper;
+import com.ftn.drumigo.mapper.VehicleMapper;
+import com.ftn.drumigo.security.CustomUserDetails;
 import com.ftn.drumigo.service.DriverService;
 import com.ftn.drumigo.service.ReviewService;
 import com.ftn.drumigo.service.RideService;
+import com.ftn.drumigo.service.VehicleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,7 +26,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -39,9 +48,23 @@ public class DriverController {
     private final RideService rideService;
     private final DriverRideHistoryMapper driverRideHistoryMapper;
     private final RideMapper rideMapper;
+    private final VehicleService vehicleService;
+    private final VehicleMapper vehicleMapper;
+
+    private void requireAdmin(CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required");
+        }
+        if (!"ADMIN".equalsIgnoreCase(userDetails.getRole())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can perform this action");
+        }
+    }
     
     @PostMapping
-    public ResponseEntity<DriverResponse> createDriver(@Valid @RequestBody DriverCreateRequest request) {
+    public ResponseEntity<DriverResponse> createDriver(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody DriverCreateRequest request) {
+        requireAdmin(userDetails);
         Driver driver = driverService.create(request);
         return ResponseEntity.status(201).body(driverMapper.toResponse(driver));
     }
@@ -79,7 +102,10 @@ public class DriverController {
     }
     
     @PostMapping("/{id}/activation")
-    public ResponseEntity<ActivationTokenResponse> createActivationToken(@PathVariable Long id) {
+    public ResponseEntity<ActivationTokenResponse> createActivationToken(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        requireAdmin(userDetails);
         String token = driverService.createActivationToken(id);
         // Token expires in 24 hours
         Instant expiresAt = Instant.now().plusSeconds(24 * 60 * 60);
@@ -98,19 +124,11 @@ public class DriverController {
     @GetMapping("/{driverId}/rides/history")
     public ResponseEntity<Page<DriverRideHistoryItemResponse>> getDriverRideHistory(
             @PathVariable Long driverId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "requestedAt,desc") String sort) {
-        
-        String[] sortParams = sort.split(",");
-        Sort.Direction direction = sortParams.length > 1 && sortParams[1].equalsIgnoreCase("asc") 
-            ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Sort sortObj = Sort.by(direction, sortParams[0]);
-        
-        Pageable pageable = PageRequest.of(page, size, sortObj);
-        Page<Ride> rides = rideService.getDriverRideHistory(driverId, from, to, pageable);
+            @Valid @ModelAttribute RideHistoryRequest request) {
+
+        Pageable pageable = request.toPageable();
+
+        Page<Ride> rides = rideService.getDriverRideHistory(driverId, request.getFrom(), request.getTo(), pageable);
         Page<DriverRideHistoryItemResponse> responses = rides.map(driverRideHistoryMapper::toResponse);
         
         return ResponseEntity.ok(responses);
@@ -145,6 +163,22 @@ public class DriverController {
             @Valid @RequestBody DriverStateUpdateRequest request) {
         Driver driver = driverService.updateDriverState(id, request.activeDriver());
         return ResponseEntity.ok(driverMapper.toResponse(driver));
+    }
+
+    @PutMapping("/me/location")
+    public ResponseEntity<VehicleResponse> updateMyLocation(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody VehicleLocationUpdateRequest request) {
+        if (userDetails == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required");
+        }
+
+        if (!"DRIVER".equalsIgnoreCase(userDetails.getRole())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only drivers can update location");
+        }
+
+        Vehicle vehicle = vehicleService.updateCurrentDriverLocation(userDetails.getUserId(), request);
+        return ResponseEntity.ok(vehicleMapper.toResponse(vehicle));
     }
 }
 

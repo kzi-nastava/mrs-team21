@@ -1,0 +1,89 @@
+package com.ftn.drumigo.tests.base;
+
+import java.time.Duration;
+import java.util.Collections;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+/**
+ * Base for E2E tests. Uses Selenium Manager to auto-match ChromeDriver to the installed Chrome
+ * version, so tests run on any machine regardless of Chrome version.
+ */
+public abstract class BaseE2ETest {
+
+    static {
+        // Suppress CDP version mismatch warnings when Chrome is newer than Selenium's bundled CDP
+        // (Selenium Manager still matches ChromeDriver to Chrome; only DevTools protocol version may lag)
+        Logger.getLogger("org.openqa.selenium.devtools").setLevel(Level.SEVERE);
+        Logger.getLogger("org.openqa.selenium.chromium.ChromiumDriver").setLevel(Level.SEVERE);
+    }
+
+    protected WebDriver driver;
+    protected WebDriverWait wait;
+
+    protected String frontendUrl;
+    protected String adminEmail;
+    protected String adminPassword;
+    protected String passengerEmail;
+    protected String passengerPassword;
+
+    @BeforeEach
+    void setUpDriver() {
+        frontendUrl = getConfig("e2e.frontend.url", "E2E_FRONTEND_URL", "http://localhost:4200");
+        adminEmail = getConfig("e2e.admin.email", "E2E_ADMIN_EMAIL", "stefan.nikolic@drumigo.com");
+        adminPassword = getConfig("e2e.admin.password", "E2E_ADMIN_PASSWORD", "Password12345");
+        passengerEmail = getConfig("e2e.passenger.email", "E2E_PASSENGER_EMAIL", "ana.petrovic@example.com");
+        passengerPassword = getConfig("e2e.passenger.password", "E2E_PASSENGER_PASSWORD", "Password12345");
+        boolean headless = Boolean.parseBoolean(getConfig("e2e.headless", "E2E_HEADLESS", "true"));
+
+        ChromeOptions options = createChromeOptions(headless);
+        driver = new ChromeDriver(options);
+        wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+    }
+
+    /**
+     * Build Chrome options that work across different Chrome versions (no driver path needed;
+     * Selenium Manager resolves the correct ChromeDriver for the installed Chrome).
+     */
+    private static ChromeOptions createChromeOptions(boolean headless) {
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--window-size=1920,1080");
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-gpu");
+        options.setExperimentalOption("excludeSwitches", Collections.singletonList("enable-logging"));
+        if (headless) {
+            // Use --headless (no =new) so older Chrome (<112) and newest Chrome (132+) both work
+            options.addArguments("--headless");
+        }
+        return options;
+    }
+
+    @AfterEach
+    void tearDownDriver() {
+        if (driver != null) {
+            driver.quit();
+        }
+    }
+
+    private String getConfig(String propertyKey, String envKey, String defaultValue) {
+        String propertyValue = System.getProperty(propertyKey);
+        if (propertyValue != null && !propertyValue.isBlank()) {
+            return propertyValue;
+        }
+
+        String envValue = System.getenv(envKey);
+        if (envValue != null && !envValue.isBlank()) {
+            return envValue;
+        }
+
+        return defaultValue;
+    }
+}

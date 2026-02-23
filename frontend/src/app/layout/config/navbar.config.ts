@@ -3,6 +3,8 @@ export interface NavItem {
   icon: string;
   path: string;
   section?: 'main' | 'account' | 'management' | 'monitoring';
+  /** When true, item is shown but not clickable (route exists as placeholder). See docs/navbar-removed-features-spec.md */
+  disabled?: boolean;
 }
 
 export interface NavigationConfig {
@@ -15,46 +17,38 @@ export const NAVIGATION_CONFIG: NavigationConfig = {
   passenger: [
     // Main Section
     { label: 'Order a Ride', icon: 'clock', path: '/order-ride', section: 'main' },
-    { label: 'Ride Tracking', icon: 'map-pin', path: '/ride-tracking/1', section: 'main' },
-    { label: 'Ride History', icon: 'file-text', path: '/driver-history', section: 'main' },
-    { label: 'Favorite Routes', icon: 'bookmark', path: '#', section: 'main' },
+    { label: 'Ride Tracking', icon: 'map-pin', path: '/ride-tracking', section: 'main' },
+    { label: 'Ride History', icon: 'file-text', path: '/ride-history', section: 'main' },
+    { label: 'Reports', icon: 'bar-chart', path: '/reports', section: 'main' },
 
     // Account Section
-    { label: 'Profile', icon: 'user', path: '/profile', section: 'account' },
-    { label: 'Settings', icon: 'settings', path: '#', section: 'account' },
-    { label: 'Support', icon: 'message-circle', path: '#', section: 'account' },
+    { label: 'Support', icon: 'message-circle', path: '/support', section: 'account' },
   ],
 
   driver: [
     // Main Section
-    { label: 'Ride Tracking', icon: 'map-pin', path: '/ride-tracking/1', section: 'main' },
-    { label: 'Ride History', icon: 'file-text', path: '/driver-history', section: 'main' },
+    { label: 'Ride Tracking', icon: 'map-pin', path: '/ride-tracking', section: 'main' },
+    { label: 'Ride History', icon: 'file-text', path: '/driver/ride-history', section: 'main' },
+    { label: 'Reports', icon: 'bar-chart', path: '/reports', section: 'main' },
 
     // Account Section
-    { label: 'Profile', icon: 'user', path: '/profile', section: 'account' },
-    { label: 'Settings', icon: 'settings', path: '#', section: 'account' },
-    { label: 'Support', icon: 'message-circle', path: '#', section: 'account' },
+    { label: 'Support', icon: 'message-circle', path: '/support', section: 'account' },
   ],
 
   admin: [
-    // Main Section
-    { label: 'Dashboard', icon: 'home', path: '#', section: 'main' },
-
     // Monitoring Section
-    { label: 'Active Rides', icon: 'map-pin', path: '#', section: 'monitoring' },
-    { label: 'Ride History', icon: 'file-text', path: '/driver-history', section: 'monitoring' },
-    { label: 'Panic Notifications', icon: 'alert-triangle', path: '#', section: 'monitoring' },
-    { label: 'Live Support / Chat', icon: 'message-circle', path: '#', section: 'monitoring' },
+    { label: 'Ride History', icon: 'file-text', path: '/admin/ride-history', section: 'monitoring' },
+    { label: 'Panic Notifications', icon: 'alert-triangle', path: '/admin/panic', section: 'monitoring' },
+    { label: 'Live Support / Chat', icon: 'message-circle', path: '/admin/support', section: 'monitoring' },
 
     // Management Section
-    { label: 'Drivers', icon: 'truck', path: '#', section: 'management' },
-    { label: 'Passengers', icon: 'users', path: '#', section: 'management' },
-    { label: 'Reports', icon: 'bar-chart', path: '#', section: 'management' },
-    { label: 'All Notifications', icon: 'bell', path: '#', section: 'management' },
+    { label: 'Register Driver', icon: 'truck', path: '/register-driver', section: 'management' },
+    { label: 'User management', icon: 'users', path: '/admin/users', section: 'management' },
+    { label: 'Ride Pricing', icon: 'dollar-sign', path: '/admin/pricing', section: 'management' },
+    { label: 'Reports', icon: 'bar-chart', path: '/admin/reports', section: 'management' },
+    { label: 'All Notifications', icon: 'bell', path: '/admin/notifications', section: 'management' },
 
-    // Account Section
-    { label: 'Profile', icon: 'user', path: '/profile', section: 'account' },
-    { label: 'Settings', icon: 'settings', path: '#', section: 'account' },
+    // Account Section (profile is reached by clicking the user block at bottom)
   ],
 };
 

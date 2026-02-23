@@ -1,0 +1,125 @@
+<div class="reports-page">
+  <header class="page-header">
+    <h1 class="page-title">Reports</h1>
+    <p class="page-subtitle">View your ride statistics for a date range</p>
+  </header>
+
+  <section class="filters-bar">
+    <div class="filter-group">
+      <label for="from" class="filter-label">From</label>
+      <input
+        id="from"
+        type="date"
+        class="filter-input"
+        [ngModel]="fromDate()"
+        (ngModelChange)="fromDate.set($event)"
+      />
+    </div>
+    <div class="filter-group">
+      <label for="to" class="filter-label">To</label>
+      <input
+        id="to"
+        type="date"
+        class="filter-input"
+        [ngModel]="toDate()"
+        (ngModelChange)="toDate.set($event)"
+      />
+    </div>
+    <button type="button" class="btn-apply" (click)="onApply()" [disabled]="loading()">
+      {{ loading() ? 'Loading...' : 'Generate report' }}
+    </button>
+  </section>
+
+  @if (error()) {
+    <div class="error-banner">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="loading-banner">Loading report...</div>
+  }
+
+  @if (report(); as r) {
+    <section class="summary-section">
+      <h2 class="summary-heading">Summary</h2>
+      <div class="summary-table-wrap">
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th class="col-cumulative">Cumulative</th>
+              <th class="col-average">Average per day</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="row-label">Rides</td>
+              <td class="col-cumulative">{{ r.totalRides }}</td>
+              <td class="col-average">{{ r.avgRidesPerDay | number : '1.0-0' }}</td>
+            </tr>
+            <tr>
+              <td class="row-label">Distance (km)</td>
+              <td class="col-cumulative">{{ r.totalDistanceKm }}</td>
+              <td class="col-average">{{ r.avgDistanceKmPerDay | number : '1.2-2' }}</td>
+            </tr>
+            <tr>
+              <td class="row-label">{{ moneyLabel() }}</td>
+              <td class="col-cumulative">{{ r.totalCost | number : '1.2-2' }}</td>
+              <td class="col-average">{{ r.avgCostPerDay | number : '1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="charts-section">
+      <div class="chart-block">
+        <h3 class="chart-title">Rides per day</h3>
+        <div class="chart-container">
+          <apx-chart
+            [series]="chartRides().series"
+            [chart]="chartRides().chart"
+            [xaxis]="chartRides().xaxis"
+            [colors]="chartRides().colors"
+            [plotOptions]="chartRides().plotOptions"
+            [yaxis]="chartYaxisRides"
+            [tooltip]="chartTooltipRides"
+            [dataLabels]="chartDataLabels"
+            [grid]="chartGrid"
+          ></apx-chart>
+        </div>
+      </div>
+      <div class="chart-block">
+        <h3 class="chart-title">Distance (km) per day</h3>
+        <div class="chart-container">
+          <apx-chart
+            [series]="chartKm().series"
+            [chart]="chartKm().chart"
+            [xaxis]="chartKm().xaxis"
+            [colors]="chartKm().colors"
+            [plotOptions]="chartKm().plotOptions"
+            [yaxis]="chartYaxis"
+            [tooltip]="chartTooltipKm"
+            [dataLabels]="chartDataLabels"
+            [grid]="chartGrid"
+          ></apx-chart>
+        </div>
+      </div>
+      <div class="chart-block">
+        <h3 class="chart-title">{{ moneyLabel() }} per day</h3>
+        <div class="chart-container">
+          <apx-chart
+            [series]="chartCost().series"
+            [chart]="chartCost().chart"
+            [xaxis]="chartCost().xaxis"
+            [colors]="chartCost().colors"
+            [plotOptions]="chartCost().plotOptions"
+            [yaxis]="chartYaxis"
+            [tooltip]="chartTooltipCost"
+            [dataLabels]="chartDataLabels"
+            [grid]="chartGrid"
+          ></apx-chart>
+        </div>
+      </div>
+    </section>
+  }
+</div>
